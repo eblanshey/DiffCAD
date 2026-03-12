@@ -1,0 +1,2233 @@
+metadata:
+  generator: FreeCAD Document Structure Exploration Script
+  generated_at: '2026-03-12T18:24:49.865693'
+  document_path: tests/freecad/BasicFile.FCStd
+document_info:
+  name: BasicFile
+  path: tests/freecad/BasicFile.FCStd
+  object_count: 23
+objects:
+- Name: Part
+  TypeId: App::Part
+  Label: Part_MyPart
+  UUID: <not available>
+  Placement: Placement(Base=Vector(x=0.0, y=0.0, z=0.0), Rotation=Rotation(Axis=Vector(x=0.0,
+    y=0.0, z=1.0), Angle=0.0 rad))
+  Properties:
+    Color:
+      Type: tuple
+      Value: '[1.0, 1.0, 1.0, 0.0]'
+      Expression: (none)
+      HasExpression: false
+    ExpressionEngine:
+      Type: list
+      Value: '[]'
+      Expression: (none)
+      HasExpression: false
+    Group:
+      Type: list
+      Value: '[<body object>, <App::VarSet object>]'
+      Expression: (none)
+      HasExpression: false
+    Id:
+      Type: str
+      Value: ''''''
+      Expression: (none)
+      HasExpression: false
+    Label:
+      Type: str
+      Value: '''Part_MyPart'''
+      Expression: (none)
+      HasExpression: false
+    Label2:
+      Type: str
+      Value: ''''''
+      Expression: (none)
+      HasExpression: false
+    License:
+      Type: str
+      Value: ''''''
+      Expression: (none)
+      HasExpression: false
+    LicenseURL:
+      Type: str
+      Value: ''''''
+      Expression: (none)
+      HasExpression: false
+    Material:
+      Type: NoneType
+      Value: None
+      Expression: (none)
+      HasExpression: false
+    Meta:
+      Type: dict
+      Value: '{}'
+      Expression: (none)
+      HasExpression: false
+    Origin:
+      Type: Value.TypeId=App::Origin
+      Value: <GeoFeature object>
+      Expression: (none)
+      HasExpression: false
+    Placement:
+      Type: Placement
+      Value: Placement(Base=Vector(x=0.0, y=0.0, z=0.0), Rotation=Rotation(Axis=Vector(x=0.0,
+        y=0.0, z=1.0), Angle=0.0 rad))
+      Expression: (none)
+      HasExpression: false
+    Type:
+      Type: str
+      Value: ''''''
+      Expression: (none)
+      HasExpression: false
+    Uid:
+      Type: str
+      Value: '''8dcf024f-6a58-418c-84c7-d84b524ce80b'''
+      Expression: (none)
+      HasExpression: false
+    Visibility:
+      Type: bool
+      Value: 'True'
+      Expression: (none)
+      HasExpression: false
+    _ElementMapVersion:
+      Type: str
+      Value: ''''''
+      Expression: (none)
+      HasExpression: false
+    _GroupTouched:
+      Type: bool
+      Value: 'False'
+      Expression: (none)
+      HasExpression: false
+  PropertyCount: 17
+  Hierarchy:
+    InList: []
+    InListDetailed: []
+    OutList:
+    - Origin
+    - Body
+    - VarSet
+    OutListDetailed:
+    - Name: Origin
+      TypeId: App::Origin
+      ReferencingProperties:
+      - Origin
+    - Name: Body
+      TypeId: PartDesign::Body
+      ReferencingProperties: []
+    - Name: VarSet
+      TypeId: App::VarSet
+      ReferencingProperties: []
+    SubObjects: '<error: ''App.Part'' object has no attribute ''SubObjects''>'
+    getSubObjects(): !!python/tuple
+    - Body.
+    - VarSet.
+  PropertyGroups: {}
+  AdditionalAttributes:
+    Shape: <Compound object at 0x62f966cff3b0>
+    Document: <Document 'BasicFile' (BasicFile) >
+    FullName: '''BasicFile#Part'''
+- Name: Origin
+  TypeId: App::Origin
+  Label: Origin
+  UUID: <not available>
+  Placement: Placement(Base=Vector(x=0.0, y=0.0, z=0.0), Rotation=Rotation(Axis=Vector(x=0.0,
+    y=0.0, z=1.0), Angle=0.0 rad))
+  Properties:
+    ExpressionEngine:
+      Type: list
+      Value: '[]'
+      Expression: (none)
+      HasExpression: false
+    Group:
+      Type: list
+      Value: '[]'
+      Expression: (none)
+      HasExpression: false
+    Label:
+      Type: str
+      Value: '''Origin'''
+      Expression: (none)
+      HasExpression: false
+    Label2:
+      Type: str
+      Value: ''''''
+      Expression: (none)
+      HasExpression: false
+    OriginFeatures:
+      Type: list
+      Value: '[<GeoFeature object>, <GeoFeature object>, <GeoFeature object>, <GeoFeature
+        object>, <GeoFeature object>, <GeoFeature object>, <GeoFeature object>]'
+      Expression: (none)
+      HasExpression: false
+    Placement:
+      Type: Placement
+      Value: Placement(Base=Vector(x=0.0, y=0.0, z=0.0), Rotation=Rotation(Axis=Vector(x=0.0,
+        y=0.0, z=1.0), Angle=0.0 rad))
+      Expression: (none)
+      HasExpression: false
+    Visibility:
+      Type: bool
+      Value: 'False'
+      Expression: (none)
+      HasExpression: false
+    _ElementMapVersion:
+      Type: str
+      Value: ''''''
+      Expression: (none)
+      HasExpression: false
+    _GroupTouched:
+      Type: bool
+      Value: 'False'
+      Expression: (none)
+      HasExpression: false
+  PropertyCount: 9
+  Hierarchy:
+    InList:
+    - Part
+    InListDetailed:
+    - Name: Part
+      TypeId: App::Part
+      ReferencingProperties:
+      - Origin
+    OutList:
+    - X_Axis
+    - Y_Axis
+    - Z_Axis
+    - XY_Plane
+    - XZ_Plane
+    - YZ_Plane
+    - Origin001
+    OutListDetailed:
+    - Name: X_Axis
+      TypeId: App::Line
+      ReferencingProperties: []
+    - Name: Y_Axis
+      TypeId: App::Line
+      ReferencingProperties: []
+    - Name: Z_Axis
+      TypeId: App::Line
+      ReferencingProperties: []
+    - Name: XY_Plane
+      TypeId: App::Plane
+      ReferencingProperties: []
+    - Name: XZ_Plane
+      TypeId: App::Plane
+      ReferencingProperties: []
+    - Name: YZ_Plane
+      TypeId: App::Plane
+      ReferencingProperties: []
+    - Name: Origin001
+      TypeId: App::Point
+      ReferencingProperties: []
+    SubObjects: '<error: ''App.GeoFeature'' object has no attribute ''SubObjects''>'
+    getSubObjects(): []
+  PropertyGroups: {}
+  AdditionalAttributes:
+    Document: <Document 'BasicFile' (BasicFile) >
+    FullName: '''BasicFile#Origin'''
+- Name: X_Axis
+  TypeId: App::Line
+  Label: X-axis
+  UUID: <not available>
+  Placement: Placement(Base=Vector(x=0.0, y=0.0, z=0.0), Rotation=Rotation(Axis=Vector(x=0.0,
+    y=0.0, z=1.0), Angle=0.0 rad))
+  Properties:
+    ExpressionEngine:
+      Type: list
+      Value: '[]'
+      Expression: (none)
+      HasExpression: false
+    Label:
+      Type: str
+      Value: '''X-axis'''
+      Expression: (none)
+      HasExpression: false
+    Label2:
+      Type: str
+      Value: ''''''
+      Expression: (none)
+      HasExpression: false
+    Placement:
+      Type: Placement
+      Value: Placement(Base=Vector(x=0.0, y=0.0, z=0.0), Rotation=Rotation(Axis=Vector(x=0.0,
+        y=0.0, z=1.0), Angle=0.0 rad))
+      Expression: (none)
+      HasExpression: false
+    Role:
+      Type: str
+      Value: '''X_Axis'''
+      Expression: (none)
+      HasExpression: false
+    Visibility:
+      Type: bool
+      Value: 'True'
+      Expression: (none)
+      HasExpression: false
+    _ElementMapVersion:
+      Type: str
+      Value: ''''''
+      Expression: (none)
+      HasExpression: false
+  PropertyCount: 7
+  Hierarchy:
+    InList:
+    - Origin
+    InListDetailed:
+    - Name: Origin
+      TypeId: App::Origin
+      ReferencingProperties: []
+    OutList: []
+    OutListDetailed: []
+    SubObjects: '<error: ''App.GeoFeature'' object has no attribute ''SubObjects''>'
+    getSubObjects(): []
+  PropertyGroups: {}
+  AdditionalAttributes:
+    Shape: <Edge object at 0x62f966cff3b0>
+    Document: <Document 'BasicFile' (BasicFile) >
+    FullName: '''BasicFile#X_Axis'''
+- Name: Y_Axis
+  TypeId: App::Line
+  Label: Y-axis
+  UUID: <not available>
+  Placement: Placement(Base=Vector(x=0.0, y=0.0, z=0.0), Rotation=Rotation(Axis=Vector(x=0.5773502691896258,
+    y=0.5773502691896258, z=0.5773502691896258), Angle=2.0943951023931953 rad))
+  Properties:
+    ExpressionEngine:
+      Type: list
+      Value: '[]'
+      Expression: (none)
+      HasExpression: false
+    Label:
+      Type: str
+      Value: '''Y-axis'''
+      Expression: (none)
+      HasExpression: false
+    Label2:
+      Type: str
+      Value: ''''''
+      Expression: (none)
+      HasExpression: false
+    Placement:
+      Type: Placement
+      Value: Placement(Base=Vector(x=0.0, y=0.0, z=0.0), Rotation=Rotation(Axis=Vector(x=0.5773502691896258,
+        y=0.5773502691896258, z=0.5773502691896258), Angle=2.0943951023931953 rad))
+      Expression: (none)
+      HasExpression: false
+    Role:
+      Type: str
+      Value: '''Y_Axis'''
+      Expression: (none)
+      HasExpression: false
+    Visibility:
+      Type: bool
+      Value: 'True'
+      Expression: (none)
+      HasExpression: false
+    _ElementMapVersion:
+      Type: str
+      Value: ''''''
+      Expression: (none)
+      HasExpression: false
+  PropertyCount: 7
+  Hierarchy:
+    InList:
+    - Origin
+    InListDetailed:
+    - Name: Origin
+      TypeId: App::Origin
+      ReferencingProperties: []
+    OutList: []
+    OutListDetailed: []
+    SubObjects: '<error: ''App.GeoFeature'' object has no attribute ''SubObjects''>'
+    getSubObjects(): []
+  PropertyGroups: {}
+  AdditionalAttributes:
+    Shape: <Edge object at 0x62f966cff3b0>
+    Document: <Document 'BasicFile' (BasicFile) >
+    FullName: '''BasicFile#Y_Axis'''
+- Name: Z_Axis
+  TypeId: App::Line
+  Label: Z-axis
+  UUID: <not available>
+  Placement: Placement(Base=Vector(x=0.0, y=0.0, z=0.0), Rotation=Rotation(Axis=Vector(x=0.5773502691896258,
+    y=-0.5773502691896258, z=0.5773502691896258), Angle=2.0943951023931953 rad))
+  Properties:
+    ExpressionEngine:
+      Type: list
+      Value: '[]'
+      Expression: (none)
+      HasExpression: false
+    Label:
+      Type: str
+      Value: '''Z-axis'''
+      Expression: (none)
+      HasExpression: false
+    Label2:
+      Type: str
+      Value: ''''''
+      Expression: (none)
+      HasExpression: false
+    Placement:
+      Type: Placement
+      Value: Placement(Base=Vector(x=0.0, y=0.0, z=0.0), Rotation=Rotation(Axis=Vector(x=0.5773502691896258,
+        y=-0.5773502691896258, z=0.5773502691896258), Angle=2.0943951023931953 rad))
+      Expression: (none)
+      HasExpression: false
+    Role:
+      Type: str
+      Value: '''Z_Axis'''
+      Expression: (none)
+      HasExpression: false
+    Visibility:
+      Type: bool
+      Value: 'True'
+      Expression: (none)
+      HasExpression: false
+    _ElementMapVersion:
+      Type: str
+      Value: ''''''
+      Expression: (none)
+      HasExpression: false
+  PropertyCount: 7
+  Hierarchy:
+    InList:
+    - Origin
+    InListDetailed:
+    - Name: Origin
+      TypeId: App::Origin
+      ReferencingProperties: []
+    OutList: []
+    OutListDetailed: []
+    SubObjects: '<error: ''App.GeoFeature'' object has no attribute ''SubObjects''>'
+    getSubObjects(): []
+  PropertyGroups: {}
+  AdditionalAttributes:
+    Shape: <Edge object at 0x62f966cff3b0>
+    Document: <Document 'BasicFile' (BasicFile) >
+    FullName: '''BasicFile#Z_Axis'''
+- Name: XY_Plane
+  TypeId: App::Plane
+  Label: XY-plane
+  UUID: <not available>
+  Placement: Placement(Base=Vector(x=0.0, y=0.0, z=0.0), Rotation=Rotation(Axis=Vector(x=0.0,
+    y=0.0, z=1.0), Angle=0.0 rad))
+  Properties:
+    ExpressionEngine:
+      Type: list
+      Value: '[]'
+      Expression: (none)
+      HasExpression: false
+    Label:
+      Type: str
+      Value: '''XY-plane'''
+      Expression: (none)
+      HasExpression: false
+    Label2:
+      Type: str
+      Value: ''''''
+      Expression: (none)
+      HasExpression: false
+    Placement:
+      Type: Placement
+      Value: Placement(Base=Vector(x=0.0, y=0.0, z=0.0), Rotation=Rotation(Axis=Vector(x=0.0,
+        y=0.0, z=1.0), Angle=0.0 rad))
+      Expression: (none)
+      HasExpression: false
+    Role:
+      Type: str
+      Value: '''XY_Plane'''
+      Expression: (none)
+      HasExpression: false
+    Visibility:
+      Type: bool
+      Value: 'True'
+      Expression: (none)
+      HasExpression: false
+    _ElementMapVersion:
+      Type: str
+      Value: ''''''
+      Expression: (none)
+      HasExpression: false
+  PropertyCount: 7
+  Hierarchy:
+    InList:
+    - Origin
+    InListDetailed:
+    - Name: Origin
+      TypeId: App::Origin
+      ReferencingProperties: []
+    OutList: []
+    OutListDetailed: []
+    SubObjects: '<error: ''App.GeoFeature'' object has no attribute ''SubObjects''>'
+    getSubObjects(): []
+  PropertyGroups: {}
+  AdditionalAttributes:
+    Shape: <Face object at 0x62f966cff3b0>
+    Document: <Document 'BasicFile' (BasicFile) >
+    FullName: '''BasicFile#XY_Plane'''
+- Name: XZ_Plane
+  TypeId: App::Plane
+  Label: XZ-plane
+  UUID: <not available>
+  Placement: Placement(Base=Vector(x=0.0, y=0.0, z=0.0), Rotation=Rotation(Axis=Vector(x=1.0,
+    y=0.0, z=0.0), Angle=1.5707963267948968 rad))
+  Properties:
+    ExpressionEngine:
+      Type: list
+      Value: '[]'
+      Expression: (none)
+      HasExpression: false
+    Label:
+      Type: str
+      Value: '''XZ-plane'''
+      Expression: (none)
+      HasExpression: false
+    Label2:
+      Type: str
+      Value: ''''''
+      Expression: (none)
+      HasExpression: false
+    Placement:
+      Type: Placement
+      Value: Placement(Base=Vector(x=0.0, y=0.0, z=0.0), Rotation=Rotation(Axis=Vector(x=1.0,
+        y=0.0, z=0.0), Angle=1.5707963267948968 rad))
+      Expression: (none)
+      HasExpression: false
+    Role:
+      Type: str
+      Value: '''XZ_Plane'''
+      Expression: (none)
+      HasExpression: false
+    Visibility:
+      Type: bool
+      Value: 'True'
+      Expression: (none)
+      HasExpression: false
+    _ElementMapVersion:
+      Type: str
+      Value: ''''''
+      Expression: (none)
+      HasExpression: false
+  PropertyCount: 7
+  Hierarchy:
+    InList:
+    - Origin
+    InListDetailed:
+    - Name: Origin
+      TypeId: App::Origin
+      ReferencingProperties: []
+    OutList: []
+    OutListDetailed: []
+    SubObjects: '<error: ''App.GeoFeature'' object has no attribute ''SubObjects''>'
+    getSubObjects(): []
+  PropertyGroups: {}
+  AdditionalAttributes:
+    Shape: <Face object at 0x62f966cff3b0>
+    Document: <Document 'BasicFile' (BasicFile) >
+    FullName: '''BasicFile#XZ_Plane'''
+- Name: YZ_Plane
+  TypeId: App::Plane
+  Label: YZ-plane
+  UUID: <not available>
+  Placement: Placement(Base=Vector(x=0.0, y=0.0, z=0.0), Rotation=Rotation(Axis=Vector(x=0.5773502691896258,
+    y=0.5773502691896258, z=0.5773502691896258), Angle=2.0943951023931953 rad))
+  Properties:
+    ExpressionEngine:
+      Type: list
+      Value: '[]'
+      Expression: (none)
+      HasExpression: false
+    Label:
+      Type: str
+      Value: '''YZ-plane'''
+      Expression: (none)
+      HasExpression: false
+    Label2:
+      Type: str
+      Value: ''''''
+      Expression: (none)
+      HasExpression: false
+    Placement:
+      Type: Placement
+      Value: Placement(Base=Vector(x=0.0, y=0.0, z=0.0), Rotation=Rotation(Axis=Vector(x=0.5773502691896258,
+        y=0.5773502691896258, z=0.5773502691896258), Angle=2.0943951023931953 rad))
+      Expression: (none)
+      HasExpression: false
+    Role:
+      Type: str
+      Value: '''YZ_Plane'''
+      Expression: (none)
+      HasExpression: false
+    Visibility:
+      Type: bool
+      Value: 'True'
+      Expression: (none)
+      HasExpression: false
+    _ElementMapVersion:
+      Type: str
+      Value: ''''''
+      Expression: (none)
+      HasExpression: false
+  PropertyCount: 7
+  Hierarchy:
+    InList:
+    - Origin
+    InListDetailed:
+    - Name: Origin
+      TypeId: App::Origin
+      ReferencingProperties: []
+    OutList: []
+    OutListDetailed: []
+    SubObjects: '<error: ''App.GeoFeature'' object has no attribute ''SubObjects''>'
+    getSubObjects(): []
+  PropertyGroups: {}
+  AdditionalAttributes:
+    Shape: <Face object at 0x62f966cff3b0>
+    Document: <Document 'BasicFile' (BasicFile) >
+    FullName: '''BasicFile#YZ_Plane'''
+- Name: Origin001
+  TypeId: App::Point
+  Label: Origin001
+  UUID: <not available>
+  Placement: Placement(Base=Vector(x=0.0, y=0.0, z=0.0), Rotation=Rotation(Axis=Vector(x=0.0,
+    y=0.0, z=1.0), Angle=0.0 rad))
+  Properties:
+    ExpressionEngine:
+      Type: list
+      Value: '[]'
+      Expression: (none)
+      HasExpression: false
+    Label:
+      Type: str
+      Value: '''Origin001'''
+      Expression: (none)
+      HasExpression: false
+    Label2:
+      Type: str
+      Value: ''''''
+      Expression: (none)
+      HasExpression: false
+    Placement:
+      Type: Placement
+      Value: Placement(Base=Vector(x=0.0, y=0.0, z=0.0), Rotation=Rotation(Axis=Vector(x=0.0,
+        y=0.0, z=1.0), Angle=0.0 rad))
+      Expression: (none)
+      HasExpression: false
+    Role:
+      Type: str
+      Value: '''Origin'''
+      Expression: (none)
+      HasExpression: false
+    Visibility:
+      Type: bool
+      Value: 'True'
+      Expression: (none)
+      HasExpression: false
+    _ElementMapVersion:
+      Type: str
+      Value: ''''''
+      Expression: (none)
+      HasExpression: false
+  PropertyCount: 7
+  Hierarchy:
+    InList:
+    - Origin
+    InListDetailed:
+    - Name: Origin
+      TypeId: App::Origin
+      ReferencingProperties: []
+    OutList: []
+    OutListDetailed: []
+    SubObjects: '<error: ''App.GeoFeature'' object has no attribute ''SubObjects''>'
+    getSubObjects(): []
+  PropertyGroups: {}
+  AdditionalAttributes:
+    Shape: <Vertex object at 0x62f966cff3b0>
+    Document: <Document 'BasicFile' (BasicFile) >
+    FullName: '''BasicFile#Origin001'''
+- Name: Body
+  TypeId: PartDesign::Body
+  Label: Body_MyBody
+  UUID: <not available>
+  Placement: Placement(Base=Vector(x=0.0, y=0.0, z=0.0), Rotation=Rotation(Axis=Vector(x=0.0,
+    y=0.0, z=1.0), Angle=0.0 rad))
+  Properties:
+    AllowCompound:
+      Type: bool
+      Value: 'True'
+      Expression: (none)
+      HasExpression: false
+    BaseFeature:
+      Type: NoneType
+      Value: None
+      Expression: (none)
+      HasExpression: false
+    ExpressionEngine:
+      Type: list
+      Value: '[]'
+      Expression: (none)
+      HasExpression: false
+    Group:
+      Type: list
+      Value: '[<Sketcher::SketchObject>, <PartDesign::Pad>, <Sketcher::SketchObject>,
+        <PartDesign::Pocket>]'
+      Expression: (none)
+      HasExpression: false
+    Label:
+      Type: str
+      Value: '''Body_MyBody'''
+      Expression: (none)
+      HasExpression: false
+    Label2:
+      Type: str
+      Value: ''''''
+      Expression: (none)
+      HasExpression: false
+    Origin:
+      Type: Value.TypeId=App::Origin
+      Value: <GeoFeature object>
+      Expression: (none)
+      HasExpression: false
+    Placement:
+      Type: Placement
+      Value: Placement(Base=Vector(x=0.0, y=0.0, z=0.0), Rotation=Rotation(Axis=Vector(x=0.0,
+        y=0.0, z=1.0), Angle=0.0 rad))
+      Expression: (none)
+      HasExpression: false
+    Shape:
+      Type: Value.TypeId=Part::TopoShape
+      Value: <Compound object at 0x62f966cff3b0>
+      Expression: (none)
+      HasExpression: false
+    ShapeMaterial:
+      Type: Value.TypeId=Materials::Material
+      Value: <Material at 0x62f967846730>
+      Expression: (none)
+      HasExpression: false
+    Tip:
+      Type: Value.TypeId=PartDesign::Pocket
+      Value: <PartDesign::Pocket>
+      Expression: (none)
+      HasExpression: false
+    Visibility:
+      Type: bool
+      Value: 'True'
+      Expression: (none)
+      HasExpression: false
+    _ElementMapVersion:
+      Type: str
+      Value: ''''''
+      Expression: (none)
+      HasExpression: false
+    _GroupTouched:
+      Type: bool
+      Value: 'False'
+      Expression: (none)
+      HasExpression: false
+  PropertyCount: 14
+  Hierarchy:
+    InList:
+    - Part
+    InListDetailed:
+    - Name: Part
+      TypeId: App::Part
+      ReferencingProperties: []
+    OutList:
+    - Pocket
+    - Origin002
+    - Sketch
+    - Pad
+    - Sketch001
+    - Pocket
+    OutListDetailed:
+    - Name: Pocket
+      TypeId: PartDesign::Pocket
+      ReferencingProperties:
+      - Tip
+    - Name: Origin002
+      TypeId: App::Origin
+      ReferencingProperties:
+      - Origin
+    - Name: Sketch
+      TypeId: Sketcher::SketchObject
+      ReferencingProperties: []
+    - Name: Pad
+      TypeId: PartDesign::Pad
+      ReferencingProperties: []
+    - Name: Sketch001
+      TypeId: Sketcher::SketchObject
+      ReferencingProperties: []
+    - Name: Pocket
+      TypeId: PartDesign::Pocket
+      ReferencingProperties:
+      - Tip
+    SubObjects: '<error: ''PartDesign.Body'' object has no attribute ''SubObjects''>'
+    getSubObjects(): []
+  PropertyGroups: {}
+  AdditionalAttributes:
+    Shape: <Compound object at 0x62f966cff3b0>
+    Document: <Document 'BasicFile' (BasicFile) >
+    FullName: '''BasicFile#Body'''
+- Name: Origin002
+  TypeId: App::Origin
+  Label: Origin004
+  UUID: <not available>
+  Placement: Placement(Base=Vector(x=0.0, y=0.0, z=0.0), Rotation=Rotation(Axis=Vector(x=0.0,
+    y=0.0, z=1.0), Angle=0.0 rad))
+  Properties:
+    ExpressionEngine:
+      Type: list
+      Value: '[]'
+      Expression: (none)
+      HasExpression: false
+    Group:
+      Type: list
+      Value: '[]'
+      Expression: (none)
+      HasExpression: false
+    Label:
+      Type: str
+      Value: '''Origin004'''
+      Expression: (none)
+      HasExpression: false
+    Label2:
+      Type: str
+      Value: ''''''
+      Expression: (none)
+      HasExpression: false
+    OriginFeatures:
+      Type: list
+      Value: '[<GeoFeature object>, <GeoFeature object>, <GeoFeature object>, <GeoFeature
+        object>, <GeoFeature object>, <GeoFeature object>, <GeoFeature object>]'
+      Expression: (none)
+      HasExpression: false
+    Placement:
+      Type: Placement
+      Value: Placement(Base=Vector(x=0.0, y=0.0, z=0.0), Rotation=Rotation(Axis=Vector(x=0.0,
+        y=0.0, z=1.0), Angle=0.0 rad))
+      Expression: (none)
+      HasExpression: false
+    Visibility:
+      Type: bool
+      Value: 'False'
+      Expression: (none)
+      HasExpression: false
+    _ElementMapVersion:
+      Type: str
+      Value: ''''''
+      Expression: (none)
+      HasExpression: false
+    _GroupTouched:
+      Type: bool
+      Value: 'False'
+      Expression: (none)
+      HasExpression: false
+  PropertyCount: 9
+  Hierarchy:
+    InList:
+    - Body
+    - Sketch
+    InListDetailed:
+    - Name: Body
+      TypeId: PartDesign::Body
+      ReferencingProperties:
+      - Origin
+    - Name: Sketch
+      TypeId: Sketcher::SketchObject
+      ReferencingProperties: []
+    OutList:
+    - X_Axis001
+    - Y_Axis001
+    - Z_Axis001
+    - XY_Plane001
+    - XZ_Plane001
+    - YZ_Plane001
+    - Origin003
+    OutListDetailed:
+    - Name: X_Axis001
+      TypeId: App::Line
+      ReferencingProperties: []
+    - Name: Y_Axis001
+      TypeId: App::Line
+      ReferencingProperties: []
+    - Name: Z_Axis001
+      TypeId: App::Line
+      ReferencingProperties: []
+    - Name: XY_Plane001
+      TypeId: App::Plane
+      ReferencingProperties: []
+    - Name: XZ_Plane001
+      TypeId: App::Plane
+      ReferencingProperties: []
+    - Name: YZ_Plane001
+      TypeId: App::Plane
+      ReferencingProperties: []
+    - Name: Origin003
+      TypeId: App::Point
+      ReferencingProperties: []
+    SubObjects: '<error: ''App.GeoFeature'' object has no attribute ''SubObjects''>'
+    getSubObjects(): []
+  PropertyGroups: {}
+  AdditionalAttributes:
+    Document: <Document 'BasicFile' (BasicFile) >
+    FullName: '''BasicFile#Origin002'''
+- Name: X_Axis001
+  TypeId: App::Line
+  Label: X-axis001
+  UUID: <not available>
+  Placement: Placement(Base=Vector(x=0.0, y=0.0, z=0.0), Rotation=Rotation(Axis=Vector(x=0.0,
+    y=0.0, z=1.0), Angle=0.0 rad))
+  Properties:
+    ExpressionEngine:
+      Type: list
+      Value: '[]'
+      Expression: (none)
+      HasExpression: false
+    Label:
+      Type: str
+      Value: '''X-axis001'''
+      Expression: (none)
+      HasExpression: false
+    Label2:
+      Type: str
+      Value: ''''''
+      Expression: (none)
+      HasExpression: false
+    Placement:
+      Type: Placement
+      Value: Placement(Base=Vector(x=0.0, y=0.0, z=0.0), Rotation=Rotation(Axis=Vector(x=0.0,
+        y=0.0, z=1.0), Angle=0.0 rad))
+      Expression: (none)
+      HasExpression: false
+    Role:
+      Type: str
+      Value: '''X_Axis'''
+      Expression: (none)
+      HasExpression: false
+    Visibility:
+      Type: bool
+      Value: 'True'
+      Expression: (none)
+      HasExpression: false
+    _ElementMapVersion:
+      Type: str
+      Value: ''''''
+      Expression: (none)
+      HasExpression: false
+  PropertyCount: 7
+  Hierarchy:
+    InList:
+    - Origin002
+    InListDetailed:
+    - Name: Origin002
+      TypeId: App::Origin
+      ReferencingProperties: []
+    OutList: []
+    OutListDetailed: []
+    SubObjects: '<error: ''App.GeoFeature'' object has no attribute ''SubObjects''>'
+    getSubObjects(): []
+  PropertyGroups: {}
+  AdditionalAttributes:
+    Shape: <Edge object at 0x62f9669aa5a0>
+    Document: <Document 'BasicFile' (BasicFile) >
+    FullName: '''BasicFile#X_Axis001'''
+- Name: Y_Axis001
+  TypeId: App::Line
+  Label: Y-axis001
+  UUID: <not available>
+  Placement: Placement(Base=Vector(x=0.0, y=0.0, z=0.0), Rotation=Rotation(Axis=Vector(x=0.5773502691896258,
+    y=0.5773502691896258, z=0.5773502691896258), Angle=2.0943951023931953 rad))
+  Properties:
+    ExpressionEngine:
+      Type: list
+      Value: '[]'
+      Expression: (none)
+      HasExpression: false
+    Label:
+      Type: str
+      Value: '''Y-axis001'''
+      Expression: (none)
+      HasExpression: false
+    Label2:
+      Type: str
+      Value: ''''''
+      Expression: (none)
+      HasExpression: false
+    Placement:
+      Type: Placement
+      Value: Placement(Base=Vector(x=0.0, y=0.0, z=0.0), Rotation=Rotation(Axis=Vector(x=0.5773502691896258,
+        y=0.5773502691896258, z=0.5773502691896258), Angle=2.0943951023931953 rad))
+      Expression: (none)
+      HasExpression: false
+    Role:
+      Type: str
+      Value: '''Y_Axis'''
+      Expression: (none)
+      HasExpression: false
+    Visibility:
+      Type: bool
+      Value: 'True'
+      Expression: (none)
+      HasExpression: false
+    _ElementMapVersion:
+      Type: str
+      Value: ''''''
+      Expression: (none)
+      HasExpression: false
+  PropertyCount: 7
+  Hierarchy:
+    InList:
+    - Origin002
+    InListDetailed:
+    - Name: Origin002
+      TypeId: App::Origin
+      ReferencingProperties: []
+    OutList: []
+    OutListDetailed: []
+    SubObjects: '<error: ''App.GeoFeature'' object has no attribute ''SubObjects''>'
+    getSubObjects(): []
+  PropertyGroups: {}
+  AdditionalAttributes:
+    Shape: <Edge object at 0x62f9669aa5a0>
+    Document: <Document 'BasicFile' (BasicFile) >
+    FullName: '''BasicFile#Y_Axis001'''
+- Name: Z_Axis001
+  TypeId: App::Line
+  Label: Z-axis001
+  UUID: <not available>
+  Placement: Placement(Base=Vector(x=0.0, y=0.0, z=0.0), Rotation=Rotation(Axis=Vector(x=0.5773502691896258,
+    y=-0.5773502691896258, z=0.5773502691896258), Angle=2.0943951023931953 rad))
+  Properties:
+    ExpressionEngine:
+      Type: list
+      Value: '[]'
+      Expression: (none)
+      HasExpression: false
+    Label:
+      Type: str
+      Value: '''Z-axis001'''
+      Expression: (none)
+      HasExpression: false
+    Label2:
+      Type: str
+      Value: ''''''
+      Expression: (none)
+      HasExpression: false
+    Placement:
+      Type: Placement
+      Value: Placement(Base=Vector(x=0.0, y=0.0, z=0.0), Rotation=Rotation(Axis=Vector(x=0.5773502691896258,
+        y=-0.5773502691896258, z=0.5773502691896258), Angle=2.0943951023931953 rad))
+      Expression: (none)
+      HasExpression: false
+    Role:
+      Type: str
+      Value: '''Z_Axis'''
+      Expression: (none)
+      HasExpression: false
+    Visibility:
+      Type: bool
+      Value: 'True'
+      Expression: (none)
+      HasExpression: false
+    _ElementMapVersion:
+      Type: str
+      Value: ''''''
+      Expression: (none)
+      HasExpression: false
+  PropertyCount: 7
+  Hierarchy:
+    InList:
+    - Origin002
+    InListDetailed:
+    - Name: Origin002
+      TypeId: App::Origin
+      ReferencingProperties: []
+    OutList: []
+    OutListDetailed: []
+    SubObjects: '<error: ''App.GeoFeature'' object has no attribute ''SubObjects''>'
+    getSubObjects(): []
+  PropertyGroups: {}
+  AdditionalAttributes:
+    Shape: <Edge object at 0x62f9669aa5a0>
+    Document: <Document 'BasicFile' (BasicFile) >
+    FullName: '''BasicFile#Z_Axis001'''
+- Name: XY_Plane001
+  TypeId: App::Plane
+  Label: XY-plane001
+  UUID: <not available>
+  Placement: Placement(Base=Vector(x=0.0, y=0.0, z=0.0), Rotation=Rotation(Axis=Vector(x=0.0,
+    y=0.0, z=1.0), Angle=0.0 rad))
+  Properties:
+    ExpressionEngine:
+      Type: list
+      Value: '[]'
+      Expression: (none)
+      HasExpression: false
+    Label:
+      Type: str
+      Value: '''XY-plane001'''
+      Expression: (none)
+      HasExpression: false
+    Label2:
+      Type: str
+      Value: ''''''
+      Expression: (none)
+      HasExpression: false
+    Placement:
+      Type: Placement
+      Value: Placement(Base=Vector(x=0.0, y=0.0, z=0.0), Rotation=Rotation(Axis=Vector(x=0.0,
+        y=0.0, z=1.0), Angle=0.0 rad))
+      Expression: (none)
+      HasExpression: false
+    Role:
+      Type: str
+      Value: '''XY_Plane'''
+      Expression: (none)
+      HasExpression: false
+    Visibility:
+      Type: bool
+      Value: 'True'
+      Expression: (none)
+      HasExpression: false
+    _ElementMapVersion:
+      Type: str
+      Value: ''''''
+      Expression: (none)
+      HasExpression: false
+  PropertyCount: 7
+  Hierarchy:
+    InList:
+    - Origin002
+    InListDetailed:
+    - Name: Origin002
+      TypeId: App::Origin
+      ReferencingProperties: []
+    OutList: []
+    OutListDetailed: []
+    SubObjects: '<error: ''App.GeoFeature'' object has no attribute ''SubObjects''>'
+    getSubObjects(): []
+  PropertyGroups: {}
+  AdditionalAttributes:
+    Shape: <Face object at 0x62f9669aa5a0>
+    Document: <Document 'BasicFile' (BasicFile) >
+    FullName: '''BasicFile#XY_Plane001'''
+- Name: XZ_Plane001
+  TypeId: App::Plane
+  Label: XZ-plane001
+  UUID: <not available>
+  Placement: Placement(Base=Vector(x=0.0, y=0.0, z=0.0), Rotation=Rotation(Axis=Vector(x=1.0,
+    y=0.0, z=0.0), Angle=1.5707963267948968 rad))
+  Properties:
+    ExpressionEngine:
+      Type: list
+      Value: '[]'
+      Expression: (none)
+      HasExpression: false
+    Label:
+      Type: str
+      Value: '''XZ-plane001'''
+      Expression: (none)
+      HasExpression: false
+    Label2:
+      Type: str
+      Value: ''''''
+      Expression: (none)
+      HasExpression: false
+    Placement:
+      Type: Placement
+      Value: Placement(Base=Vector(x=0.0, y=0.0, z=0.0), Rotation=Rotation(Axis=Vector(x=1.0,
+        y=0.0, z=0.0), Angle=1.5707963267948968 rad))
+      Expression: (none)
+      HasExpression: false
+    Role:
+      Type: str
+      Value: '''XZ_Plane'''
+      Expression: (none)
+      HasExpression: false
+    Visibility:
+      Type: bool
+      Value: 'True'
+      Expression: (none)
+      HasExpression: false
+    _ElementMapVersion:
+      Type: str
+      Value: ''''''
+      Expression: (none)
+      HasExpression: false
+  PropertyCount: 7
+  Hierarchy:
+    InList:
+    - Origin002
+    InListDetailed:
+    - Name: Origin002
+      TypeId: App::Origin
+      ReferencingProperties: []
+    OutList: []
+    OutListDetailed: []
+    SubObjects: '<error: ''App.GeoFeature'' object has no attribute ''SubObjects''>'
+    getSubObjects(): []
+  PropertyGroups: {}
+  AdditionalAttributes:
+    Shape: <Face object at 0x62f9669aa5a0>
+    Document: <Document 'BasicFile' (BasicFile) >
+    FullName: '''BasicFile#XZ_Plane001'''
+- Name: YZ_Plane001
+  TypeId: App::Plane
+  Label: YZ-plane001
+  UUID: <not available>
+  Placement: Placement(Base=Vector(x=0.0, y=0.0, z=0.0), Rotation=Rotation(Axis=Vector(x=0.5773502691896258,
+    y=0.5773502691896258, z=0.5773502691896258), Angle=2.0943951023931953 rad))
+  Properties:
+    ExpressionEngine:
+      Type: list
+      Value: '[]'
+      Expression: (none)
+      HasExpression: false
+    Label:
+      Type: str
+      Value: '''YZ-plane001'''
+      Expression: (none)
+      HasExpression: false
+    Label2:
+      Type: str
+      Value: ''''''
+      Expression: (none)
+      HasExpression: false
+    Placement:
+      Type: Placement
+      Value: Placement(Base=Vector(x=0.0, y=0.0, z=0.0), Rotation=Rotation(Axis=Vector(x=0.5773502691896258,
+        y=0.5773502691896258, z=0.5773502691896258), Angle=2.0943951023931953 rad))
+      Expression: (none)
+      HasExpression: false
+    Role:
+      Type: str
+      Value: '''YZ_Plane'''
+      Expression: (none)
+      HasExpression: false
+    Visibility:
+      Type: bool
+      Value: 'True'
+      Expression: (none)
+      HasExpression: false
+    _ElementMapVersion:
+      Type: str
+      Value: ''''''
+      Expression: (none)
+      HasExpression: false
+  PropertyCount: 7
+  Hierarchy:
+    InList:
+    - Origin002
+    InListDetailed:
+    - Name: Origin002
+      TypeId: App::Origin
+      ReferencingProperties: []
+    OutList: []
+    OutListDetailed: []
+    SubObjects: '<error: ''App.GeoFeature'' object has no attribute ''SubObjects''>'
+    getSubObjects(): []
+  PropertyGroups: {}
+  AdditionalAttributes:
+    Shape: <Face object at 0x62f9669aa5a0>
+    Document: <Document 'BasicFile' (BasicFile) >
+    FullName: '''BasicFile#YZ_Plane001'''
+- Name: Origin003
+  TypeId: App::Point
+  Label: Origin003
+  UUID: <not available>
+  Placement: Placement(Base=Vector(x=0.0, y=0.0, z=0.0), Rotation=Rotation(Axis=Vector(x=0.0,
+    y=0.0, z=1.0), Angle=0.0 rad))
+  Properties:
+    ExpressionEngine:
+      Type: list
+      Value: '[]'
+      Expression: (none)
+      HasExpression: false
+    Label:
+      Type: str
+      Value: '''Origin003'''
+      Expression: (none)
+      HasExpression: false
+    Label2:
+      Type: str
+      Value: ''''''
+      Expression: (none)
+      HasExpression: false
+    Placement:
+      Type: Placement
+      Value: Placement(Base=Vector(x=0.0, y=0.0, z=0.0), Rotation=Rotation(Axis=Vector(x=0.0,
+        y=0.0, z=1.0), Angle=0.0 rad))
+      Expression: (none)
+      HasExpression: false
+    Role:
+      Type: str
+      Value: '''Origin'''
+      Expression: (none)
+      HasExpression: false
+    Visibility:
+      Type: bool
+      Value: 'True'
+      Expression: (none)
+      HasExpression: false
+    _ElementMapVersion:
+      Type: str
+      Value: ''''''
+      Expression: (none)
+      HasExpression: false
+  PropertyCount: 7
+  Hierarchy:
+    InList:
+    - Origin002
+    InListDetailed:
+    - Name: Origin002
+      TypeId: App::Origin
+      ReferencingProperties: []
+    OutList: []
+    OutListDetailed: []
+    SubObjects: '<error: ''App.GeoFeature'' object has no attribute ''SubObjects''>'
+    getSubObjects(): []
+  PropertyGroups: {}
+  AdditionalAttributes:
+    Shape: <Vertex object at 0x62f9669aa5a0>
+    Document: <Document 'BasicFile' (BasicFile) >
+    FullName: '''BasicFile#Origin003'''
+- Name: Sketch
+  TypeId: Sketcher::SketchObject
+  Label: Sketch_Pad
+  UUID: <not available>
+  Placement: Placement(Base=Vector(x=0.0, y=0.0, z=0.0), Rotation=Rotation(Axis=Vector(x=0.0,
+    y=0.0, z=1.0), Angle=0.0 rad))
+  Properties:
+    ArcFitTolerance:
+      Type: float
+      Value: 1e-06
+      Expression: (none)
+      HasExpression: false
+    AttacherEngine:
+      Type: str
+      Value: '''Engine Plane'''
+      Expression: (none)
+      HasExpression: false
+    AttacherType:
+      Type: str
+      Value: '''Attacher::AttachEnginePlane'''
+      Expression: (none)
+      HasExpression: false
+    AttachmentOffset:
+      Type: Placement
+      Value: Placement(Base=Vector(x=0.0, y=0.0, z=0.0), Rotation=Rotation(Axis=Vector(x=0.0,
+        y=0.0, z=1.0), Angle=0.0 rad))
+      Expression: (none)
+      HasExpression: false
+    AttachmentSupport:
+      Type: list
+      Value: '[[<GeoFeature object>, [''XY_Plane001'']]]'
+      Expression: (none)
+      HasExpression: false
+    Constraints:
+      Type: list
+      Value: '[<Constraint ''Coincident''>, <Constraint ''Coincident''>, <Constraint
+        ''Coincident''>, <Constraint ''Coincident''>, <Constraint ''Horizontal'' (0)>,
+        <Constraint ''Horizontal'' (2)>, <Constraint ''Vertical'' (1)>, <Constraint
+        ''Vertical'' (3)>, <Constraint ''Symmetric''>, <Constraint ''Coincident''>,
+        <Constraint ''DistanceY''>, <Constraint ''DistanceX''>]'
+      Expression: (none)
+      HasExpression: false
+    Exports:
+      Type: list
+      Value: '[]'
+      Expression: (none)
+      HasExpression: false
+    ExpressionEngine:
+      Type: list
+      Value: '[]'
+      Expression: (none)
+      HasExpression: false
+    ExternalGeo:
+      Type: list
+      Value: '[<Line segment (0,0,0) (1,0,0) >, <Line segment (0,0,0) (0,1,0) >]'
+      Expression: (none)
+      HasExpression: false
+    ExternalGeometry:
+      Type: list
+      Value: '[]'
+      Expression: (none)
+      HasExpression: false
+    ExternalTypes:
+      Type: list
+      Value: '[0]'
+      Expression: (none)
+      HasExpression: false
+    FullyConstrained:
+      Type: bool
+      Value: 'True'
+      Expression: (none)
+      HasExpression: false
+    Geometry:
+      Type: list
+      Value: '[<Line segment (-15,-25,0) (15,-25,0) >, <Line segment (15,-25,0) (15,25,0)
+        >, <Line segment (15,25,0) (-15,25,0) >, <Line segment (-15,25,0) (-15,-25,0)
+        >, <Point (0,0,0) >]'
+      Expression: (none)
+      HasExpression: false
+    InternalShape:
+      Type: Value.TypeId=Part::TopoShape
+      Value: <Face object at 0x62f9669aa5a0>
+      Expression: (none)
+      HasExpression: false
+    Label:
+      Type: str
+      Value: '''Sketch_Pad'''
+      Expression: (none)
+      HasExpression: false
+    Label2:
+      Type: str
+      Value: ''''''
+      Expression: (none)
+      HasExpression: false
+    MakeInternals:
+      Type: bool
+      Value: 'True'
+      Expression: (none)
+      HasExpression: false
+    MapMode:
+      Type: str
+      Value: '''FlatFace'''
+      Expression: (none)
+      HasExpression: false
+    MapPathParameter:
+      Type: float
+      Value: '0.0'
+      Expression: (none)
+      HasExpression: false
+    MapReversed:
+      Type: bool
+      Value: 'False'
+      Expression: (none)
+      HasExpression: false
+    Placement:
+      Type: Placement
+      Value: Placement(Base=Vector(x=0.0, y=0.0, z=0.0), Rotation=Rotation(Axis=Vector(x=0.0,
+        y=0.0, z=1.0), Angle=0.0 rad))
+      Expression: (none)
+      HasExpression: false
+    Shape:
+      Type: Value.TypeId=Part::TopoShape
+      Value: <Wire object at 0x62f9669aa5a0>
+      Expression: (none)
+      HasExpression: false
+    ShapeMaterial:
+      Type: Value.TypeId=Materials::Material
+      Value: <Material at 0x62f967846730>
+      Expression: (none)
+      HasExpression: false
+    Visibility:
+      Type: bool
+      Value: 'False'
+      Expression: (none)
+      HasExpression: false
+    _ElementMapVersion:
+      Type: str
+      Value: '''15.70200.5'''
+      Expression: (none)
+      HasExpression: false
+  PropertyCount: 25
+  Hierarchy:
+    InList:
+    - Body
+    - Pad
+    - Pad
+    InListDetailed:
+    - Name: Body
+      TypeId: PartDesign::Body
+      ReferencingProperties: []
+    - Name: Pad
+      TypeId: PartDesign::Pad
+      ReferencingProperties: []
+    - Name: Pad
+      TypeId: PartDesign::Pad
+      ReferencingProperties: []
+    OutList:
+    - Origin002
+    OutListDetailed:
+    - Name: Origin002
+      TypeId: App::Origin
+      ReferencingProperties: []
+    SubObjects: '<error: ''Sketcher.SketchObject'' object has no attribute ''SubObjects''>'
+    getSubObjects(): []
+  PropertyGroups: {}
+  AdditionalAttributes:
+    Shape: <Wire object at 0x62f9669aa5a0>
+    Document: <Document 'BasicFile' (BasicFile) >
+    FullName: '''BasicFile#Sketch'''
+- Name: Pad
+  TypeId: PartDesign::Pad
+  Label: Pad_Main
+  UUID: <not available>
+  Placement: Placement(Base=Vector(x=0.0, y=0.0, z=0.0), Rotation=Rotation(Axis=Vector(x=0.0,
+    y=0.0, z=1.0), Angle=0.0 rad))
+  Properties:
+    AddSubShape:
+      Type: Value.TypeId=Part::TopoShape
+      Value: <Solid object at 0x62f9669aa5a0>
+      Expression: (none)
+      HasExpression: false
+    AllowMultiFace:
+      Type: bool
+      Value: 'True'
+      Expression: (none)
+      HasExpression: false
+    AlongSketchNormal:
+      Type: bool
+      Value: 'True'
+      Expression: (none)
+      HasExpression: false
+    BaseFeature:
+      Type: NoneType
+      Value: None
+      Expression: (none)
+      HasExpression: false
+    Direction:
+      Type: Vector
+      Value: Vector(x=0.0, y=0.0, z=1.0)
+      Expression: (none)
+      HasExpression: false
+    ExpressionEngine:
+      Type: list
+      Value: '[]'
+      Expression: (none)
+      HasExpression: false
+    Label:
+      Type: str
+      Value: '''Pad_Main'''
+      Expression: (none)
+      HasExpression: false
+    Label2:
+      Type: str
+      Value: ''''''
+      Expression: (none)
+      HasExpression: false
+    Length:
+      Type: Quantity
+      Value: 10.0 mm
+      Expression: (none)
+      HasExpression: false
+    Length2:
+      Type: Quantity
+      Value: 10.0 mm
+      Expression: (none)
+      HasExpression: false
+    Midplane:
+      Type: bool
+      Value: 'False'
+      Expression: (none)
+      HasExpression: false
+    Offset:
+      Type: Quantity
+      Value: 0.0 mm
+      Expression: (none)
+      HasExpression: false
+    Offset2:
+      Type: Quantity
+      Value: 0.0 mm
+      Expression: (none)
+      HasExpression: false
+    Placement:
+      Type: Placement
+      Value: Placement(Base=Vector(x=0.0, y=0.0, z=0.0), Rotation=Rotation(Axis=Vector(x=0.0,
+        y=0.0, z=1.0), Angle=0.0 rad))
+      Expression: (none)
+      HasExpression: false
+    PreviewShape:
+      Type: Value.TypeId=Part::TopoShape
+      Value: <Shape object at 0x62f9669aa5a0>
+      Expression: (none)
+      HasExpression: false
+    Profile:
+      Type: tuple
+      Value: '[<Sketcher::SketchObject>, ['''']]'
+      Expression: (none)
+      HasExpression: false
+    ReferenceAxis:
+      Type: tuple
+      Value: '[<Sketcher::SketchObject>, [''N_Axis'']]'
+      Expression: (none)
+      HasExpression: false
+    Refine:
+      Type: bool
+      Value: 'True'
+      Expression: (none)
+      HasExpression: false
+    Reversed:
+      Type: bool
+      Value: 'False'
+      Expression: (none)
+      HasExpression: false
+    Shape:
+      Type: Value.TypeId=Part::TopoShape
+      Value: <Solid object at 0x62f9669aa5a0>
+      Expression: (none)
+      HasExpression: false
+    ShapeMaterial:
+      Type: Value.TypeId=Materials::Material
+      Value: <Material at 0x62f967846730>
+      Expression: (none)
+      HasExpression: false
+    SideType:
+      Type: str
+      Value: '''One side'''
+      Expression: (none)
+      HasExpression: false
+    Suppressed:
+      Type: bool
+      Value: 'False'
+      Expression: (none)
+      HasExpression: false
+    SuppressedShape:
+      Type: Value.TypeId=Part::TopoShape
+      Value: <Shape object at 0x62f9669aa5a0>
+      Expression: (none)
+      HasExpression: false
+    TaperAngle:
+      Type: Quantity
+      Value: 5.0 deg
+      Expression: (none)
+      HasExpression: false
+    TaperAngle2:
+      Type: Quantity
+      Value: 0.0 deg
+      Expression: (none)
+      HasExpression: false
+    Type:
+      Type: str
+      Value: '''Length'''
+      Expression: (none)
+      HasExpression: false
+    Type2:
+      Type: str
+      Value: '''Length'''
+      Expression: (none)
+      HasExpression: false
+    UpToFace:
+      Type: NoneType
+      Value: None
+      Expression: (none)
+      HasExpression: false
+    UpToFace2:
+      Type: NoneType
+      Value: None
+      Expression: (none)
+      HasExpression: false
+    UpToShape:
+      Type: list
+      Value: '[]'
+      Expression: (none)
+      HasExpression: false
+    UpToShape2:
+      Type: list
+      Value: '[]'
+      Expression: (none)
+      HasExpression: false
+    UseCustomVector:
+      Type: bool
+      Value: 'False'
+      Expression: (none)
+      HasExpression: false
+    Visibility:
+      Type: bool
+      Value: 'False'
+      Expression: (none)
+      HasExpression: false
+    _Body:
+      Type: Value.TypeId=PartDesign::Body
+      Value: <body object>
+      Expression: (none)
+      HasExpression: false
+    _ElementMapVersion:
+      Type: str
+      Value: '''15.70200.5'''
+      Expression: (none)
+      HasExpression: false
+  PropertyCount: 36
+  Hierarchy:
+    InList:
+    - Body
+    - Sketch001
+    - Pocket
+    InListDetailed:
+    - Name: Body
+      TypeId: PartDesign::Body
+      ReferencingProperties: []
+    - Name: Sketch001
+      TypeId: Sketcher::SketchObject
+      ReferencingProperties: []
+    - Name: Pocket
+      TypeId: PartDesign::Pocket
+      ReferencingProperties:
+      - BaseFeature
+    OutList:
+    - Sketch
+    - Sketch
+    OutListDetailed:
+    - Name: Sketch
+      TypeId: Sketcher::SketchObject
+      ReferencingProperties: []
+    - Name: Sketch
+      TypeId: Sketcher::SketchObject
+      ReferencingProperties: []
+    SubObjects: '<error: ''PartDesign.Feature'' object has no attribute ''SubObjects''>'
+    getSubObjects(): []
+  PropertyGroups: {}
+  AdditionalAttributes:
+    Shape: <Solid object at 0x62f9669aa5a0>
+    Document: <Document 'BasicFile' (BasicFile) >
+    FullName: '''BasicFile#Pad'''
+- Name: Sketch001
+  TypeId: Sketcher::SketchObject
+  Label: Sketch_Pocket
+  UUID: <not available>
+  Placement: Placement(Base=Vector(x=0.0, y=0.0, z=10.0), Rotation=Rotation(Axis=Vector(x=0.0,
+    y=0.0, z=1.0), Angle=0.0 rad))
+  Properties:
+    ArcFitTolerance:
+      Type: float
+      Value: 1e-06
+      Expression: (none)
+      HasExpression: false
+    AttacherEngine:
+      Type: str
+      Value: '''Engine Plane'''
+      Expression: (none)
+      HasExpression: false
+    AttacherType:
+      Type: str
+      Value: '''Attacher::AttachEnginePlane'''
+      Expression: (none)
+      HasExpression: false
+    AttachmentOffset:
+      Type: Placement
+      Value: Placement(Base=Vector(x=0.0, y=0.0, z=0.0), Rotation=Rotation(Axis=Vector(x=0.0,
+        y=0.0, z=1.0), Angle=0.0 rad))
+      Expression: (none)
+      HasExpression: false
+    AttachmentSupport:
+      Type: list
+      Value: '[[<PartDesign::Pad>, [''Face6'']]]'
+      Expression: (none)
+      HasExpression: false
+    Constraints:
+      Type: list
+      Value: '[<Constraint ''Coincident''>, <Constraint ''Diameter''>]'
+      Expression: (none)
+      HasExpression: false
+    Exports:
+      Type: list
+      Value: '[]'
+      Expression: (none)
+      HasExpression: false
+    ExpressionEngine:
+      Type: list
+      Value: '[]'
+      Expression: (none)
+      HasExpression: false
+    ExternalGeo:
+      Type: list
+      Value: '[<Line segment (0,0,0) (1,0,0) >, <Line segment (0,0,0) (0,1,0) >]'
+      Expression: (none)
+      HasExpression: false
+    ExternalGeometry:
+      Type: list
+      Value: '[]'
+      Expression: (none)
+      HasExpression: false
+    ExternalTypes:
+      Type: list
+      Value: '[0]'
+      Expression: (none)
+      HasExpression: false
+    FullyConstrained:
+      Type: bool
+      Value: 'True'
+      Expression: (none)
+      HasExpression: false
+    Geometry:
+      Type: list
+      Value: '[Circle (Radius : 5, Position : (0, 0, 0), Direction : (0, 0, 1))]'
+      Expression: (none)
+      HasExpression: false
+    InternalShape:
+      Type: Value.TypeId=Part::TopoShape
+      Value: <Face object at 0x62f9669aa5a0>
+      Expression: (none)
+      HasExpression: false
+    Label:
+      Type: str
+      Value: '''Sketch_Pocket'''
+      Expression: (none)
+      HasExpression: false
+    Label2:
+      Type: str
+      Value: ''''''
+      Expression: (none)
+      HasExpression: false
+    MakeInternals:
+      Type: bool
+      Value: 'True'
+      Expression: (none)
+      HasExpression: false
+    MapMode:
+      Type: str
+      Value: '''FlatFace'''
+      Expression: (none)
+      HasExpression: false
+    MapPathParameter:
+      Type: float
+      Value: '0.0'
+      Expression: (none)
+      HasExpression: false
+    MapReversed:
+      Type: bool
+      Value: 'False'
+      Expression: (none)
+      HasExpression: false
+    Placement:
+      Type: Placement
+      Value: Placement(Base=Vector(x=0.0, y=0.0, z=10.0), Rotation=Rotation(Axis=Vector(x=0.0,
+        y=0.0, z=1.0), Angle=0.0 rad))
+      Expression: (none)
+      HasExpression: false
+    Shape:
+      Type: Value.TypeId=Part::TopoShape
+      Value: <Wire object at 0x62f9669aa5a0>
+      Expression: (none)
+      HasExpression: false
+    ShapeMaterial:
+      Type: Value.TypeId=Materials::Material
+      Value: <Material at 0x62f967846730>
+      Expression: (none)
+      HasExpression: false
+    Visibility:
+      Type: bool
+      Value: 'False'
+      Expression: (none)
+      HasExpression: false
+    _ElementMapVersion:
+      Type: str
+      Value: '''15.70200.5'''
+      Expression: (none)
+      HasExpression: false
+  PropertyCount: 25
+  Hierarchy:
+    InList:
+    - Body
+    - Pocket
+    - Pocket
+    InListDetailed:
+    - Name: Body
+      TypeId: PartDesign::Body
+      ReferencingProperties: []
+    - Name: Pocket
+      TypeId: PartDesign::Pocket
+      ReferencingProperties: []
+    - Name: Pocket
+      TypeId: PartDesign::Pocket
+      ReferencingProperties: []
+    OutList:
+    - Pad
+    OutListDetailed:
+    - Name: Pad
+      TypeId: PartDesign::Pad
+      ReferencingProperties: []
+    SubObjects: '<error: ''Sketcher.SketchObject'' object has no attribute ''SubObjects''>'
+    getSubObjects(): []
+  PropertyGroups: {}
+  AdditionalAttributes:
+    Shape: <Wire object at 0x62f9669aa5a0>
+    Document: <Document 'BasicFile' (BasicFile) >
+    FullName: '''BasicFile#Sketch001'''
+- Name: Pocket
+  TypeId: PartDesign::Pocket
+  Label: Pocket_Main
+  UUID: <not available>
+  Placement: Placement(Base=Vector(x=0.0, y=0.0, z=0.0), Rotation=Rotation(Axis=Vector(x=0.0,
+    y=0.0, z=1.0), Angle=0.0 rad))
+  Properties:
+    AddSubShape:
+      Type: Value.TypeId=Part::TopoShape
+      Value: <Solid object at 0x62f9669aa5a0>
+      Expression: (none)
+      HasExpression: false
+    AllowMultiFace:
+      Type: bool
+      Value: 'True'
+      Expression: (none)
+      HasExpression: false
+    AlongSketchNormal:
+      Type: bool
+      Value: 'True'
+      Expression: (none)
+      HasExpression: false
+    BaseFeature:
+      Type: Value.TypeId=PartDesign::Pad
+      Value: <PartDesign::Pad>
+      Expression: (none)
+      HasExpression: false
+    Direction:
+      Type: Vector
+      Value: Vector(x=-0.0, y=-0.0, z=-1.0)
+      Expression: (none)
+      HasExpression: false
+    ExpressionEngine:
+      Type: list
+      Value: '[[''Length'', ''<<MyVarSet>>.PocketLength'']]'
+      Expression: (none)
+      HasExpression: false
+    Label:
+      Type: str
+      Value: '''Pocket_Main'''
+      Expression: (none)
+      HasExpression: false
+    Label2:
+      Type: str
+      Value: ''''''
+      Expression: (none)
+      HasExpression: false
+    Length:
+      Type: Quantity
+      Value: 4.0 mm
+      Expression: <<MyVarSet>>.PocketLength
+      HasExpression: true
+    Length2:
+      Type: Quantity
+      Value: 5.0 mm
+      Expression: (none)
+      HasExpression: false
+    Midplane:
+      Type: bool
+      Value: 'False'
+      Expression: (none)
+      HasExpression: false
+    Offset:
+      Type: Quantity
+      Value: 0.0 mm
+      Expression: (none)
+      HasExpression: false
+    Offset2:
+      Type: Quantity
+      Value: 0.0 mm
+      Expression: (none)
+      HasExpression: false
+    Placement:
+      Type: Placement
+      Value: Placement(Base=Vector(x=0.0, y=0.0, z=0.0), Rotation=Rotation(Axis=Vector(x=0.0,
+        y=0.0, z=1.0), Angle=0.0 rad))
+      Expression: (none)
+      HasExpression: false
+    PreviewShape:
+      Type: Value.TypeId=Part::TopoShape
+      Value: <Shape object at 0x62f9669aa5a0>
+      Expression: (none)
+      HasExpression: false
+    Profile:
+      Type: tuple
+      Value: '[<Sketcher::SketchObject>, ['''']]'
+      Expression: (none)
+      HasExpression: false
+    ReferenceAxis:
+      Type: tuple
+      Value: '[<Sketcher::SketchObject>, [''N_Axis'']]'
+      Expression: (none)
+      HasExpression: false
+    Refine:
+      Type: bool
+      Value: 'True'
+      Expression: (none)
+      HasExpression: false
+    Reversed:
+      Type: bool
+      Value: 'False'
+      Expression: (none)
+      HasExpression: false
+    Shape:
+      Type: Value.TypeId=Part::TopoShape
+      Value: <Compound object at 0x62f9669aa5a0>
+      Expression: (none)
+      HasExpression: false
+    ShapeMaterial:
+      Type: Value.TypeId=Materials::Material
+      Value: <Material at 0x62f967846730>
+      Expression: (none)
+      HasExpression: false
+    SideType:
+      Type: str
+      Value: '''One side'''
+      Expression: (none)
+      HasExpression: false
+    Suppressed:
+      Type: bool
+      Value: 'False'
+      Expression: (none)
+      HasExpression: false
+    SuppressedShape:
+      Type: Value.TypeId=Part::TopoShape
+      Value: <Shape object at 0x62f9669aa5a0>
+      Expression: (none)
+      HasExpression: false
+    TaperAngle:
+      Type: Quantity
+      Value: 0.0 deg
+      Expression: (none)
+      HasExpression: false
+    TaperAngle2:
+      Type: Quantity
+      Value: 0.0 deg
+      Expression: (none)
+      HasExpression: false
+    Type:
+      Type: str
+      Value: '''Length'''
+      Expression: (none)
+      HasExpression: false
+    Type2:
+      Type: str
+      Value: '''Length'''
+      Expression: (none)
+      HasExpression: false
+    UpToFace:
+      Type: NoneType
+      Value: None
+      Expression: (none)
+      HasExpression: false
+    UpToFace2:
+      Type: NoneType
+      Value: None
+      Expression: (none)
+      HasExpression: false
+    UpToShape:
+      Type: list
+      Value: '[]'
+      Expression: (none)
+      HasExpression: false
+    UpToShape2:
+      Type: list
+      Value: '[]'
+      Expression: (none)
+      HasExpression: false
+    UseCustomVector:
+      Type: bool
+      Value: 'False'
+      Expression: (none)
+      HasExpression: false
+    Visibility:
+      Type: bool
+      Value: 'True'
+      Expression: (none)
+      HasExpression: false
+    _Body:
+      Type: Value.TypeId=PartDesign::Body
+      Value: <body object>
+      Expression: (none)
+      HasExpression: false
+    _ElementMapVersion:
+      Type: str
+      Value: '''15.70200.5'''
+      Expression: (none)
+      HasExpression: false
+  PropertyCount: 36
+  Hierarchy:
+    InList:
+    - Body
+    - Body
+    InListDetailed:
+    - Name: Body
+      TypeId: PartDesign::Body
+      ReferencingProperties:
+      - Tip
+    - Name: Body
+      TypeId: PartDesign::Body
+      ReferencingProperties:
+      - Tip
+    OutList:
+    - Sketch001
+    - Sketch001
+    - Pad
+    - VarSet
+    - VarSet
+    OutListDetailed:
+    - Name: Sketch001
+      TypeId: Sketcher::SketchObject
+      ReferencingProperties: []
+    - Name: Sketch001
+      TypeId: Sketcher::SketchObject
+      ReferencingProperties: []
+    - Name: Pad
+      TypeId: PartDesign::Pad
+      ReferencingProperties:
+      - BaseFeature
+    - Name: VarSet
+      TypeId: App::VarSet
+      ReferencingProperties: []
+    - Name: VarSet
+      TypeId: App::VarSet
+      ReferencingProperties: []
+    SubObjects: '<error: ''PartDesign.Feature'' object has no attribute ''SubObjects''>'
+    getSubObjects(): []
+  PropertyGroups: {}
+  AdditionalAttributes:
+    Shape: <Compound object at 0x62f9669aa5a0>
+    Document: <Document 'BasicFile' (BasicFile) >
+    FullName: '''BasicFile#Pocket'''
+- Name: VarSet
+  TypeId: App::VarSet
+  Label: MyVarSet
+  UUID: <not available>
+  Properties:
+    ExpressionEngine:
+      Type: list
+      Value: '[]'
+      Expression: (none)
+      HasExpression: false
+    Label:
+      Type: str
+      Value: '''MyVarSet'''
+      Expression: (none)
+      HasExpression: false
+    Label2:
+      Type: str
+      Value: ''''''
+      Expression: (none)
+      HasExpression: false
+    PocketLength:
+      Type: Quantity
+      Value: 4.0 mm
+      Expression: (none)
+      HasExpression: false
+    Visibility:
+      Type: bool
+      Value: 'True'
+      Expression: (none)
+      HasExpression: false
+  PropertyCount: 5
+  Hierarchy:
+    InList:
+    - Part
+    - Pocket
+    InListDetailed:
+    - Name: Part
+      TypeId: App::Part
+      ReferencingProperties: []
+    - Name: Pocket
+      TypeId: PartDesign::Pocket
+      ReferencingProperties: []
+    OutList: []
+    OutListDetailed: []
+    SubObjects: '<error: ''App.DocumentObject'' object has no attribute ''SubObjects''>'
+    getSubObjects(): []
+  PropertyGroups: {}
+  AdditionalAttributes:
+    Document: <Document 'BasicFile' (BasicFile) >
+    FullName: '''BasicFile#VarSet'''
+summary:
+  object_types:
+    App::Line: 6
+    App::Origin: 2
+    App::Part: 1
+    App::Plane: 6
+    App::Point: 2
+    App::VarSet: 1
+    PartDesign::Body: 1
+    PartDesign::Pad: 1
+    PartDesign::Pocket: 1
+    Sketcher::SketchObject: 2
+  property_names:
+    ExpressionEngine: 23
+    Label: 23
+    Label2: 23
+    Visibility: 23
+    Placement: 22
+    _ElementMapVersion: 22
+    Role: 14
+    Shape: 5
+    ShapeMaterial: 5
+    Group: 4
+    _GroupTouched: 4
+    Type: 3
+    BaseFeature: 3
+    Origin: 2
+    OriginFeatures: 2
+    ArcFitTolerance: 2
+    AttacherEngine: 2
+    AttacherType: 2
+    AttachmentOffset: 2
+    AttachmentSupport: 2
+    Constraints: 2
+    Exports: 2
+    ExternalGeo: 2
+    ExternalGeometry: 2
+    ExternalTypes: 2
+    FullyConstrained: 2
+    Geometry: 2
+    InternalShape: 2
+    MakeInternals: 2
+    MapMode: 2
+    MapPathParameter: 2
+    MapReversed: 2
+    AddSubShape: 2
+    AllowMultiFace: 2
+    AlongSketchNormal: 2
+    Direction: 2
+    Length: 2
+    Length2: 2
+    Midplane: 2
+    Offset: 2
+    Offset2: 2
+    PreviewShape: 2
+    Profile: 2
+    ReferenceAxis: 2
+    Refine: 2
+    Reversed: 2
+    SideType: 2
+    Suppressed: 2
+    SuppressedShape: 2
+    TaperAngle: 2
+    TaperAngle2: 2
+    Type2: 2
+    UpToFace: 2
+    UpToFace2: 2
+    UpToShape: 2
+    UpToShape2: 2
+    UseCustomVector: 2
+    _Body: 2
+    Color: 1
+    Id: 1
+    License: 1
+    LicenseURL: 1
+    Material: 1
+    Meta: 1
+    Uid: 1
+    AllowCompound: 1
+    Tip: 1
+    PocketLength: 1
+  property_types:
+    str: 99
+    bool: 48
+    list: 47
+    Placement: 24
+    Value.TypeId=Part::TopoShape: 13
+    Quantity: 13
+    NoneType: 7
+    tuple: 5
+    Value.TypeId=Materials::Material: 5
+    float: 4
+    Value.TypeId=App::Origin: 2
+    Vector: 2
+    Value.TypeId=PartDesign::Body: 2
+    dict: 1
+    Value.TypeId=PartDesign::Pocket: 1
+    Value.TypeId=PartDesign::Pad: 1
+  properties_with_expressions:
+  - Pocket.Length
+  potential_excluded_properties:
+    Label2: 23
