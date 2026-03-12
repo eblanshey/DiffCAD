@@ -19,7 +19,6 @@ This document describes the implementation plan for the **Diff Workbench** FreeC
 ```
 freecad_diff_workbench/
 ├── README.md                          # User-facing documentation
-├── PLAN.md                            # This file
 ├── pyproject.toml                     # Project configuration, dependencies, tooling
 ├── CMakeLists.txt                     # FreeCAD addon registration
 ├── package.xml                        # FreeCAD addon metadata
@@ -105,10 +104,12 @@ freecad_diff_workbench/
 │   └── freecad/                       # FreeCAD test fixtures
 │       └── create_test_document.py
 │
-└── docs/                              # Development documentation (optional)
-    ├── architecture.md                # Architecture overview
-    ├── development.md                 # Development setup guide
-    └── tests.md                       # Testing guidelines
+└── docs/                              # Development documentation
+    ├── PLAN.md                        # Implementation plan and architecture
+    ├── feature_development.md         # Development process and phases
+    ├── architecture.md                # Architecture overview (optional)
+    ├── development.md                 # Development setup guide (optional)
+    └── tests.md                       # Testing guidelines (optional)
 ```
 
 ## Architectural Principles
