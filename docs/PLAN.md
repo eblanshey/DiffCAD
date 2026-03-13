@@ -343,9 +343,11 @@ Pure Python diff computation - ZERO FreeCAD dependencies:
 - Handles type-specific comparisons
 
 #### DiffEngine
-- Orchestrates tree + property diffing
-- Applies excluded types/properties from settings
-- Returns structured DiffResult
+- Orchestrates tree + property diffing between two snapshots
+- **Applies excluded types/properties from SettingsPort** - this is where filtering occurs
+- Excluded types: Entire nodes of excluded TypeIds are removed from diff output
+- Excluded properties: Individual properties are skipped during comparison
+- Returns structured DiffResult with only meaningful differences
 
 ### 4. Snapshot Module (`snapshot/`)
 
@@ -357,8 +359,10 @@ Snapshot management follows the same pattern as DataManager's `varsets/` module:
 #### SnapshotQuery
 - Queries current document state
 - Extracts tree structure from FreeCAD objects
-- Reads property values and expressions
+- Reads ALL property values and expressions (no filtering)
 - **Read-only operations only**
+- **No filtering applied** - snapshots capture complete document state
+- Filtering of excluded types/properties happens in [`DiffEngine`](docs/PLAN.md:345-348) during diff computation
 - Uses `FreeCadPort` via `get_port(ctx)`
 
 #### SnapshotMutations
