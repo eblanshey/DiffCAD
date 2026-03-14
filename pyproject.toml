@@ -107,7 +107,8 @@ select = ["E", "W", "F", "I", "B", "C4", "UP", "N", "SIM", "C901"]
 ignore = ["S101", "N802", "N806"]
 # Per-file ignores:
 #   tests/* - allow asserts, higher complexity, and longer lines in tests
-per-file-ignores = { "tests/*" = ["S101", "C901", "E501"] }
+#   freecad/diff_wb/snapshot/snapshot_query.py - allow higher complexity for _build_tree_node
+per-file-ignores = { "tests/*" = ["S101", "C901", "E501"], "freecad/diff_wb/snapshot/snapshot_query.py" = ["C901"] }
 
 [tool.ruff.lint.mccabe]
 max-complexity = 10

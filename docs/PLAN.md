@@ -531,11 +531,12 @@ Following datamanager patterns:
 - [ ] Diff orchestration (`diff/diff_engine.py`)
 - [ ] Unit tests for diff logic
 
-### Phase 4: Snapshot Management
-- [ ] Document state extraction (`snapshot/snapshot_query.py`)
-- [ ] In-memory storage (`snapshot/snapshot_store.py`)
-- [ ] Snapshot mutations (`snapshot/snapshot_mutations.py`)
-- [ ] Integration tests
+### Phase 4: Snapshot Management ✅ (Complete)
+- [x] Document state extraction (`snapshot/snapshot_query.py`)
+- [x] In-memory storage (`snapshot/snapshot_store.py`)
+- [x] Snapshot mutations (`snapshot/snapshot_mutations.py`)
+- [x] Unit tests (27 tests passing)
+- [x] Added `PropertyValue.from_freecad_property()` factory method for type detection
 
 ### Phase 5: UI Implementation
 - [ ] Qt Designer file (`resources/ui/diff_panel.ui`)

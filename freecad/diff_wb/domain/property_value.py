@@ -236,6 +236,98 @@ class PropertyValue:
             # For unknown/expression/shape/material types, store value as-is
             return cls(type_=type_, value=value, expression=expression)
 
+    @staticmethod
+    def from_freecad_property(prop_name: str, value: Any, expression: str | None = None) -> "PropertyValue":
+        """Create a PropertyValue from a FreeCAD property value.
+
+        This factory method handles type detection based on property names
+        and value types, encapsulating all FreeCAD-specific logic in the domain layer.
+
+        Args:
+            prop_name: The FreeCAD property name (e.g., "Placement", "Position", "Length")
+            value: The raw value from the FreeCAD object
+            expression: Optional expression that drives this value
+
+        Returns:
+            A PropertyValue with properly detected type and converted value
+
+        Examples:
+            >>> # Placement property
+            >>> class MockPlacement:
+            ...     class Position:
+            ...         x, y, z = 1.0, 2.0, 3.0
+            ...
+            ...     class Rotation:
+            ...         AxisX, AxisY, AxisZ, Angle = 0, 0, 1, 90
+            ...
+            ...     Position = Position()
+            ...     Rotation = Rotation()
+            >>> PropertyValue.from_freecad_property("Placement", MockPlacement())
+            PropertyValue(type_=PropertyType.PLACEMENT, value=Placement(...))
+
+            >>> # Position property (vector)
+            >>> class MockVector:
+            ...     x, y, z = 1.0, 2.0, 3.0
+            >>> PropertyValue.from_freecad_property("Position", MockVector())
+            PropertyValue(type_=PropertyType.VECTOR, value=Vector(x=1.0, y=2.0, z=3.0))
+
+            >>> # Simple float property
+            >>> PropertyValue.from_freecad_property("Length", 10.5)
+            PropertyValue(type_=PropertyType.FLOAT, value=10.5)
+        """
+        # FreeCAD property names that indicate VECTOR type
+        VECTOR_PROPERTY_NAMES: frozenset[str] = frozenset(
+            {"Position", "Axis", "Direction", "Normal", "Translation", "StartPoint", "EndPoint"}
+        )
+
+        # FreeCAD property names that indicate PLACEMENT type
+        PLACEMENT_PROPERTY_NAMES: frozenset[str] = frozenset({"Placement"})
+
+        def _infer_type_from_value(val: Any) -> PropertyType:
+            """Infer PropertyType from a Python value."""
+            if isinstance(val, bool):
+                return PropertyType.BOOL
+            elif isinstance(val, int):
+                return PropertyType.INT
+            elif isinstance(val, float):
+                return PropertyType.FLOAT
+            elif val is None or isinstance(val, str):
+                return PropertyType.STRING
+            else:
+                # For complex types, default to STRING
+                return PropertyType.STRING
+
+        # Property name-based type detection (most reliable for FreeCAD)
+        if prop_name in PLACEMENT_PROPERTY_NAMES:
+            # Extract Placement from FreeCAD object
+            pos = getattr(value, "Position", None)
+            rot = getattr(value, "Rotation", None)
+            if pos and rot:
+                pos_x = float(getattr(pos, "x", 0))
+                pos_y = float(getattr(pos, "y", 0))
+                pos_z = float(getattr(pos, "z", 0))
+                rot_ax = float(getattr(rot, "AxisX", 0))
+                rot_ay = float(getattr(rot, "AxisY", 0))
+                rot_az = float(getattr(rot, "AxisZ", 0))
+                rot_angle = float(getattr(rot, "Angle", 0))
+                return PropertyValue.create(
+                    PropertyType.PLACEMENT,
+                    {"position": (pos_x, pos_y, pos_z), "rotation": (rot_ax, rot_ay, rot_az, rot_angle)},
+                    expression=expression,
+                )
+            # If we can't extract placement data, fall through to value-based detection
+
+        # Vector-like property names
+        if prop_name in VECTOR_PROPERTY_NAMES and hasattr(value, "x"):
+            vec_x = float(getattr(value, "x", 0))
+            vec_y = float(getattr(value, "y", 0))
+            vec_z = float(getattr(value, "z", 0))
+            return PropertyValue.create(PropertyType.VECTOR, (vec_x, vec_y, vec_z), expression=expression)
+
+        # Fall back to type inference from value
+        prop_type = _infer_type_from_value(value)
+        return PropertyValue.create(prop_type, value, expression=expression)
+
 
 def make_property_value(type_: PropertyType, value: Any, **kwargs: Any) -> PropertyValue:
     """Factory function to create a PropertyValue with proper type handling.
