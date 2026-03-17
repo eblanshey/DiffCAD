@@ -114,7 +114,7 @@ per-file-ignores = { "tests/*" = ["S101", "C901", "E501"], "freecad/diff_wb/snap
 max-complexity = 10
 
 [tool.ruff.lint.isort]
-known-first-party = ["diff_wb"]
+known-first-party = ["diff_wb", "tests"]
 lines-after-imports = 2
 combine-as-imports = true
 

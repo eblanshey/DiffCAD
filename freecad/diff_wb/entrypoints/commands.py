@@ -1,4 +1,6 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
+# File responsibility: Registers FreeCAD commands for snapshot management
+# and diff comparison operations in the workbench toolbar.
 """FreeCAD command registrations for the Diff Workbench.
 
 This module defines the toolbar/menu commands for snapshot management
@@ -7,8 +9,11 @@ and diff comparison operations.
 
 import os
 
-from ..ports.app_port import AppPortAdapter
+from ..infrastructure.freecad.app_port import get_app_port
 from ..resources import ICONPATH
+
+
+_translate = get_app_port().translate
 
 
 class _TakeSnapshotCommand:
@@ -16,10 +21,9 @@ class _TakeSnapshotCommand:
 
     def GetResources(self) -> dict[str, str]:
         """Return FreeCAD command metadata for UI integration."""
-        translate = AppPortAdapter().translate
         return {
-            "MenuText": translate("Workbench", "Take Snapshot"),
-            "ToolTip": translate("Workbench", "Create a snapshot of the current document"),
+            "MenuText": _translate("Workbench", "Take Snapshot"),
+            "ToolTip": _translate("Workbench", "Create a snapshot of the current document"),
             "Pixmap": os.path.join(ICONPATH, "TakeSnapshot.svg"),
         }
 
@@ -29,7 +33,6 @@ class _TakeSnapshotCommand:
 
     def Activated(self) -> None:
         """Execute the take snapshot action."""
-        # TODO: Implement snapshot creation logic in Phase 4
         pass
 
 
@@ -38,10 +41,9 @@ class _CompareCommand:
 
     def GetResources(self) -> dict[str, str]:
         """Return FreeCAD command metadata for UI integration."""
-        translate = AppPortAdapter().translate
         return {
-            "MenuText": translate("Workbench", "Compare"),
-            "ToolTip": translate("Workbench", "Compare snapshots"),
+            "MenuText": _translate("Workbench", "Compare"),
+            "ToolTip": _translate("Workbench", "Compare snapshots"),
             "Pixmap": os.path.join(ICONPATH, "Compare.svg"),
         }
 
@@ -51,7 +53,6 @@ class _CompareCommand:
 
     def Activated(self) -> None:
         """Execute the compare action."""
-        # TODO: Implement comparison logic in Phase 3-5
         pass
 
 
@@ -60,10 +61,9 @@ class _SwapColumnsCommand:
 
     def GetResources(self) -> dict[str, str]:
         """Return FreeCAD command metadata for UI integration."""
-        translate = AppPortAdapter().translate
         return {
-            "MenuText": translate("Workbench", "Swap Columns"),
-            "ToolTip": translate("Workbench", "Swap the left and right columns"),
+            "MenuText": _translate("Workbench", "Swap Columns"),
+            "ToolTip": _translate("Workbench", "Swap the left and right columns"),
             "Pixmap": os.path.join(ICONPATH, "SwapColumns.svg"),
         }
 
@@ -73,7 +73,6 @@ class _SwapColumnsCommand:
 
     def Activated(self) -> None:
         """Execute the swap columns action."""
-        # TODO: Implement column swap logic in Phase 5
         pass
 
 

@@ -32,47 +32,57 @@ freecad_diff_workbench/
 │       ├── __init__.py
 │       ├── init_gui.py                # FreeCAD entrypoint
 │       ├── version.py                 # Version info
-│       ├── freecad_helpers.py         # Shared FreeCAD helpers
-│       ├── freecad_version_check.py   # Version validation
 │       ├── resources.py               # Resource path management
-│       ├── config.py                  # Hard-coded configuration (excluded types/props)
+│       ├── config.py                  # Hard-coded configuration (deprecated)
 │       │
 │       ├── entrypoints/               # FreeCAD integration
 │       │   ├── __init__.py
 │       │   ├── commands.py            # Command registrations
 │       │   └── workbench.py           # Workbench registration
 │       │
-│       ├── ports/                     # Runtime boundary abstractions
-│       │   ├── __init__.py
-│       │   ├── freecad_context.py     # FreeCadContext + get_runtime_context()
-│       │   ├── freecad_port.py        # FreeCadPort + adapter
-│       │   ├── gui_port.py            # GuiPort for PySideUic/MDI
-│       │   ├── settings_port.py       # SettingsPort for persisted settings
-│       │   └── app_port.py            # AppPort for translation
-│       │
 │       ├── domain/                    # Pure domain models (no FreeCAD deps)
 │       │   ├── __init__.py
-│       │   ├── snapshot.py            # Snapshot, TreeNode dataclasses
-│       │   ├── diff_result.py         # DiffResult, NodeDiff, PropertyDiff
-│       │   └── property_value.py      # PropertyValue, Vector, Rotation, Placement
+│       │   ├── tree/                  # Shared tree models
+│       │   │   ├── __init__.py
+│       │   │   ├── node.py            # TreeNode dataclass
+│       │   │   └── property.py        # Property, Vector, Rotation, Placement
+│       │   ├── snapshots/             # Snapshot domain concept
+│       │   │   ├── __init__.py
+│       │   │   ├── models.py          # Snapshot dataclass
+│       │   │   ├── extractor.py       # SnapshotExtractor (uses Logger)
+│       │   │   └── repository.py      # SnapshotRepository + InMemory impl
+│       │   ├── diff/                  # Diff domain concept
+│       │   │   ├── __init__.py
+│       │   │   ├── models.py          # DiffResult, NodeDiff, PropertyDiff
+│       │   │   ├── engine.py          # DiffEngine (uses SettingsRepository)
+│       │   │   └── comparator.py      # TreeComparator, PropertyComparator
+│       │   ├── settings/              # Settings domain concept
+│       │   │   ├── __init__.py
+│       │   │   ├── models.py          # Settings dataclass
+│       │   │   └── repository.py      # SettingsRepository protocol
+│       │   └── logging/               # Logging domain concept
+│       │       ├── __init__.py
+│       │       └── logger.py          # Logger protocol
 │       │
-│       ├── diff/                      # Diff computation (pure algorithms)
+│       ├── infrastructure/            # External adapters
 │       │   ├── __init__.py
-│       │   ├── tree_diff.py           # Tree comparison algorithm
-│       │   ├── property_diff.py       # Property comparison logic
-│       │   └── diff_engine.py         # Orchestrates diff computation
+│       │   ├── freecad/
+│       │   │   ├── __init__.py
+│       │   │   ├── context.py         # FreeCadContext + FreeCadPort adapter
+│       │   │   ├── settings_repo.py   # SettingsRepository implementation
+│       │   │   └── app_port.py        # AppPort implementation
+│       │   ├── gui/
+│       │   │   ├── __init__.py
+│       │   │   └── qt_adapter.py      # GuiPort implementation
+│       │   └── persistence/
+│       │       ├── __init__.py
+│       │       └── snapshot_repo.py   # (Future: FileBasedSnapshotRepository)
 │       │
-│       ├── ui/                        # UI layer
+│       ├── ui/                        # UI layer (Qt widgets only)
 │       │   ├── __init__.py
 │       │   ├── diff_panel.py          # Qt widget (thin view layer)
 │       │   ├── diff_panel_presenter.py# Presenter for UI state/formatting
 │       │   └── panel_controller.py    # UI-facing facade
-│       │
-│       ├── snapshot/                  # Snapshot management (uses FreeCadPort)
-│       │   ├── __init__.py
-│       │   ├── snapshot_query.py      # Extracts tree from FreeCAD document
-│       │   ├── snapshot_mutations.py  # Creates snapshots (orchestrates query + store)
-│       │   └── snapshot_store.py      # In-memory storage/retrieval
 │       │
 │       └── resources/
 │           ├── icons/
@@ -105,10 +115,9 @@ freecad_diff_workbench/
 │
 └── docs/                              # Development documentation
     ├── PLAN.md                        # Implementation plan and architecture
+    ├── ARCHITECTURE.md                # Architecture overview (layered DDD)
     ├── feature_development.md         # Development process and phases
-    ├── architecture.md                # Architecture overview (optional)
-    ├── development.md                 # Development setup guide (optional)
-    └── tests.md                       # Testing guidelines (optional)
+```
 ```
 
 ## Architectural Principles
@@ -152,33 +161,39 @@ flowchart TB
     %% Entry points
     InitGui[init_gui.py] --> Commands[commands.py]
     InitGui --> Workbench[workbench.py]
-    InitGui --> DiffPanel[diff_panel.py]
+    InitGui --> DiffPanel[ui/diff_panel.py]
     
     Commands --> DiffPanel
     
     %% UI -> presenter -> controller
-    DiffPanel --> Presenter[diff_panel_presenter.py]
-    Presenter --> PanelController[panel_controller.py]
+    DiffPanel --> Presenter[ui/diff_panel_presenter.py]
+    Presenter --> PanelController[ui/panel_controller.py]
     
-    %% Controller -> domain layers
-    PanelController --> DiffEngine[diff/diff_engine.py]
-    PanelController --> SnapshotStore[snapshot/snapshot_store.py]
+    %% Controller -> application layer (future)
+    PanelController --> SnapshotCtrl[application/controllers/snapshot_controller.py]
+    PanelController --> CompareCtrl[application/controllers/compare_controller.py]
     
-    %% Snapshot layer
-    SnapshotStore --> SnapshotQuery[snapshot/snapshot_query.py]
-    SnapshotStore --> SnapshotMutations[snapshot/snapshot_mutations.py]
+    %% Application -> domain layers
+    SnapshotCtrl --> SnapshotExt[domain/snapshots/extractor.py]
+    SnapshotCtrl --> SnapshotRepo[domain/snapshots/repository.py]
+    CompareCtrl --> DiffEng[domain/diff/engine.py]
     
-    %% Diff layer
-    DiffEngine --> TreeDiff[diff/tree_diff.py]
-    DiffEngine --> PropertyDiff[diff/property_diff.py]
+    %% Domain snapshots
+    SnapshotExt --> TreeNode[domain/tree/node.py]
+    SnapshotExt --> Property[domain/tree/property.py]
     
-    %% Ports
-    DiffPanel --> AppPort[app_port.py]
-    DiffPanel --> GuiPort[gui_port.py]
-    DiffPanel --> SettingsPort[settings_port.py]
-    PanelController --> FreeCadPort[freecad_port.py]
-    SnapshotQuery --> FreeCadPort
-    SnapshotMutations --> FreeCadPort
+    %% Domain diff
+    DiffEng --> DiffModels[domain/diff/models.py]
+    DiffEng --> Comparator[domain/diff/comparator.py]
+    DiffEng --> SettingsRepo[domain/settings/repository.py]
+    
+    %% Infrastructure adapters
+    SnapshotExt --> Logger[domain/logging/logger.py]
+    Logger --> FreeCADLogger[infrastructure/freecad/logger.py]
+    SnapshotExt --> FreeCadPort[infrastructure/freecad/context.py]
+    DiffEng --> SettingsImpl[infrastructure/freecad/settings_repo.py]
+    DiffPanel --> GuiPort[infrastructure/gui/qt_adapter.py]
+    DiffPanel --> AppPort[infrastructure/freecad/app_port.py]
     
     %% Resources
     DiffPanel --> Resources[resources.py]
@@ -511,55 +526,79 @@ Following datamanager patterns:
 
 ## Implementation Phases
 
-### Phase 1: Foundation ✅ (Complete)
-- [x] Project structure matching datamanager
-- [x] `pyproject.toml` with dependencies and tool configuration
-- [x] Ports layer implementation (`ports/`) - `freecad_context.py`, `freecad_port.py`, `gui_port.py`, `settings_port.py`, `app_port.py`
-- [x] Resource management (`resources.py`)
-- [x] Basic entrypoints (`init_gui.py`, `workbench.py`)
-- [x] Version management (`version.py`)
+### Architecture Refactoring Phases (Steps 1-5 Complete)
 
-### Phase 2: Core Domain ✅ (Complete)
-- [x] Snapshot data structures (`domain/snapshot.py`) - `Snapshot`, `TreeNode` with path, label, is_root
-- [x] TreeNode representation (`domain/tree_node.py`)
-- [x] Diff result types (`domain/diff_result.py`, `domain/property_diff.py`) - `DiffState`, `PropertyDiff`, `NodeDiff`, `DiffSummary`, `DiffResult`
-- [x] Settings persistence via SettingsPort - `SettingsPort` interface with adapter
+#### Phase 1: Domain Tree Models ✅ (Complete)
+- [x] Create `domain/tree/` directory structure
+- [x] Move `TreeNode` to `domain/tree/node.py`
+- [x] Merge property models into `domain/tree/property.py`
+- [x] Update imports in existing code
+- [x] Run tests (66 passed)
 
-### Phase 3: Diff Engine ❌ (Not Started)
-- [ ] Tree comparison algorithm (`diff/tree_diff.py`)
-- [ ] Property comparison (`diff/property_diff.py`)
-- [ ] Diff orchestration (`diff/diff_engine.py`)
-- [ ] Unit tests for diff logic
+#### Phase 2: Domain Snapshots ✅ (Complete)
+- [x] Create `domain/snapshots/` directory structure
+- [x] Move `Snapshot` to `domain/snapshots/models.py`
+- [x] Create `domain/snapshots/repository.py` with `SnapshotRepository` protocol
+- [x] Create `domain/snapshots/extractor.py` with `SnapshotExtractor`
+- [x] Delete old `domain/snapshot.py`
+- [x] Run tests (13 + 8 + 6 = 27 passed)
 
-### Phase 4: Snapshot Management ✅ (Complete)
-- [x] Document state extraction (`snapshot/snapshot_query.py`)
-- [x] In-memory storage (`snapshot/snapshot_store.py`)
-- [x] Snapshot mutations (`snapshot/snapshot_mutations.py`)
-- [x] Unit tests (93 tests passing)
-- [x] Added `PropertyValue.from_freecad_property()` factory method for type detection
+#### Phase 3: Domain Diff ✅ (Complete)
+- [x] Create `domain/diff/` directory structure
+- [x] Move models to `domain/diff/models.py`
+- [x] Create `domain/diff/comparator.py` with `TreeComparator`, `PropertyComparator`
+- [x] Create `domain/diff/engine.py` with `DiffEngine`
+- [x] Delete old `diff/` directory files
+- [x] Run tests (34 + 40 + 66 = 140 passed)
 
-### Phase 5: UI Implementation ❌ (Not Started)
+#### Phase 4: Infrastructure Reorganization ✅ (Complete)
+- [x] Create `infrastructure/` directory structure
+- [x] Create `domain/logging/logger.py` (Logger port)
+- [x] Create `domain/settings/` with `Settings` and `SettingsRepository`
+- [x] Move ports to `infrastructure/` as adapters
+- [x] Create `infrastructure/freecad/logger.py` (FreeCADLogger adapter)
+- [x] Update all imports
+- [x] Run tests (167 passed)
+
+#### Phase 5: Cleanup and Migration ✅ (Complete)
+- [x] Remove old directories (`domain/snapshot.py`, `domain/property_value.py`, `snapshot/`, `diff/`, `ports/`)
+- [x] Update `config.py` with deprecation comments
+- [x] Update entrypoints for dependency injection
+- [x] Run full test suite (161 passed)
+- [x] Run linter checks (all passed)
+
+### Phase 6: Documentation ✅ (Complete)
+- [x] Update `PLAN.md` with new architecture references
+- [x] Mark Phase 1-5 as complete
+- [x] Update module map with new structure
+- [x] Update import path examples
+- [x] Verify `ARCHITECTURE.md` accuracy
+- [x] Create migration guide in `development.md`
+
+### Future Phases (Post-Refactoring)
+
+#### Phase 7: Application Layer ❌ (Not Started)
+- [ ] Create `application/` directory structure
+- [ ] Implement `SnapshotController` use case
+- [ ] Implement `CompareController` use case
+- [ ] Implement presenters for UI formatting
+
+#### Phase 8: UI Implementation ❌ (Not Started)
 - [ ] Qt Designer file (`resources/ui/diff_panel.ui`)
 - [ ] Main panel widget (`ui/diff_panel.py`)
 - [ ] Presenter logic (`ui/diff_panel_presenter.py`)
 - [ ] Panel controller (`ui/panel_controller.py`)
 
-### Phase 6: Integration ⚠️ (Partial)
-- [x] Command registration (`entrypoints/commands.py`) - stubs implemented
-- [x] Toolbar/menu wiring - registered in `workbench.py`
-- [ ] Icon assets - missing (only `.gitkeep` files exist)
-
-### Phase 7: Preferences Integration ❌ (Not Started)
+#### Phase 9: Preferences Integration ❌ (Not Started)
 - [ ] FreeCAD Preferences dialog panel
-- [ ] Settings persistence via SettingsPort - infrastructure ready, UI missing
+- [ ] Settings persistence via `SettingsRepository`
 - [ ] Dynamic reload of excluded types/properties
 
-### Phase 8: Testing & Polish ⚠️ (Partial)
-- [x] Unit test coverage - 93 tests passing on domain/snapshot modules
+#### Phase 10: Testing & Polish ❌ (Not Started)
 - [ ] Integration tests
-- [ ] Documentation updates (README.md)
 - [ ] Icon design/finalization
 - [ ] Performance optimization
+- [ ] User documentation (README.md)
 
 
 ## Differences from DataManager
@@ -624,6 +663,46 @@ sequenceDiagram
     DiffEngine-->>PanelController: DiffResult
     PanelController-->>Presenter: diff_result
     Presenter-->>DiffPanel: Render two columns with coloring
+```
+
+## File Import Paths
+
+### Old → New Import Migration
+
+| Old Import | New Import |
+|------------|------------|
+| `from freecad.diff_wb.domain.snapshot import Snapshot` | `from freecad.diff_wb.domain.snapshots.models import Snapshot` |
+| `from freecad.diff_wb.domain.property_value import PropertyValue` | `from freecad.diff_wb.domain.tree.property import Property` |
+| `from freecad.diff_wb.domain.tree_node import TreeNode` | `from freecad.diff_wb.domain.tree.node import TreeNode` |
+| `from freecad.diff_wb.diff.diff_result import DiffResult` | `from freecad.diff_wb.domain.diff.models import DiffResult` |
+| `from freecad.diff_wb.diff.tree_diff import TreeComparator` | `from freecad.diff_wb.domain.diff.comparator import TreeComparator` |
+| `from freecad.diff_wb.diff.property_diff import PropertyComparator` | `from freecad.diff_wb.domain.diff.comparator import PropertyComparator` |
+| `from freecad.diff_wb.diff.diff_engine import DiffEngine` | `from freecad.diff_wb.domain.diff.engine import DiffEngine` |
+| `from freecad.diff_wb.snapshot.snapshot_store import SnapshotStore` | `from freecad.diff_wb.domain.snapshots.repository import InMemorySnapshotRepository` |
+| `from freecad.diff_wb.snapshot.snapshot_query import SnapshotQuery` | `from freecad.diff_wb.domain.snapshots.extractor import SnapshotExtractor` |
+| `from freecad.diff_wb.ports.freecad_port import get_port` | `from freecad.diff_wb.infrastructure.freecad.context import get_port` |
+| `from freecad.diff_wb.ports.gui_port import GuiPort` | `from freecad.diff_wb.infrastructure.gui.qt_adapter import GuiPortAdapter` |
+| `from freecad.diff_wb.ports.settings_port import SettingsPort` | `from freecad.diff_wb.infrastructure.freecad.settings_repo import FreeCADSettingsRepository` |
+| `from freecad.diff_wb.ports.app_port import AppPort` | `from freecad.diff_wb.infrastructure.freecad.app_port import FreeCADAppPort` |
+| `from freecad.diff_wb.config import EXCLUDED_TYPES` | `from freecad.diff_wb.domain.settings.models import Settings` (via SettingsRepository) |
+
+### Recommended Import Patterns
+
+```python
+# Domain models (recommended - clean API)
+from freecad.diff_wb.domain.snapshots import Snapshot, SnapshotRepository
+from freecad.diff_wb.domain.tree import TreeNode, Property
+from freecad.diff_wb.domain.diff import DiffResult, DiffEngine
+
+# Infrastructure adapters (when needed)
+from freecad.diff_wb.infrastructure.freecad.context import FreeCadContext, get_port
+from freecad.diff_wb.infrastructure.freecad.settings_repo import FreeCADSettingsRepository
+from freecad.diff_wb.infrastructure.freecad.logger import FreeCADLogger
+
+# Direct module access (for specific classes)
+from freecad.diff_wb.domain.snapshots.models import Snapshot
+from freecad.diff_wb.domain.snapshots.repository import InMemorySnapshotRepository
+from freecad.diff_wb.domain.diff.comparator import TreeComparator, PropertyComparator
 ```
 
 ## Configuration Files to Create

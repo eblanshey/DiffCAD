@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
+# File responsibility: Validates that running FreeCAD and Python versions meet minimum requirements for the workbench.
 """Runtime version checks for supported FreeCAD and Python versions.
 
 This module validates that the current FreeCAD and Python runtime meet the
@@ -7,7 +8,7 @@ minimum required versions for the Diff Workbench.
 
 import sys
 
-from .ports.freecad_port import get_port
+from .infrastructure.freecad.context import get_port
 
 
 # Minimum required FreeCAD version (0.21.2+)

@@ -8,8 +8,9 @@ Run with: ./run_with_freecad.sh python scripts/verify_snapshot_extraction.py
 """
 
 import FreeCAD
-from freecad.diff_wb.domain.snapshot import TreeNode, Snapshot
-from freecad.diff_wb.domain.property_value import PropertyValue
+from freecad.diff_wb.domain.snapshots.models import Snapshot
+from freecad.diff_wb.domain.tree.node import TreeNode
+from freecad.diff_wb.domain.tree.property import Property, PropertyType
 
 
 def print_section(title: str) -> None:
@@ -151,7 +152,8 @@ def test_treenode_construction(doc: FreeCAD.Document) -> None:
         try:
             value = getattr(test_obj, prop_name)
             # Include all properties (including None values for completeness)
-            properties[prop_name] = PropertyValue(value=value, type_name=type(value).__name__)
+            prop_type = PropertyType.STRING if value is None else PropertyType.STRING
+            properties[prop_name] = Property.create(type_=prop_type, value=value)
         except Exception as e:
             print(f"  Warning: Could not extract {prop_name}: {e}")
 
@@ -230,7 +232,8 @@ def test_snapshot_domain_model(doc: FreeCAD.Document) -> None:
             try:
                 value = getattr(obj, prop_name)
                 # Include all properties (including None values)
-                properties[prop_name] = PropertyValue(value=value, type_name=type(value).__name__)
+                prop_type = PropertyType.STRING if value is None else PropertyType.STRING
+                properties[prop_name] = Property.create(type_=prop_type, value=value)
             except Exception as e:
                 print(f"  Warning: Could not extract {obj.Name}.{prop_name}: {e}")
 

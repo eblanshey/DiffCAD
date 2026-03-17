@@ -1,4 +1,6 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
+# File responsibility: Manages package version reporting by reading
+# from pyproject.toml for both installed and source tree scenarios.
 """Package version for `freecad.diff_wb`."""
 
 from __future__ import annotations

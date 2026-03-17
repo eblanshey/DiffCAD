@@ -1,4 +1,6 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
+# File responsibility: Defines the DiffWorkbench class that integrates
+# the workbench into FreeCAD's GUI with menus and toolbars.
 """FreeCAD workbench registration for Diff Workbench.
 
 Defines the Gui.Workbench subclass used by FreeCAD to create menus/toolbars
@@ -7,7 +9,7 @@ and activate the workbench.
 
 import os
 
-from ..ports.freecad_port import get_port
+from ..infrastructure.freecad.context import get_port
 from ..resources import ICONPATH
 
 

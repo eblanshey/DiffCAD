@@ -37,11 +37,11 @@ Complete all steps in order, following Test-Driven Development (TDD) approach: w
 - [x] **Step 2.3:** Implement `values_are_equal(old_value: PropertyValue | None, new_value: PropertyValue | None) -> bool`
   - Handle None cases (added/deleted properties)
   - Use PropertyValue's built-in equality for type-aware comparison
-- [ ] **Step 2.4:** Implement `compare_properties(old_props: dict, new_props: dict) -> list[PropertyDiff]`
+- [x] **Step 2.4:** Implement `compare_properties(old_props: dict, new_props: dict) -> list[PropertyDiff]`
   - Write test: `test_compare_properties_all_types`, `test_compare_properties_excluded_filtered`, `test_compare_properties_float_tolerance`
   - Iterate through old and new properties, create PropertyDiff for each
   - Apply exclusion filtering
-- [ ] **Step 2.5:** Create comprehensive unit tests for property_diff module
+- [x] **Step 2.5:** Create comprehensive unit tests for property_diff module
   - Write test file: `tests/unit/test_property_diff.py`
   - Test all property type comparisons (BOOL, INT, FLOAT, STRING, VECTOR, PLACEMENT, LINK, EXPRESSION)
   - Test float tolerance edge cases
@@ -72,7 +72,7 @@ Complete all steps in order, following Test-Driven Development (TDD) approach: w
 - [x] **Step 4.1:** Verify tree_diff unit tests pass
   - Execute: `pytest tests/unit/test_tree_diff.py -v`
   - All tests should pass without FreeCAD dependency
-- [ ] **Step 4.2:** Create and run property_diff unit tests
+- [x] **Step 4.2:** Create and run property_diff unit tests
   - Execute: `pytest tests/unit/test_property_diff.py -v`
   - Verify all property type comparisons work correctly
 - [ ] **Step 4.3:** Create and run diff_engine unit tests

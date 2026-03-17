@@ -1,7 +1,11 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
+# File responsibility: Pytest configuration and shared fixtures for Diff Workbench tests,
+# including mock FreeCAD app, GUI, context fixtures, and fake implementations for testing.
 """Pytest configuration and shared fixtures for Diff Workbench tests."""
 
 import pytest
+
+from tests.fakes import FakeLogger, FakeSettingsRepository
 
 
 @pytest.fixture
@@ -66,6 +70,18 @@ def mock_freecad_gui():
 @pytest.fixture
 def freecad_context(mock_freecad_app, mock_freecad_gui):
     """Create a FreeCAD context with mocked app and gui."""
-    from freecad.diff_wb.ports.freecad_context import FreeCadContext
+    from freecad.diff_wb.infrastructure.freecad.context import FreeCadContext
 
     return FreeCadContext(app=mock_freecad_app, gui=mock_freecad_gui)
+
+
+@pytest.fixture
+def fake_logger():
+    """Create a fake logger for testing."""
+    return FakeLogger()
+
+
+@pytest.fixture
+def fake_settings_repo():
+    """Create a fake settings repository with default excluded types and properties."""
+    return FakeSettingsRepository()
