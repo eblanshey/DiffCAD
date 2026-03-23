@@ -29,15 +29,15 @@ class NullSnapshotView(SnapshotView):
     which violates the type contract. All methods are no-ops.
     """
 
-    def show_success(self, message: str, snapshot_id: str) -> None:
+    def show_success(self, snapshot_name: str) -> None:
         """Do nothing - null object pattern."""
         pass
 
-    def show_error(self, message: str) -> None:
+    def show_error(self, error_message: str) -> None:
         """Do nothing - null object pattern."""
         pass
 
-    def show_loading(self, message: str = "Creating snapshot...") -> None:
+    def show_loading(self, message: str | None = None) -> None:
         """Do nothing - null object pattern."""
         pass
 

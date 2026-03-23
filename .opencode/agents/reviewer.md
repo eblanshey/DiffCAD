@@ -11,7 +11,6 @@ permission:
   bash: deny
   webfetch: deny
   task:
-      test-runner: allow
       linter-fix: allow
 ---
 # FreeCAD Diff Workbench Code Reviewer

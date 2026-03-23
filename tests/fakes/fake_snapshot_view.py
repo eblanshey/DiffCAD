@@ -1,6 +1,9 @@
-"""Module responsibility: Fake snapshot view for testing."""
+"""Module responsibility: Fake snapshot view for testing.
 
-from typing import Protocol
+This fake implementation captures method calls for verification in tests.
+It follows the updated SnapshotView protocol where presenters pass raw data
+and views handle translation.
+"""
 
 from freecad.diff_wb.ui.protocols.snapshot_view import SnapshotView
 
@@ -15,20 +18,32 @@ class FakeSnapshotView(SnapshotView):
         self._call_log = []
         self._last_call = None
 
-    def show_success(self, message: str, snapshot_id: str) -> None:
-        """Capture success call instead of showing UI."""
-        call = {"method": "show_success", "message": message, "snapshot_id": snapshot_id}
+    def show_success(self, snapshot_name: str) -> None:
+        """Capture success call instead of showing UI.
+
+        Args:
+            snapshot_name: Raw snapshot name - view handles translation and formatting.
+        """
+        call = {"method": "show_success", "snapshot_name": snapshot_name}
         self._call_log.append(call)
         self._last_call = call
 
-    def show_error(self, message: str) -> None:
-        """Capture error call instead of showing UI."""
-        call = {"method": "show_error", "message": message}
+    def show_error(self, error_message: str) -> None:
+        """Capture error call instead of showing UI.
+
+        Args:
+            error_message: Error message to display.
+        """
+        call = {"method": "show_error", "error_message": error_message}
         self._call_log.append(call)
         self._last_call = call
 
-    def show_loading(self, message: str = "Creating snapshot...") -> None:
-        """Capture loading call instead of showing UI."""
+    def show_loading(self, message: str | None = None) -> None:
+        """Capture loading call instead of showing UI.
+
+        Args:
+            message: Optional custom message. If None, uses default.
+        """
         call = {"method": "show_loading", "message": message}
         self._call_log.append(call)
         self._last_call = call

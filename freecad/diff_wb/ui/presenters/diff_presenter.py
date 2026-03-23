@@ -35,6 +35,8 @@ class DiffPresenter:
 
         # Call view methods to trigger UI rendering
         self._view.show_diff_tree(nodes)
+        # Pass raw integers - view handles translation and formatting using
+        # individual labels (DIFF_SUMMARY_ADDED_LABEL, etc.) per user decision
         self._view.show_summary(
             added=diff_result.summary.added_nodes,
             deleted=diff_result.summary.deleted_nodes,

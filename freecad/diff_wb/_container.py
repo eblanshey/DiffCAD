@@ -9,13 +9,15 @@ the same _container variable that commands.py and workbench.py expect.
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, Any
 
-# Import type hints only when needed to avoid circular imports
-try:
-    from .application.di.container import ApplicationContainer, create_application_container
-except ImportError:  # Will fail in pure test environment
-    ApplicationContainer = None  # type: ignore
-    create_application_container = None  # type: ignore
+
+if TYPE_CHECKING:
+    from .application.di.container import ApplicationContainer
+else:
+    # At runtime, avoid circular imports - use Any placeholder
+    ApplicationContainer = Any  # type: ignore[var-annotated]
+
 
 # Module-level variable for entry point compatibility.
 # This mirrors the _container from init_gui.py but can be set by tests.
@@ -24,7 +26,7 @@ except ImportError:  # Will fail in pure test environment
 # during normal FreeCAD operation. Tests set it via set_container() before importing
 # entry points. Initialized to None for module loading, but guaranteed to be set
 # before any entry point code executes.
-_container: ApplicationContainer = None  # type: ignore[assignment]
+_container: ApplicationContainer | None = None
 
 
 def set_container(container: ApplicationContainer) -> None:
@@ -40,13 +42,13 @@ def set_container(container: ApplicationContainer) -> None:
     _container = container
 
 
-def get_container() -> ApplicationContainer:
+def get_container() -> ApplicationContainer | None:
     """Get the current container.
 
     Returns:
         The currently set container (always available after init_gui.py runs)
     """
-    return _container  # type: ignore[return-value]
+    return _container
 
 
 def clear_container() -> None:

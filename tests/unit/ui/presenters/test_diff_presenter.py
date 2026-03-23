@@ -1,9 +1,9 @@
 """File responsibility: Unit tests for DiffPresenter."""
 
-from freecad.diff_wb.ui.presenters.presentation_models import NodePresentation
 from freecad.diff_wb.domain.diff.models import DiffResult, DiffState, NodeDiff, PropertyDiff
 from freecad.diff_wb.domain.tree import Property, PropertyType
 from freecad.diff_wb.ui.presenters.diff_presenter import DiffPresenter
+from freecad.diff_wb.ui.presenters.presentation_models import NodePresentation
 from tests.fakes.fake_diff_view import FakeDiffView
 
 

@@ -104,13 +104,13 @@ class TestApplicationContainer:
 
         # Create fake views for testing
         class FakeSnapshotView:
-            def show_success(self, message, snapshot_id) -> None:  # type: ignore
+            def show_success(self, snapshot_name) -> None:  # type: ignore
                 pass
 
-            def show_error(self, message) -> None:  # type: ignore
+            def show_error(self, error_message) -> None:  # type: ignore
                 pass
 
-            def show_loading(self, message="Creating snapshot...") -> None:  # type: ignore
+            def show_loading(self, message=None) -> None:  # type: ignore
                 pass
 
         class FakeDiffView:

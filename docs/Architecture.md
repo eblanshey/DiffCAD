@@ -419,32 +419,33 @@ result = extractor.extract_tree()
 
 ### UI Layer Translation Strategy
 
-**Translation happens in views, not presenters.** This keeps presenters pure and testable while allowing views to use framework-specific translation systems.
+**Translation happens in views, not presenters.** This keeps presenters pure and testable while allowing views to use Qt's native translation system.
 
-**Flow:**
-1. Presenter formats message in English (default)
-2. View receives message and translates via Qt/FreeCAD
-3. User sees translated text
+**Key Principles:**
+- **Templates** use Qt-style placeholders: `%1`, `%2`, etc.
+- **Views** handle translation AND parameter substitution
+- **Presenters** pass raw data only (no message formatting)
+- **Centralized strings** in `translation_strings.py`
 
-**Example:**
+**Example Flow:**
 ```python
-# Presenter (pure Python, no translation)
-def present_result(self, result: SnapshotResult) -> None:
-    msg = f"Snapshot '{result.snapshot_name}' created successfully"
-    self._view.show_success(message=msg, snapshot_id=result.snapshot_id)
+# Presenter (passes raw data)
+self._view.show_success(snapshot_name=result.snapshot_name)
 
-# Qt View (infrastructure, uses FreeCAD/Qt)
-class QtSnapshotView(SnapshotView):
-    def show_success(self, message: str, snapshot_id: str) -> None:
-        translated = QCoreApplication.translate("SnapshotView", message)
-        self._label.setText(translated)
+# View (handles translation)
+template = QCoreApplication.translate("SnapshotView", SNAPSHOT_SUCCESS_TEMPLATE)
+self._label.setText(template % snapshot_name)
 ```
 
-**Why this approach:**
-- Presenters remain testable without translation mocks
-- Views control their own localization strategy
-- Supports multiple UI frameworks (Qt, web, CLI) with different translation systems
-- Follows single responsibility: presenters format data, views handle presentation
+**Translation Contexts:**
+| Context | Purpose |
+|---------|---------|
+| `"Workbench"` | Menu items, tooltips |
+| `"Log"` | Console messages |
+| `"SnapshotView"` / `"DiffView"` | View-specific messages |
+| `"Common"` | Shared errors/loading |
+
+See `freecad/diff_wb/ui/translation_strings.py` for all templates.
 
 ---
 
