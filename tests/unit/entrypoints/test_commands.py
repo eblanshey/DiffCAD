@@ -8,19 +8,12 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
+from freecad.diff_wb.application.actions.result_models import CompareResult, SnapshotResult
 from freecad.diff_wb.entrypoints.commands import (
     _CompareCommand,
     _SwapColumnsCommand,
     _TakeSnapshotCommand,
 )
-from freecad.diff_wb.application.actions.result_models import CompareResult, SnapshotResult
-from tests.fakes.fake_diff_view import FakeDiffView
-from tests.fakes.fake_snapshot_view import FakeSnapshotView
-
-
-def _mock_translate(context: str, text: str) -> str:
-    """Mock translate function for testing without FreeCAD."""
-    return text
 
 
 class TestTakeSnapshotCommand:
@@ -49,10 +42,11 @@ class TestTakeSnapshotCommand:
         mock_action.execute.assert_called_once()
         mock_presenter.present_result.assert_called_once_with(expected_result)
 
-    @patch("freecad.diff_wb.entrypoints.commands._translate", side_effect=_mock_translate)
-    def test_command_resources_correct(self, mock_translate: Mock) -> None:
+    @patch("freecad.diff_wb.entrypoints.commands._container")
+    def test_command_resources_correct(self, mock_container: Mock) -> None:
         """Menu text, tooltips, icons are correct."""
         # Setup
+        mock_container.translate.side_effect = lambda ctx, text: text
         mock_action = MagicMock()
         mock_presenter = MagicMock()
         command = _TakeSnapshotCommand(action=mock_action, presenter=mock_presenter)
@@ -89,7 +83,6 @@ class TestCompareCommand:
         """Verifies comparison flow from command to action to presenter."""
         # Setup
         mock_action = MagicMock()
-        mock_view = FakeDiffView()
         mock_presenter = MagicMock()
 
         expected_diff_result = MagicMock()
@@ -130,10 +123,11 @@ class TestCompareCommand:
         # Verify presenter was never called since we can't get past the NotImplementedError
         mock_presenter.present_diff.assert_not_called()
 
-    @patch("freecad.diff_wb.entrypoints.commands._translate", side_effect=_mock_translate)
-    def test_compare_command_resources_correct(self, mock_translate: Mock) -> None:
+    @patch("freecad.diff_wb.entrypoints.commands._container")
+    def test_compare_command_resources_correct(self, mock_container: Mock) -> None:
         """Menu text, tooltips, icons are correct."""
         # Setup
+        mock_container.translate.side_effect = lambda ctx, text: text
         mock_action = MagicMock()
         mock_presenter = MagicMock()
         command = _CompareCommand(action=mock_action, presenter=mock_presenter)
@@ -166,10 +160,11 @@ class TestCompareCommand:
 class TestSwapColumnsCommand:
     """Tests for _SwapColumnsCommand."""
 
-    @patch("freecad.diff_wb.entrypoints.commands._translate", side_effect=_mock_translate)
-    def test_swap_columns_command_resources_correct(self, mock_translate: Mock) -> None:
+    @patch("freecad.diff_wb.entrypoints.commands._container")
+    def test_swap_columns_command_resources_correct(self, mock_container: Mock) -> None:
         """Menu text, tooltips, icons are correct."""
         # Setup
+        mock_container.translate.side_effect = lambda ctx, text: text
         command = _SwapColumnsCommand()
 
         # Execute

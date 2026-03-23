@@ -4,7 +4,7 @@ TODO: Use this in presenter tests once presenters are implemented.
 Currently unused but kept for future use.
 """
 
-from freecad.diff_wb.infrastructure.gui.qt_adapter import GuiPort
+from freecad.diff_wb.infrastructure.freecad.ports import GuiPort
 
 
 class FakeGuiPort(GuiPort):

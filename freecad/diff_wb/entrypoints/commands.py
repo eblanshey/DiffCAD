@@ -7,22 +7,13 @@ This module defines the FreeCAD commands that bridge user interactions
 
 import os
 
+from .._container import _container
 from ..application.actions.commands.compare_snapshots import CompareSnapshotsAction
 from ..application.actions.commands.take_snapshot import TakeSnapshotAction
 from ..application.di.container import ApplicationContainer
 from ..resources import ICONPATH
 from ..ui.presenters.diff_presenter import DiffPresenter
 from ..ui.presenters.snapshot_presenter import SnapshotPresenter
-
-
-def _translate(context: str, text: str) -> str:
-    """Translate text using FreeCAD's translation system.
-
-    This function is defined locally to avoid importing FreeCAD at module level.
-    """
-    from ..infrastructure.freecad.app_port import get_app_port
-
-    return get_app_port().translate(context, text)
 
 
 class _TakeSnapshotCommand:
@@ -41,8 +32,8 @@ class _TakeSnapshotCommand:
     def GetResources(self) -> dict[str, str]:
         """Return FreeCAD command metadata for UI integration."""
         return {
-            "MenuText": _translate("Workbench", "Take Snapshot"),
-            "ToolTip": _translate("Workbench", "Create a snapshot of the current document"),
+            "MenuText": _container.translate("Workbench", "Take Snapshot"),
+            "ToolTip": _container.translate("Workbench", "Create a snapshot of the current document"),
             "Pixmap": os.path.join(ICONPATH, "TakeSnapshot.svg"),
         }
 
@@ -76,8 +67,8 @@ class _CompareCommand:
     def GetResources(self) -> dict[str, str]:
         """Return FreeCAD command metadata for UI integration."""
         return {
-            "MenuText": _translate("Workbench", "Compare"),
-            "ToolTip": _translate("Workbench", "Compare snapshots"),
+            "MenuText": _container.translate("Workbench", "Compare"),
+            "ToolTip": _container.translate("Workbench", "Compare snapshots"),
             "Pixmap": os.path.join(ICONPATH, "Compare.svg"),
         }
 
@@ -125,8 +116,8 @@ class _SwapColumnsCommand:
     def GetResources(self) -> dict[str, str]:
         """Return FreeCAD command metadata for UI integration."""
         return {
-            "MenuText": _translate("Workbench", "Swap Columns"),
-            "ToolTip": _translate("Workbench", "Swap the left and right columns"),
+            "MenuText": _container.translate("Workbench", "Swap Columns"),
+            "ToolTip": _container.translate("Workbench", "Swap the left and right columns"),
             "Pixmap": os.path.join(ICONPATH, "SwapColumns.svg"),
         }
 

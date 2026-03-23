@@ -18,7 +18,7 @@ from freecad.diff_wb.domain.settings import Settings, SettingsRepository
 Concrete implementations when you need real adapters instead of interfaces:
 
 ```python
-from freecad.diff_wb.infrastructure.freecad.context import FreeCadContext, get_port
+from freecad.diff_wb.infrastructure.freecad.ports import FreeCadContext, get_port, get_app_port, get_gui_port
 from freecad.diff_wb.infrastructure.freecad.settings_repo import FreeCADSettingsRepository
 from freecad.diff_wb.infrastructure.freecad.logger import FreeCADLogger
 ```

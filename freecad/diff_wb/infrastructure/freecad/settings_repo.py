@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from ...config import EXCLUDED_PROPERTIES, EXCLUDED_TYPES
 from ...domain.settings.models import Settings
-from ..freecad.context import FreeCadContext, get_freecad_runtime_context
+from .ports import FreeCadContext
 
 
 class FreeCADSettingsRepository:
@@ -19,8 +19,8 @@ class FreeCADSettingsRepository:
     Uses hard-coded defaults from config.py when no persisted settings exist.
     """
 
-    def __init__(self, ctx: FreeCadContext | None = None) -> None:
-        self._ctx = ctx if ctx is not None else get_freecad_runtime_context()
+    def __init__(self, ctx: FreeCadContext) -> None:
+        self._ctx = ctx
         self._group_path = "User parameter:BaseApp/Preferences/Mod/DiffWorkbench"
 
     def _get_group(self) -> object:

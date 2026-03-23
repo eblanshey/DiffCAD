@@ -8,7 +8,7 @@ minimum required versions for the Diff Workbench.
 
 import sys
 
-from .infrastructure.freecad.context import get_port
+from ._container import _container
 
 
 # Minimum required FreeCAD version (0.21.2+)
@@ -19,13 +19,22 @@ FC_COMMIT_REQUIRED = 33772
 
 
 def _warn_unsupported_python_version() -> None:
-    port = get_port()
-    port.warn(
-        port.translate(
-            "Log",
-            "Python version (currently {}.{}.{}) must be at least 3.11 in order to work with FreeCAD 1.0 and above\n",
-        ).format(sys.version_info[0], sys.version_info[1], sys.version_info[2])
-    )
+    """Warn about unsupported Python version using container helpers."""
+    if _container is None:
+        # Fallback during tests - print to stderr
+        import sys as _sys
+
+        _sys.stderr.write(
+            f"Python version ({sys.version_info[0]}.{sys.version_info[1]}.{sys.version_info[2]}) "
+            "must be at least 3.11 in order to work with FreeCAD 1.0 and above\n"
+        )
+        return
+
+    translated = _container.translate(
+        "Log",
+        "Python version (currently {}.{}.{}) must be at least 3.11 in order to work with FreeCAD 1.0 and above\n",
+    ).format(sys.version_info[0], sys.version_info[1], sys.version_info[2])
+    _container.log(translated)
 
 
 def _coerce_gitver(value: str) -> int:
@@ -50,23 +59,33 @@ def _parse_freecad_version() -> tuple[int, int, int, int]:
 
 
 def _warn_unsupported_freecad_version(*, major: int, minor: int, patch: int, gitver: int) -> None:
-    port = get_port()
-    port.warn(
-        port.translate(
-            "Log",
-            "FreeCAD version (currently {}.{}.{} ({})) must be at least {}.{}.{} ({}) "
-            "in order to work with Python 3.11 and above\n",
-        ).format(
-            major,
-            minor,
-            patch,
-            gitver,
-            FC_MAJOR_VER_REQUIRED,
-            FC_MINOR_VER_REQUIRED,
-            FC_PATCH_VER_REQUIRED,
-            FC_COMMIT_REQUIRED,
+    """Warn about unsupported FreeCAD version using container helpers."""
+    if _container is None:
+        # Fallback during tests - print to stderr
+        import sys as _sys
+
+        _sys.stderr.write(
+            f"FreeCAD version ({major}.{minor}.{patch} ({gitver})) must be at least "
+            f"{FC_MAJOR_VER_REQUIRED}.{FC_MINOR_VER_REQUIRED}.{FC_PATCH_VER_REQUIRED} ({FC_COMMIT_REQUIRED}) "
+            "in order to work with Python 3.11 and above\n"
         )
+        return
+
+    translated = _container.translate(
+        "Log",
+        "FreeCAD version (currently {}.{}.{} ({})) must be at least {}.{}.{} ({}) "
+        "in order to work with Python 3.11 and above\n",
+    ).format(
+        major,
+        minor,
+        patch,
+        gitver,
+        FC_MAJOR_VER_REQUIRED,
+        FC_MINOR_VER_REQUIRED,
+        FC_PATCH_VER_REQUIRED,
+        FC_COMMIT_REQUIRED,
     )
+    _container.log(translated)
 
 
 def check_supported_version(major_ver: int, minor_ver: int, patch_ver: int = 0, git_ver: int = 0) -> bool:
@@ -96,7 +115,7 @@ def check_python_and_freecad_version() -> None:
     - The running Python version (must satisfy the minimum required).
     - The running FreeCAD version/commit (when available).
 
-    Failures are reported via ``App.Console.PrintWarning`` / ``PrintLog``.
+    Failures are reported via container helpers.
     No exception is raised; the workbench may continue to load with reduced
     functionality.
     """
@@ -105,8 +124,8 @@ def check_python_and_freecad_version() -> None:
         return
 
     # Check FreeCAD version
-    port = get_port()
-    port.log(port.translate("Log", "Checking FreeCAD version\n"))
+    if _container is not None:
+        _container.log(_container.translate("Log", "Checking FreeCAD version\n"))
     major, minor, patch, gitver = _parse_freecad_version()
 
     if not check_supported_version(major, minor, patch, gitver):

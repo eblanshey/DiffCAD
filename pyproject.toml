@@ -16,6 +16,7 @@ dependencies = []
 
 [dependency-groups]
 dev = [
+    "freecad-stubs>=1.0.21",
     "mypy>=1.17.1",
     "pytest>=8.4.1",
     "pytest-cov>=6.2.1",

@@ -7,10 +7,11 @@ It's the composition root for the application layer.
 from dataclasses import dataclass
 
 from ...domain.diff.engine import DiffEngine
-from ...domain.logging.logger import FreeCADLogger
+from ...domain.logging import Logger
 from ...domain.snapshots.extractor import SnapshotExtractor
 from ...domain.snapshots.repository import InMemorySnapshotRepository
-from ...infrastructure.freecad.context import FreeCadContext, get_port as get_freecad_port
+from ...infrastructure.freecad.logger import FreeCADLogger
+from ...infrastructure.freecad.ports import AppPort, FreeCadContext, FreeCadPort, get_app_port, get_port
 from ...infrastructure.freecad.settings_repo import FreeCADSettingsRepository
 from ...ui.presenters.diff_presenter import DiffPresenter
 from ...ui.presenters.snapshot_presenter import SnapshotPresenter
@@ -49,7 +50,15 @@ __all__ = [
 
 @dataclass
 class ApplicationContainer:
-    """Holds all wired application layer components."""
+    """Holds all wired application layer components.
+
+    The container also stores port instances and provides helper methods
+    for entry points to use without knowing about the port infrastructure.
+    """
+
+    # Ports (infrastructure adapters)
+    _freecad_port: FreeCadPort
+    _app_port: AppPort
 
     # Actions (application layer)
     take_snapshot_action: TakeSnapshotAction
@@ -59,6 +68,32 @@ class ApplicationContainer:
     # Presenters (UI layer)
     snapshot_presenter: SnapshotPresenter
     diff_presenter: DiffPresenter | None
+
+    def log(self, message: str) -> None:
+        """Log a message to the FreeCAD console.
+
+        Helper method for entry points to log messages without
+        knowing about port infrastructure.
+
+        Args:
+            message: The message to log
+        """
+        self._freecad_port.message(message)
+
+    def translate(self, context: str, text: str) -> str:
+        """Translate text using FreeCAD's translation system.
+
+        Helper method for entry points to translate text without
+        knowing about port infrastructure.
+
+        Args:
+            context: The translation context (e.g., "Workbench", "Log")
+            text: The text to translate
+
+        Returns:
+            The translated text
+        """
+        return self._app_port.translate(context, text)
 
 
 def create_application_container(
@@ -79,8 +114,9 @@ def create_application_container(
         ApplicationContainer with all wired components
     """
     # Get infrastructure adapters
-    freecad_port = get_freecad_port(ctx)
-    logger = FreeCADLogger()
+    freecad_port = get_port(ctx)
+    app_port = get_app_port(ctx)
+    logger: Logger = FreeCADLogger(freecad_port)
 
     # Use provided settings_repo or create default
     if settings_repo is None:
@@ -112,6 +148,8 @@ def create_application_container(
     diff_presenter = DiffPresenter(view=diff_view) if diff_view else None
 
     return ApplicationContainer(
+        _freecad_port=freecad_port,
+        _app_port=app_port,
         take_snapshot_action=take_snapshot_action,
         compare_snapshots_action=compare_snapshots_action,
         list_snapshots_action=list_snapshots_action,

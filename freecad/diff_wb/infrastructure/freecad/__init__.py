@@ -3,7 +3,21 @@
 # application ports and runtime context for FreeCAD integration.
 """FreeCAD infrastructure adapters."""
 
-from .context import FreeCadContext, FreeCadPortAdapter, get_freecad_runtime_context, get_port
+from .logger import FreeCADLogger
+from .ports import (
+    FreeCadContext,
+    FreeCadPort,
+    get_freecad_runtime_context,
+    get_port,
+)
+from .settings_repo import FreeCADSettingsRepository
 
 
-__all__ = ["FreeCadContext", "FreeCadPortAdapter", "get_port", "get_freecad_runtime_context"]
+__all__ = [
+    "FreeCADLogger",
+    "FreeCadContext",
+    "FreeCadPort",
+    "get_port",
+    "get_freecad_runtime_context",
+    "FreeCADSettingsRepository",
+]

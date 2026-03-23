@@ -135,13 +135,9 @@ infrastructure/
 ├── __init__.py
 ├── freecad/                       # FreeCAD integration
 │   ├── __init__.py
-│   ├── context.py                 # FreeCadContext + FreeCadPort adapter
+│   ├── ports.py                   # ALL port protocols, adapters, factories
 │   ├── settings_repo.py           # SettingsRepository implementation
 │   └── logger.py                  # Logger implementation (FreeCAD Console)
-│
-├── gui/                           # Qt GUI integration
-│   ├── __init__.py
-│   └── qt_adapter.py              # GuiPort implementation
 │
 └── persistence/                   # Data persistence
     ├── __init__.py
@@ -241,9 +237,9 @@ Use both appropriately based on the use case:
   - `SnapshotRepository`, `SettingsRepository`, `Logger`
 
 - **Implementations with state**
-  - `InMemorySnapshotRepository` (has `_snapshots` dict)
-  - `FreeCADLogger` (might have config state later)
-  - `DiffEngine` (coordinates services via injected dependencies)
+   - `InMemorySnapshotRepository` (has `_snapshots` dict)
+   - `FreeCADLogger` (wraps FreeCadPort, infrastructure layer)
+   - `DiffEngine` (coordinates services via injected dependencies)
 
 ### Use **Functions** for:
 
@@ -295,7 +291,7 @@ class DiffEngine:
 
 ### Composition Root
 
-At application startup (in `entrypoints/init_gui.py`), wire all dependencies:
+At application startup (in `init_gui.py`), wire all dependencies:
 
 1. Create infrastructure adapters (real implementations)
 2. Create domain services with injected adapters
@@ -303,6 +299,152 @@ At application startup (in `entrypoints/init_gui.py`), wire all dependencies:
 4. Register with FreeCAD
 
 This keeps dependency wiring centralized and explicit.
+
+---
+
+## Container and Context Usage Rules
+
+The Diff Workbench uses a hand-made IoC (Inversion of Control) container to wire dependencies at startup. This ensures the domain and application layers remain testable without FreeCAD dependencies.
+
+### Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│ ENTRY POINTS (workbench.py, commands.py)                           │
+│   → Use _container.log(), _container.translate() helpers only      │
+│   → NEVER access CTX, port factories, or create ports              │
+└────────────────────────┬────────────────────────────────────────────┘
+                         │ access via helpers
+                         ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│ INIT_GUI.PY (Composition Root)                                      │
+│   → Creates CTX ONCE                                                │
+│   → Creates container ONCE                                          │
+│   → Exposes _container for entry point helpers                     │
+└────────────────────────┬────────────────────────────────────────────┘
+                         │ creates
+                         ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│ CONTAINER (application/di/container.py)                            │
+│   → Creates all ports (once) with CTX                              │
+│   → Creates actions/presenters WITH ports injected                 │
+│   → Provides helper methods: log(), translate()                    │
+│   → Only infrastructure knows about CTX                            │
+└────────────────────────┬────────────────────────────────────────────┘
+                         │ injects into
+                         ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│ APPLICATION LAYER (actions, queries)                               │
+│   → Receives ports via constructor                                 │
+│   → NEVER imports CTX, container, or port factories                │
+│   → Passes ports to domain services                                │
+└────────────────────────┬────────────────────────────────────────────┘
+                         │ uses
+                         ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│ DOMAIN LAYER (services, extractors)                                │
+│   → Defines port protocols (interfaces)                            │
+│   → Receives port implementations via constructor                  │
+│   → NEVER imports infrastructure, CTX, or container                │
+│   → Testable with fakes - no FreeCAD needed                        │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Composition Root
+
+The composition root is `init_gui.py`, which runs once when FreeCAD loads the workbench. It creates:
+
+1. **CTX** - The FreeCadContext (bundles FreeCAD/FreeCADGui modules)
+2. **Container** - The ApplicationContainer (creates ports, wires actions/presenters)
+
+```python
+# init_gui.py (runs once at FreeCAD startup)
+ctx = get_freecad_runtime_context()  # Create CTX once
+container = create_application_container(ctx)  # Create container once
+```
+
+### Container Responsibilities
+
+The container (`application/di/container.py`) is responsible for:
+- Creating all port adapters using CTX
+- Creating actions and presenters with ports injected
+- Providing helper methods for entry points (log, translate)
+
+The container is a **creation-time** mechanism, not a runtime service locator. After startup, actions are called directly without accessing the container.
+
+### CTX and Container Access Rules
+
+| Layer | Can Access Container | Can Access CTX | Can Access Port Factories | Can Create Ports |
+|-------|---------------------|----------------|---------------------------|------------------|
+| **Domain** | ❌ Never | ❌ Never | ❌ Never | ❌ Never |
+| **Application** | ❌ Never | ❌ Never | ❌ Never | ❌ Never |
+| **UI** | ❌ Never | ❌ Never | ❌ Never | ❌ Never |
+| **Infrastructure** | ✅ Yes | ✅ Yes | ✅ Yes | ✅ Yes |
+| **Entry Points** | ✅ Helpers only | ❌ Never | ❌ Never | ❌ Never |
+
+### Consolidated Ports Module
+
+All port protocols, adapters, and factories are consolidated in `infrastructure/freecad/ports.py`:
+
+- **Protocols**: `AppLike`, `GuiLike`, `DocumentLike`, `ConsoleLike`, `FreeCadPort`, `AppPort`, `GuiPort`
+- **Context**: `FreeCadContext` dataclass
+- **Adapters**: `FreeCadPortAdapter`, `AppPortAdapter`, `GuiPortAdapter`
+- **Factories**: `get_port(ctx)`, `get_app_port(ctx)`, `get_gui_port(ctx)` - all require mandatory ctx
+
+**Important**: All factory functions require an explicit `FreeCadContext` parameter. There is no automatic context creation. This enforces explicit dependency injection.
+
+### Entry Point Helpers
+
+Entry points (`workbench.py`, `commands.py`) can use container helpers without knowing about ports:
+
+```python
+# Entry point code
+from .. import _container
+
+_container.log("Workbench activated")  # Logs to FreeCAD console
+_translated = _container.translate("Workbench", "My Text")  # Translates
+```
+
+### Domain Testing
+
+Domain code is fully testable using fakes - no FreeCAD or container needed:
+
+```python
+# Unit test
+fake_port = FakeFreeCadPort()  # In tests/fakes/
+extractor = SnapshotExtractor(freecad_port=fake_port)  # Pass fake
+result = extractor.extract_tree()
+# Domain tested without FreeCAD!
+```
+
+### UI Layer Translation Strategy
+
+**Translation happens in views, not presenters.** This keeps presenters pure and testable while allowing views to use framework-specific translation systems.
+
+**Flow:**
+1. Presenter formats message in English (default)
+2. View receives message and translates via Qt/FreeCAD
+3. User sees translated text
+
+**Example:**
+```python
+# Presenter (pure Python, no translation)
+def present_result(self, result: SnapshotResult) -> None:
+    msg = f"Snapshot '{result.snapshot_name}' created successfully"
+    self._view.show_success(message=msg, snapshot_id=result.snapshot_id)
+
+# Qt View (infrastructure, uses FreeCAD/Qt)
+class QtSnapshotView(SnapshotView):
+    def show_success(self, message: str, snapshot_id: str) -> None:
+        translated = QCoreApplication.translate("SnapshotView", message)
+        self._label.setText(translated)
+```
+
+**Why this approach:**
+- Presenters remain testable without translation mocks
+- Views control their own localization strategy
+- Supports multiple UI frameworks (Qt, web, CLI) with different translation systems
+- Follows single responsibility: presenters format data, views handle presentation
 
 ---
 
@@ -342,21 +484,6 @@ class FakeLogger(Logger):
    - Slower execution, requires FreeCAD runtime
 
 This approach ensures core workbench logic is tested independently from external dependencies.
-
----
-
-## File Import Paths
-
-### Current → Target Migration
-
-| Current Import | Target Import |
-|----------------|---------------|
-| `from freecad.diff_wb.domain.snapshot import Snapshot` | `from freecad.diff_wb.domain.snapshots.models import Snapshot` |
-| `from freecad.diff_wb.domain.property_value import PropertyValue` | `from freecad.diff_wb.domain.tree.property import Property` |
-| `from freecad.diff_wb.diff.diff_result import DiffResult` | `from freecad.diff_wb.domain.diff.models import DiffResult` |
-| `from freecad.diff_wb.snapshot.snapshot_store import SnapshotStore` | `from freecad.diff_wb.domain.snapshots.repository import InMemorySnapshotRepository` |
-| `from freecad.diff_wb.ports.freecad_port import get_port` | `from freecad.diff_wb.infrastructure.freecad.context import get_port` |
-| `from freecad.diff_wb.config import EXCLUDED_TYPES` | `from freecad.diff_wb.domain.settings.models import Settings` (via SettingsRepository) |
 
 ---
 

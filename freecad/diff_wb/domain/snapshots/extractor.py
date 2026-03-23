@@ -11,7 +11,7 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING, Protocol
 
-from ..logging import FreeCADLogger, Logger
+from ..logging import Logger
 from ..tree import Property, TreeNode
 
 
@@ -20,7 +20,11 @@ if TYPE_CHECKING:
 
 
 class FreeCadPort(Protocol):
-    """Interface for FreeCAD document operations (defined in domain for type hints)."""
+    """Interface for FreeCAD document operations (defined in domain for type hints).
+
+    This Protocol defines the minimal set of FreeCAD operations needed
+    by the Diff Workbench, allowing for test doubles in unit tests.
+    """
 
     def get_active_document(self) -> object | None: ...
 
@@ -283,29 +287,3 @@ class SnapshotExtractor:
         return Snapshot(
             snapshot_id=str(uuid.uuid4()), document_name=document_name, timestamp=timestamp, root_nodes=root_nodes
         )
-
-
-# Legacy function for backward compatibility
-def extract_tree(port: FreeCadPort | None = None) -> Snapshot:
-    """Legacy function for backward compatibility.
-
-    Deprecated: Use SnapshotExtractor instead. This function is kept temporarily
-    for backward compatibility during the migration.
-
-    Args:
-        port: Optional FreeCadPort instance. If None, returns empty snapshot.
-
-    Returns:
-        A Snapshot object containing the document tree structure.
-    """
-    # Lazy import to avoid circular dependency
-    from freecad.diff_wb.infrastructure.freecad.context import get_port
-
-    # Create a default logger for the legacy function
-    logger = FreeCADLogger()
-    extractor = SnapshotExtractor(logger)
-
-    if port is None:
-        port = get_port()
-
-    return extractor.extract_tree(port)

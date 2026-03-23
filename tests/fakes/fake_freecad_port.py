@@ -1,6 +1,6 @@
 """File responsibility: Fake FreeCAD port for testing."""
 
-from freecad.diff_wb.infrastructure.freecad.context import FreeCadPort
+from freecad.diff_wb.infrastructure.freecad.ports import FreeCadPort
 
 
 class FakeFreeCadPort(FreeCadPort):
@@ -44,3 +44,8 @@ class FakeFreeCadPort(FreeCadPort):
     def message(self, text: str) -> None:
         """Log the call (not actually messaging)."""
         self._call_log.append(f"message:{text}")
+
+    def translate(self, context: str, text: str) -> str:
+        """Return text unchanged (not implementing translation)."""
+        self._call_log.append(f"translate:{context}:{text}")
+        return text

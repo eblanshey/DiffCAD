@@ -4,7 +4,7 @@ import datetime
 
 from ....domain.snapshots.extractor import SnapshotExtractor
 from ....domain.snapshots.repository import SnapshotRepository
-from ....infrastructure.freecad.context import FreeCadPort
+from ....infrastructure.freecad.ports import FreeCadPort
 from ..result_models import SnapshotResult
 
 

@@ -9,12 +9,8 @@ and activate the workbench.
 
 import os
 
-from ..infrastructure.freecad.context import get_port
+from .._container import _container
 from ..resources import ICONPATH
-
-
-def _translate(context: str, text: str) -> str:
-    return get_port().translate(context, text)
 
 
 try:
@@ -28,8 +24,8 @@ if Gui is not None:
     class DiffWorkbench(Gui.Workbench):
         """Workbench class for the Diff Workbench addon."""
 
-        MenuText = _translate("Workbench", "Diff Workbench")
-        ToolTip = _translate("Workbench", "Compare document snapshots")
+        MenuText = _container.translate("Workbench", "Diff Workbench")
+        ToolTip = _container.translate("Workbench", "Compare document snapshots")
         Icon = os.path.join(ICONPATH, "Logo.svg")
         toolbox = [
             "DiffTakeSnapshot",
@@ -45,7 +41,7 @@ if Gui is not None:
             """Called at first activation; import all commands."""
             import FreeCAD as App  # pylint: disable=import-error
 
-            get_port().message(_translate("Log", "Switching to diff_wb") + "\n")
+            _container.log(_container.translate("Log", "Switching to diff_wb") + "\n")
 
             qt_translate_noop = App.Qt.QT_TRANSLATE_NOOP
 
@@ -55,8 +51,8 @@ if Gui is not None:
 
         def Activated(self) -> None:
             """Called when user switches to this workbench."""
-            get_port().message(_translate("Log", "Workbench diff_wb activated.") + "\n")
+            _container.log(_container.translate("Log", "Workbench diff_wb activated.") + "\n")
 
         def Deactivated(self) -> None:
             """Called when this workbench is deactivated."""
-            get_port().message(_translate("Log", "Workbench diff_wb de-activated.") + "\n")
+            _container.log(_container.translate("Log", "Workbench diff_wb de-activated.") + "\n")

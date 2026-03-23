@@ -1,5 +1,5 @@
 ---
-description: Runs all tests, or the specific unit tests requested
+description: Runs all tests, or the specific unit tests requested. Do not provide any context for why the tests are to be run. Instruct the agent to simply run the desired tests and return the output.
 mode: subagent
 model: workstation/Qwen3.5-4B
 tools:

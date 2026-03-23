@@ -70,7 +70,7 @@ def mock_freecad_gui():
 @pytest.fixture
 def freecad_context(mock_freecad_app, mock_freecad_gui):
     """Create a FreeCAD context with mocked app and gui."""
-    from freecad.diff_wb.infrastructure.freecad.context import FreeCadContext
+    from freecad.diff_wb.infrastructure.freecad.ports import FreeCadContext
 
     return FreeCadContext(app=mock_freecad_app, gui=mock_freecad_gui)
 
