@@ -1,8 +1,20 @@
-# Task: Phase 8 - 3-Column Window + Show on Activation
+# Task: Phase 8 - 3-Column Window + Show on Activation ✅ COMPLETED
 
 ## Goal
 
 Create the empty 3-column diff panel UI and wire it to display when the Diff workbench activates. This is a UI skeleton with no data wiring yet - the columns will be empty placeholders.
+
+## Status: COMPLETE
+
+The 3-column diff panel is now working. Key fix: **Set widget parent BEFORE adding to MDI area**.
+
+### Bug Fixed
+
+**Problem**: Empty Diff View subwindow with no widgets visible.
+
+**Root Cause**: Calling `panel.setParent(mdi_area)` AFTER `mdi_area.addSubWindow(panel)` caused the widget not to display properly.
+
+**Solution**: Call `panel.setParent(mdi_area)` BEFORE `mdi_area.addSubWindow(panel)`.
 
 ## Context
 

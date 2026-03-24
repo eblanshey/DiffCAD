@@ -118,11 +118,11 @@ See [UI.md](UI.md) for detailed UI requirements.
 - [x] Register commands in `entrypoints/commands.py`
 
 #### Phase 8: 3-Column Window + Show on Activation ❌ (Not Started)
-- [ ] Create `ui/diff_panel.py` with horizontal `QSplitter`
-- [ ] Three columns: `QListWidget` (Snapshots) | `QTreeWidget` (Tree) | `QTableWidget` (Properties)
-- [ ] Empty columns, no data wiring yet
-- [ ] Wire to show when Diff workbench activates in `workbench.py`
-- [ ] **Test**: Switch to Diff workbench → see empty 3 columns
+- [x] Create `ui/diff_panel.py` with horizontal `QSplitter`
+- [x] Three columns: `QListWidget` (Snapshots) | `QTreeWidget` (Tree) | `QTableWidget` (Properties)
+- [x] Empty columns, no data wiring yet
+- [x] Wire to show when Diff workbench activates in `workbench.py`
+- [x] **Test**: Switch to Diff workbench → see empty 3 columns
 
 #### Phase 9: Populate Snapshots Column ❌ (Not Started)
 - [ ] Wire `ListSnapshotsQuery` to load snapshots on panel show

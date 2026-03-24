@@ -59,20 +59,21 @@ if Gui is not None:
             """Called when user switches to this workbench."""
             _container.log(_container.translate("Log", "Workbench diff_wb activated.") + "\n")
 
-            # Create and show MDI subwindow if not already created
+            # Create subwindow if it doesn't exist (was closed or never created)
             if self._subwindow is None:
                 self._create_diff_panel()
             else:
-                # Show existing subwindow if it was hidden
+                # Show existing subwindow and bring to front
                 self._subwindow.show()
+                self._subwindow.raise_()
+                self._subwindow.setFocus()
 
         def Deactivated(self) -> None:
             """Called when this workbench is deactivated."""
             _container.log(_container.translate("Log", "Workbench diff_wb de-activated.") + "\n")
 
-            # Hide subwindow (don't destroy - keep state)
-            if self._subwindow:
-                self._subwindow.hide()
+            # Don't hide the subwindow - let it stay visible like other FreeCAD panels
+            # This prevents interference with FreeCAD's default view management
 
         def _create_diff_panel(self) -> None:
             """Create the 3-column diff panel as an MDI subwindow."""
@@ -80,25 +81,49 @@ if Gui is not None:
                 _container.log("Warning: FreeCADGui not available\n")
                 return
 
-            from PySide6.QtWidgets import QMdiArea
+            try:
+                from PySide6.QtCore import Qt
+                from PySide6.QtWidgets import QMdiArea
 
-            from ..ui import DiffPanelView
+                from ..ui import DiffPanelView
 
-            # Get MDI area from FreeCAD's main window
-            main_window = getMainWindow()
-            mdi_area = main_window.findChild(QMdiArea)
+                # Get MDI area from FreeCAD's main window
+                main_window = getMainWindow()
+                mdi_area = main_window.findChild(QMdiArea)
 
-            if mdi_area is None:
-                _container.log("Warning: Could not get MDI area\n")
-                return
+                if mdi_area is None:
+                    _container.log("Warning: Could not get MDI area\n")
+                    return
 
-            # Create panel
-            panel = DiffPanelView()
+                # Create panel
+                panel = DiffPanelView()
 
-            # Add as subwindow (QMdiSubWindow created automatically)
-            self._subwindow = mdi_area.addSubWindow(panel)
-            panel.setParent(mdi_area)  # Important: set parent to MDI area
+                # Add as subwindow (QMdiSubWindow created automatically)
+                # Do NOT call setParent - let FreeCAD handle it
+                self._subwindow = mdi_area.addSubWindow(panel)
 
-            # Configure subwindow
-            self._subwindow.setWindowTitle("Diff View")
-            self._subwindow.show()
+                # Configure subwindow
+                self._subwindow.setWindowTitle("Diff View")
+
+                # Set proper cleanup attribute
+                self._subwindow.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, True)
+
+                # Set a reasonable default size that doesn't interfere with other views
+                self._subwindow.resize(900, 600)
+
+                # Show normally (not maximized) to coexist with other MDI views
+                self._subwindow.show()
+
+                # Connect destroyed signal to reset reference when window is closed
+                # QMdiSubWindow inherits from QWidget which inherits from QObject
+                self._subwindow.destroyed.connect(self._on_subwindow_closed)
+            except Exception as e:
+                _container.log(f"ERROR creating diff panel: {e}\n")
+                import traceback
+
+                _container.log(traceback.format_exc() + "\n")
+
+        def _on_subwindow_closed(self) -> None:
+            """Called when the diff panel subwindow is closed."""
+            _container.log(_container.translate("Log", "Diff panel closed.") + "\n")
+            self._subwindow = None  # Reset reference so new one will be created on next activation

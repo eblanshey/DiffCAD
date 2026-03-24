@@ -46,8 +46,8 @@ class DiffPanelView(QWidget):
         # Column 1: Snapshots list (always visible)
         self.snapshot_list = QListWidget()
         self.snapshot_list.setMinimumWidth(150)
-        snapshot_placeholder = QLabel("Snapshots\n(click Take Snapshot)")
-        snapshot_placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        snapshot_placeholder = QLabel("Snapshots")
+        snapshot_placeholder.setAlignment(Qt.AlignmentFlag.AlignLeft)
         snapshot_layout = QVBoxLayout()
         snapshot_layout.addWidget(snapshot_placeholder)
         snapshot_layout.addWidget(self.snapshot_list)
@@ -75,6 +75,9 @@ class DiffPanelView(QWidget):
 
         # Set initial sizes (equal thirds)
         splitter.setSizes([200, 200, 200])
+
+        # Set minimum size for the panel
+        self.setMinimumSize(450, 200)
 
         layout.addWidget(splitter)
 
