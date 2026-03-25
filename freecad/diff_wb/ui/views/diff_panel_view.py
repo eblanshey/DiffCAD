@@ -1,15 +1,22 @@
 """File responsibility: Diff panel view with 3-column layout, implementing DiffView and SnapshotView protocols."""
 
+from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QBrush, QColor, QPainter, QPalette
 from PySide6.QtWidgets import (
+    QAbstractItemView,
+    QApplication,
     QHeaderView,
     QLabel,
     QListWidget,
     QListWidgetItem,
     QSplitter,
+    QStyledItemDelegate,
+    QStyleOptionViewItem,
     QTableWidget,
     QTreeWidget,
     QVBoxLayout,
@@ -18,6 +25,77 @@ from PySide6.QtWidgets import (
 
 from ...application.actions.result_models import SnapshotSummary
 from ..presenters.presentation_models import NodePresentation
+
+
+@dataclass
+class _SelectedItem:
+    """Tracks a selected snapshot with its assigned role."""
+
+    row: int
+    role: str  # "from" or "to"
+
+
+class _SnapshotListItemDelegate(QStyledItemDelegate):
+    """Custom item delegate for rendering snapshot list items with custom selection colors.
+
+    This delegate overrides the paint method to apply custom background colors
+    for selected items based on their role ("from" = red, "to" = green),
+    overriding Qt's default blue selection highlight.
+    """
+
+    # Color mapping for roles
+    FROM_COLOR = QColor(255, 200, 200)  # Light red
+    TO_COLOR = QColor(200, 255, 200)  # Light green
+
+    def __init__(self, parent: QListWidget, get_item_role_callback: Callable[[int], str | None]) -> None:
+        """Initialize the delegate.
+
+        Args:
+            parent: The QListWidget this delegate belongs to.
+            get_item_role_callback: A callable that takes a row number and returns
+                the role ("from" or "to") if the item is selected, or None otherwise.
+        """
+        super().__init__(parent)
+        self._get_item_role = get_item_role_callback
+        self._parent = parent
+
+    def paint(self, painter: QPainter, option: QStyleOptionViewItem, index) -> None:
+        """Paint the item with custom selection colors.
+
+        Args:
+            painter: The QPainter instance.
+            option: The QStyleOptionViewItem containing display information.
+            index: The model index.
+        """
+        # Get the row from the index
+        row = index.row()
+
+        # Check if this item is selected by checking the widget's selection
+        is_selected = self._parent.item(row).isSelected() if self._parent.item(row) else False
+
+        # If selected and we have a custom role, use custom color
+        if is_selected:
+            role = self._get_item_role(row)
+            if role:
+                # Get the selection color based on role
+                selection_color = self.FROM_COLOR if role == "from" else self.TO_COLOR
+
+                # Draw custom background
+                painter.save()
+                painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+                painter.fillRect(option.rect, QBrush(selection_color))
+
+                # Get text and draw it
+                item = self._parent.item(row)
+                if item:
+                    text_rect = option.rect.adjusted(4, 0, -4, 0)  # Add some padding
+                    painter.setPen(option.palette.color(QPalette.ColorRole.Text))
+                    painter.drawText(text_rect, Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft, item.text())
+                painter.restore()
+                return
+
+        # Use default painting for non-selected items or when no custom role
+        super().paint(painter, option, index)
 
 
 class DiffPanelView(QWidget):
@@ -35,6 +113,9 @@ class DiffPanelView(QWidget):
 
     def __init__(self, parent=None):
         QWidget.__init__(self, parent)
+        self._selected_items: dict[int, _SelectedItem] = {}  # row -> _SelectedItem
+        # Create the custom delegate for rendering selection colors
+        self._delegate = _SnapshotListItemDelegate(None, self._get_item_role)
         self._setup_ui()
 
     def _setup_ui(self) -> None:
@@ -47,6 +128,12 @@ class DiffPanelView(QWidget):
         # Column 1: Snapshots list (always visible)
         self.snapshot_list = QListWidget()
         self.snapshot_list.setMinimumWidth(150)
+        self.snapshot_list.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
+        self.snapshot_list.itemSelectionChanged.connect(self._on_selection_changed)
+        # Set the custom delegate for rendering selection colors
+        self.snapshot_list.setItemDelegate(self._delegate)
+        # Update the delegate's parent reference now that snapshot_list exists
+        self._delegate._parent = self.snapshot_list
         snapshot_placeholder = QLabel("Snapshots")
         snapshot_placeholder.setAlignment(Qt.AlignmentFlag.AlignLeft)
         snapshot_layout = QVBoxLayout()
@@ -95,6 +182,9 @@ class DiffPanelView(QWidget):
             snapshots: List of snapshot summaries containing id, name,
                 created_at (ISO format), and node_count.
         """
+        # Clear all selections and roles on refresh
+        self.clear_selection()
+
         # Clear existing items
         self.snapshot_list.clear()
 
@@ -167,3 +257,122 @@ class DiffPanelView(QWidget):
     def show_summary(self, added: int, deleted: int, modified: int) -> None:
         """Display the diff summary counts."""
         pass
+
+    # Selection management methods
+    def _get_default_background(self) -> QColor:
+        """Get the default background color from the widget's palette.
+
+        Returns:
+            The default background color used by QListWidget items.
+        """
+        palette = QApplication.palette()
+        return palette.color(QPalette.ColorRole.Base)
+
+    def _get_item_role(self, row: int) -> str | None:
+        """Get the role of a selected item by row.
+
+        Args:
+            row: The row number of the item.
+
+        Returns:
+            The role ("from" or "to") if the item is selected, None otherwise.
+        """
+        if row in self._selected_items:
+            return self._selected_items[row].role
+        return None
+
+    def _on_selection_changed(self) -> None:
+        """Handle selection changes with max-2 limit and stable color roles."""
+        # Get currently selected rows from Qt
+        current_selected_rows = {self.snapshot_list.row(item) for item in self.snapshot_list.selectedItems()}
+        existing_rows = set(self._selected_items.keys())
+
+        # Detect added/removed rows
+        added_rows = current_selected_rows - existing_rows
+        removed_rows = existing_rows - current_selected_rows
+
+        # Handle deselection: remove from tracking
+        self._handle_deselection(removed_rows)
+
+        # Handle new selection: assign role, apply custom color
+        self._handle_new_selections(added_rows)
+
+    def _handle_deselection(self, removed_rows: set[int]) -> None:
+        """Remove deselected items from tracking."""
+        for row in removed_rows:
+            if row in self._selected_items:
+                del self._selected_items[row]
+
+    def _handle_new_selections(self, added_rows: set[int]) -> None:
+        """Handle newly selected items with role assignment and color application."""
+        for row in added_rows:
+            # Check if we already have 2 selections
+            if len(self._selected_items) >= 2:
+                self._reject_selection(row)
+                return
+
+            # Assign role and apply color
+            role = self._assign_role()
+            self._apply_selection_style(row, role)
+
+    def _reject_selection(self, row: int) -> None:
+        """Silently reject a selection attempt by deselecting the item."""
+        item = self.snapshot_list.item(row)
+        if item:
+            item.setSelected(False)
+
+    def _assign_role(self) -> str:
+        """Assign a role to a new selection.
+
+        Returns:
+            "from" if no "from" selection exists, otherwise "to".
+        """
+        has_from = any(item.role == "from" for item in self._selected_items.values())
+        return "to" if has_from else "from"
+
+    def _apply_selection_style(self, row: int, role: str) -> None:
+        """Apply visual style for a selected item.
+
+        Args:
+            row: The row number of the selected item.
+            role: The assigned role ("from" or "to").
+        """
+        item = self.snapshot_list.item(row)
+        if item:
+            color = _SnapshotListItemDelegate.FROM_COLOR if role == "from" else _SnapshotListItemDelegate.TO_COLOR
+            item.setBackground(QBrush(color))
+        self._selected_items[row] = _SelectedItem(row=row, role=role)
+
+    def get_selected_snapshot_ids(self) -> list[str]:
+        """Return snapshot IDs in role order: [from_id, to_id].
+
+        Returns:
+            List of snapshot IDs ordered by role (from before to), not row order.
+            Empty list if nothing selected, single-element list if only one selected.
+        """
+        ids: list[str] = []
+        # First add "from" if exists
+        for item in self._selected_items.values():
+            if item.role == "from":
+                widget_item = self.snapshot_list.item(item.row)
+                if widget_item:
+                    ids.append(widget_item.data(Qt.ItemDataRole.UserRole))
+        # Then add "to" if exists
+        for item in self._selected_items.values():
+            if item.role == "to":
+                widget_item = self.snapshot_list.item(item.row)
+                if widget_item:
+                    ids.append(widget_item.data(Qt.ItemDataRole.UserRole))
+        return ids
+
+    def clear_selection(self) -> None:
+        """Clear all selections, reset backgrounds, and clear role tracking."""
+        # Reset all tracked item backgrounds to default
+        for row in self._selected_items:
+            item = self.snapshot_list.item(row)
+            if item:
+                item.setBackground(QBrush(self._get_default_background()))
+
+        # Clear selection and tracking
+        self.snapshot_list.clearSelection()
+        self._selected_items = {}

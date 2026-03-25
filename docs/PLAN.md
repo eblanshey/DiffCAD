@@ -125,15 +125,15 @@ See [UI.md](UI.md) for detailed UI requirements.
 - [x] **Test**: Switch to Diff workbench → see empty 3 columns
 
 #### Phase 9: Populate Snapshots Column ❌ (Not Started)
-- [ ] Wire `ListSnapshotsQuery` to load snapshots on panel show
-- [ ] Display snapshot names + timestamps (newest first)
-- [ ] **Test**: Take snapshot → appears in list
+- [x] Wire `ListSnapshotsQuery` to load snapshots on panel show
+- [x] Display snapshot names + timestamps (newest first)
+- [x] **Test**: Take snapshot → appears in list
 
 #### Phase 10: Snapshot Selection ❌ (Not Started)
-- [ ] Single click: select one snapshot
-- [ ] Ctrl+click: select second snapshot (first = "from", second = "to")
-- [ ] Visual indicator of selection state
-- [ ] **Test**: Can select 1-2 snapshots
+- [x] Single click: select one snapshot
+- [x] Ctrl+click: select second snapshot (first = "from", second = "to")
+- [x] Visual indicator of selection state
+- [x] **Test**: Can select 1-2 snapshots
 
 #### Phase 11: Compare Command → Tree Diff ❌ (Not Started)
 - [ ] "Compare" button triggers `CompareSnapshotsAction`
