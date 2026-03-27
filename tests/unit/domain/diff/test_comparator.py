@@ -1412,8 +1412,8 @@ class TestCompareProperties:
         for prop_diff in result:
             assert prop_diff.state == DiffState.MODIFIED
 
-    def test_only_unchanged_filtered_out(self):
-        """Test that unchanged properties are filtered out."""
+    def test_only_unchanged_included(self):
+        """Test that unchanged properties are included in result."""
         old_props = {
             "Prop1": Property.create(PropertyType.FLOAT, 10.0),
             "Prop2": Property.create(PropertyType.STRING, "same"),
@@ -1423,10 +1423,12 @@ class TestCompareProperties:
             "Prop2": Property.create(PropertyType.STRING, "same"),
         }
         result = compare_properties(old_props, new_props)
-        assert result == []
+        assert len(result) == 2
+        for prop_diff in result:
+            assert prop_diff.state == DiffState.UNCHANGED
 
     def test_mixed_changes(self):
-        """Test combination of added, deleted, and modified properties."""
+        """Test combination of added, deleted, modified and unchanged properties."""
         old_props = {
             "DeletedProp": Property.create(PropertyType.STRING, "gone"),
             "ModifiedProp": Property.create(PropertyType.FLOAT, 10.0),
@@ -1438,12 +1440,13 @@ class TestCompareProperties:
             "UnchangedProp": Property.create(PropertyType.INT, 5),
         }
         result = compare_properties(old_props, new_props)
-        assert len(result) == 3
+        assert len(result) == 4
 
         states = {prop_diff.property_name: prop_diff.state for prop_diff in result}
         assert states["DeletedProp"] == DiffState.DELETED
         assert states["AddedProp"] == DiffState.ADDED
         assert states["ModifiedProp"] == DiffState.MODIFIED
+        assert states["UnchangedProp"] == DiffState.UNCHANGED
 
     def test_excludes_time_stamp(self):
         """Test that TimeStamp property is filtered out."""
@@ -1456,9 +1459,10 @@ class TestCompareProperties:
             "Length": Property.create(PropertyType.FLOAT, 10.0),
         }
         result = compare_properties(old_props, new_props)
-        # Only Length should appear (and it's unchanged, so filtered)
-        assert len(result) == 0
-        assert not any(p.property_name == "TimeStamp" for p in result)
+        # TimeStamp is excluded, Length is unchanged but included
+        assert len(result) == 1
+        assert result[0].property_name == "Length"
+        assert result[0].state == DiffState.UNCHANGED
 
     def test_excludes_label2(self):
         """Test that Label2 property is filtered out."""
@@ -1499,14 +1503,17 @@ class TestCompareProperties:
         }
         result = compare_properties(old_props, new_props)
 
-        assert len(result) == 5  # All except IntProp which is unchanged
+        assert len(result) == 6  # All properties including unchanged IntProp
 
         prop_names = {p.property_name for p in result}
-        assert prop_names == {"BoolProp", "FloatProp", "StringProp", "VectorProp", "PlacementProp"}
+        assert prop_names == {"BoolProp", "IntProp", "FloatProp", "StringProp", "VectorProp", "PlacementProp"}
 
-        # Verify all are MODIFIED
-        for prop_diff in result:
+        # Verify modified are MODIFIED
+        modified_props = [p for p in result if p.property_name != "IntProp"]
+        for prop_diff in modified_props:
             assert prop_diff.state == DiffState.MODIFIED
+        # Verify IntProp is unchanged
+        assert next(p for p in result if p.property_name == "IntProp").state == DiffState.UNCHANGED
 
     def test_float_tolerance_edge_cases(self):
         """Test float tolerance with various edge cases."""
@@ -1518,7 +1525,8 @@ class TestCompareProperties:
             "FloatProp": Property.create(PropertyType.FLOAT, 1.0 + 1e-10),
         }
         result = compare_properties(old_props, new_props)
-        assert len(result) == 0  # Within tolerance, so unchanged
+        assert len(result) == 1  # Within tolerance, so unchanged but included
+        assert result[0].state == DiffState.UNCHANGED
 
         # Difference exceeding tolerance
         new_props_exceed = {

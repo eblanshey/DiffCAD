@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
     QStyledItemDelegate,
     QStyleOptionViewItem,
     QTableWidget,
+    QTableWidgetItem,
     QTreeWidget,
     QTreeWidgetItem,
     QVBoxLayout,
@@ -26,7 +27,7 @@ from PySide6.QtWidgets import (
 )
 
 from ...application.actions.result_models import SnapshotSummary
-from ..presenters.presentation_models import NodePresentation
+from ..presenters.presentation_models import NodePresentation, PropertyPresentation
 from ..translation_strings import (
     DIFF_SUMMARY_ADDED_LABEL,
     DIFF_SUMMARY_DELETED_LABEL,
@@ -122,6 +123,7 @@ class DiffPanelView(QWidget):
     ADDED_COLOR = QColor(200, 255, 200)  # Light green
     DELETED_COLOR = QColor(255, 200, 200)  # Light red
     MODIFIED_COLOR = QColor(200, 200, 255)  # Light blue
+    UNCHANGED_COLOR = QColor(240, 240, 240)  # Light gray (neutral)
 
     def __init__(self, parent=None):
         QWidget.__init__(self, parent)
@@ -368,6 +370,53 @@ class DiffPanelView(QWidget):
             self._added_label.setText(f"{added_text} {added}")
             self._deleted_label.setText(f"{deleted_text} {deleted}")
             self._modified_label.setText(f"{modified_text} {modified}")
+
+    def show_properties(self, properties: list[PropertyPresentation]) -> None:
+        """Display property diffs in the properties table.
+
+        Args:
+            properties: List of PropertyPresentation objects to display.
+                       Each row shows: Property Name | Value
+                       Color coding: green=added, red=deleted, blue=modified, gray=unchanged
+        """
+        # Clear existing rows
+        self.properties_table.setRowCount(0)
+
+        # Include all properties (including unchanged)
+        all_properties = properties
+
+        # Set row count to number of properties
+        self.properties_table.setRowCount(len(all_properties))
+
+        # Populate rows
+        for row, prop in enumerate(all_properties):
+            # Property name column (column 0)
+            name_item = QTableWidgetItem(prop.name)
+
+            # Determine color based on state
+            if prop.state == "ADDED":
+                bg_color = self.ADDED_COLOR
+                value_text = f"+ {prop.new_display}"
+            elif prop.state == "DELETED":
+                bg_color = self.DELETED_COLOR
+                value_text = f"- {prop.old_display}"
+            elif prop.state == "MODIFIED":
+                bg_color = self.MODIFIED_COLOR
+                value_text = f"{prop.old_display} → {prop.new_display}"
+            else:  # UNCHANGED
+                bg_color = self.UNCHANGED_COLOR
+                value_text = prop.new_display  # Just the value, no arrows
+
+            # Value column (column 1)
+            value_item = QTableWidgetItem(value_text)
+
+            # Apply background color to both cells
+            name_item.setBackground(QBrush(bg_color))
+            value_item.setBackground(QBrush(bg_color))
+
+            # Add items to table
+            self.properties_table.setItem(row, 0, name_item)
+            self.properties_table.setItem(row, 1, value_item)
 
     # Selection management methods
     def _get_default_background(self) -> QColor:

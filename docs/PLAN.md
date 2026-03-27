@@ -136,12 +136,12 @@ See [UI.md](UI.md) for detailed UI requirements.
 - [x] **Test**: Can select 1-2 snapshots
 
 #### Phase 11: Compare Command → Tree Diff ❌ (Not Started)
-- [ ] "Compare" button triggers `CompareSnapshotsAction`
-- [ ] Display diff tree in Tree column (changed nodes only)
-- [ ] Color coding: green=added, red=removed, blue=modified
-- [ ] Preserve node indentation from FreeCAD feature tree
-- [ ] Expand/collapse children with +/- icons
-- [ ] **Test**: Select 2 snapshots → Compare → see tree diff
+- [x] "Compare" button triggers `CompareSnapshotsAction`
+- [x] Display diff tree in Tree column (changed nodes only)
+- [x] Color coding: green=added, red=removed, blue=modified
+- [x] Preserve node indentation from FreeCAD feature tree
+- [x] Expand/collapse children with +/- icons
+- [x] **Test**: Select 2 snapshots → Compare → see tree diff
 
 #### Phase 12: Node Selection → Properties Diff ❌ (Not Started)
 - [ ] Click node in Tree → show property diff in Properties column

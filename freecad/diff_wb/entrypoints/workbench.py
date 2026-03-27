@@ -137,6 +137,11 @@ if Gui is not None:
 
                 _container.diff_presenter = DiffPresenter(view=panel)
 
+                # Connect tree selection to diff presenter
+                panel.tree_widget.itemClicked.connect(
+                    lambda item, col: _container.diff_presenter.on_node_selected(item.data(0, Qt.ItemDataRole.UserRole))
+                )
+
                 # Add as subwindow (QMdiSubWindow created automatically)
                 # Do NOT call setParent - let FreeCAD handle it
                 self._subwindow = mdi_area.addSubWindow(panel)

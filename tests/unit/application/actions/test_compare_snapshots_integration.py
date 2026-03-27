@@ -737,11 +737,11 @@ class TestCompareSnapshotsAction:
         assert len(result.diff_result.node_diffs) == 1
         node_diff = result.diff_result.node_diffs[0]
         assert node_diff.state == DiffState.MODIFIED
-        # Verify property changes - only changed properties are included (Label and Length), Width is excluded as unchanged
+        # Verify property changes - all properties are included (changed and unchanged)
         changed_props = [p for p in node_diff.property_diffs if p.state != DiffState.UNCHANGED]
         assert len(changed_props) == 2
-        # Total property diffs should be 2 (unchanged properties are filtered out)
-        assert len(node_diff.property_diffs) == 2
+        # Total property diffs should be 3 (all properties included, including unchanged)
+        assert len(node_diff.property_diffs) == 3
         # Find specific property changes
         label_props = [p for p in node_diff.property_diffs if p.property_name == "Label"]
         assert len(label_props) == 1
@@ -757,6 +757,7 @@ class TestCompareSnapshotsAction:
         assert length_props[0].old_value.value == 10.0
         assert length_props[0].new_value is not None
         assert length_props[0].new_value.value == 20.0
-        # Width should NOT be in the diff since it's unchanged
+        # Width should be in the diff as unchanged
         width_props = [p for p in node_diff.property_diffs if p.property_name == "Width"]
-        assert len(width_props) == 0
+        assert len(width_props) == 1
+        assert width_props[0].state == DiffState.UNCHANGED

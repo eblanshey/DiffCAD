@@ -154,8 +154,11 @@ class TreeComparator:
             old_node.properties, new_node.properties, excluded_properties
         )
 
+        # Check if there are any actual changes (excluding unchanged)
+        has_changes = any(diff.state != DiffState.UNCHANGED for diff in property_diffs)
+
         # If no property differences (all excluded or identical), return None
-        if not property_diffs:
+        if not has_changes:
             return None
 
         # Return NodeDiff with populated property diffs
@@ -541,7 +544,7 @@ class PropertyComparator:
             excluded_properties: List of property names to exclude from comparison
 
         Returns:
-            List of PropertyDiff objects for non-excluded properties that have differences
+            List of PropertyDiff objects for all non-excluded properties (including unchanged)
         """
         property_diffs: list[PropertyDiff] = []
 
@@ -563,9 +566,8 @@ class PropertyComparator:
                 new_value=new_value,
             )
 
-            # Only include if there's an actual difference
-            if prop_diff.state != DiffState.UNCHANGED:
-                property_diffs.append(prop_diff)
+            # Always include the property diff
+            property_diffs.append(prop_diff)
 
         return property_diffs
 

@@ -48,7 +48,9 @@ Delegate to **implementer** with these REQUIRED inputs:
 - Checklist items to complete in this phase
 - Any relevant context from task file
 
-Wait for implementer to confirm completion (implementer runs tests automatically).
+Wait for implementer to confirm completion (implementer runs tests automatically). **DO NOT FORGET TO GIVE THE IMPLEMENTER THE PATH TO THE TASK FILE, AND TELL HIM TO READ IT!**
+
+Note that the implementer automatically runs and fixes automated tests.
 
 ### STEP 2: Code Review (MANDATORY AFTER EVERY PHASE)
 **CRITICAL: You MUST run reviewer after every single phase. DO NOT skip this step.**
@@ -57,6 +59,7 @@ After implementer confirms (tests already run by implementer), delegate to **rev
 - Task file path
 - Description of what was implemented
 - Request review against task requirements and architecture
+- Do NOT tell reviewer to run tests or linting, as they don't have the ability
 
 **Decision point based on reviewer output:**
 - If reviewer says "Approved" → Continue to STEP 3

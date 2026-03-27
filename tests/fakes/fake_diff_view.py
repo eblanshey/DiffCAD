@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from freecad.diff_wb.ui.presenters.presentation_models import NodePresentation
+from freecad.diff_wb.ui.presenters.presentation_models import NodePresentation, PropertyPresentation
 
 
 class FakeDiffView:
@@ -30,6 +30,10 @@ class FakeDiffView:
     def show_error(self, message: str) -> None:
         """Capture error call instead of showing UI."""
         self._record_call("show_error", message=message)
+
+    def show_properties(self, properties: list[PropertyPresentation]) -> None:
+        """Capture properties call instead of showing UI."""
+        self._record_call("show_properties", properties=properties)
 
     def _record_call(self, method: str, **kwargs: Any) -> dict[str, Any]:
         """Record a method call for later verification."""

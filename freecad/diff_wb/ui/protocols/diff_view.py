@@ -21,7 +21,7 @@ Translation Strategy for Summary:
 
 from typing import Protocol
 
-from ..presenters.presentation_models import NodePresentation
+from ..presenters.presentation_models import NodePresentation, PropertyPresentation
 
 
 __all__ = ["DiffView"]
@@ -67,4 +67,14 @@ class DiffView(Protocol):
 
         Args:
             error_message: The error message to display.
+        """
+
+    def show_properties(self, properties: list[PropertyPresentation]) -> None:
+        """Display property diffs in the properties column.
+
+        Args:
+            properties: List of PropertyPresentation objects to display.
+                       Each row shows: Property Name | Old Value → New Value
+                       Color coding: green=added, red=deleted, blue=modified
+                       Expression changes appear as separate rows after their value row.
         """
