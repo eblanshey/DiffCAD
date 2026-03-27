@@ -5,9 +5,16 @@ This module defines the FreeCAD commands that bridge user interactions
 (toolbar/menu clicks) with application layer actions and UI presenters.
 """
 
+from __future__ import annotations
+
 import os
+from typing import TYPE_CHECKING
 
 from ..resources import ICONPATH
+
+
+if TYPE_CHECKING:
+    from ..ui.views.diff_panel_view import DiffPanelView
 
 
 class _TakeSnapshotCommand:
@@ -51,39 +58,61 @@ class _CompareCommand:
 
     def Activated(self) -> None:
         """FreeCAD calls this when user clicks toolbar button."""
+        from PySide6.QtWidgets import QMessageBox  # pylint: disable=import-error
+
         from .._container import get_container
 
         container = get_container()
-        # Phase 8: Get snapshot IDs from UI selection
-        # TODO: Phase 8 - Implement UI dialog for snapshot selection
-        old_id = self._get_selected_old_snapshot()
-        new_id = self._get_selected_new_snapshot()
+
+        # Get the diff panel view from FreeCADGui
+        # The view is accessed via the workbench's main window
+        view = self._get_view()
+        if view is None:
+            QMessageBox.critical(None, "Error", "Diff panel view not found.")
+            return
+
+        # Get selected snapshot IDs from the view
+        selected_ids = view.get_selected_snapshot_ids()
+
+        # Validate: require at least 2 snapshots (use first 2 if more selected)
+        # Selection order: first selected = old/from, second selected = new/to
+        if len(selected_ids) < 2:
+            QMessageBox.warning(
+                None,
+                "Selection Required",
+                "Please select at least 2 snapshots to compare.",
+            )
+            return
+
+        # Use only the first 2 if more than 2 are selected
+        old_id = selected_ids[0]
+        new_id = selected_ids[1]
 
         result = container.compare_snapshots_action.execute(old_id, new_id)
         if result.success and container.diff_presenter and result.diff_result is not None:
             container.diff_presenter.present_diff(result.diff_result)
 
-    def _get_selected_old_snapshot(self) -> str:
-        """Get the selected old snapshot ID from UI.
+    def _get_view(self) -> DiffPanelView | None:
+        """Get the DiffPanelView from FreeCADGui.
 
         Returns:
-            The ID of the snapshot selected as the "old" snapshot.
-
-        Raises:
-            NotImplementedError: Phase 8 - UI selection not yet implemented.
+            The DiffPanelView instance if found, None otherwise.
         """
-        raise NotImplementedError("Phase 8 - UI selection not yet implemented")
+        import FreeCADGui as Gui  # pylint: disable=import-error
 
-    def _get_selected_new_snapshot(self) -> str:
-        """Get the selected new snapshot ID from UI.
+        from ..ui.views.diff_panel_view import DiffPanelView
 
-        Returns:
-            The ID of the snapshot selected as the "new" snapshot.
+        # Get the diff panel view from FreeCADGui
+        # The view is accessed via the workbench's main window
+        mw = Gui.getMainWindow()
+        if mw is None:
+            return None
 
-        Raises:
-            NotImplementedError: Phase 8 - UI selection not yet implemented.
-        """
-        raise NotImplementedError("Phase 8 - UI selection not yet implemented")
+        # Find the DiffPanelView widget (assumed to be in the main window)
+        for widget in mw.findChildren(DiffPanelView):
+            return widget
+
+        return None
 
 
 class _SwapColumnsCommand:

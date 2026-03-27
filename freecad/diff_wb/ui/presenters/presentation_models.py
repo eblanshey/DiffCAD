@@ -1,6 +1,6 @@
 """File responsibility: UI-friendly presentation models for diff display."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 __all__ = ["NodePresentation", "PropertyPresentation", "SnapshotPresentation"]
@@ -14,6 +14,7 @@ class NodePresentation:
     type_id: str
     state: str  # "ADDED", "DELETED", "MODIFIED", "UNCHANGED"
     has_changes: bool
+    children: list["NodePresentation"] = field(default_factory=list)
 
 
 @dataclass(frozen=True)

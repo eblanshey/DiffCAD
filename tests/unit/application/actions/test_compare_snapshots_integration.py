@@ -645,17 +645,21 @@ class TestCompareSnapshotsAction:
         assert result.success is True
         assert result.diff_result is not None
         # The diff should detect changes in child nodes
-        # Note: Body itself has no property changes, so it's not included in node_diffs
-        # Instead, its children appear as root-level diffs
-        assert len(result.diff_result.node_diffs) == 3
-        # Check that child changes are detected at the root level
-        pad_diffs = [n for n in result.diff_result.node_diffs if n.path == "/Body/Pad"]
+        # Body is now included as a placeholder parent to preserve hierarchy
+        assert len(result.diff_result.node_diffs) == 1
+        # Body should be the root with children nested under it
+        body_diff = result.diff_result.node_diffs[0]
+        assert body_diff.path == "Body"
+        assert body_diff.state == DiffState.UNCHANGED
+        assert len(body_diff.children) == 3
+        # Check that child changes are properly nested under Body
+        pad_diffs = [n for n in body_diff.children if n.path == "Body/Pad"]
         assert len(pad_diffs) == 1
         assert pad_diffs[0].state == DiffState.MODIFIED
-        pocket_diffs = [n for n in result.diff_result.node_diffs if n.path == "/Body/Pocket"]
+        pocket_diffs = [n for n in body_diff.children if n.path == "Body/Pocket"]
         assert len(pocket_diffs) == 1
         assert pocket_diffs[0].state == DiffState.DELETED
-        fillet_diffs = [n for n in result.diff_result.node_diffs if n.path == "/Body/Fillet"]
+        fillet_diffs = [n for n in body_diff.children if n.path == "Body/Fillet"]
         assert len(fillet_diffs) == 1
         assert fillet_diffs[0].state == DiffState.ADDED
         # Verify summary counts

@@ -5,11 +5,12 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QCoreApplication, Qt
 from PySide6.QtGui import QBrush, QColor, QPainter, QPalette
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QApplication,
+    QHBoxLayout,
     QHeaderView,
     QLabel,
     QListWidget,
@@ -19,12 +20,18 @@ from PySide6.QtWidgets import (
     QStyleOptionViewItem,
     QTableWidget,
     QTreeWidget,
+    QTreeWidgetItem,
     QVBoxLayout,
     QWidget,
 )
 
 from ...application.actions.result_models import SnapshotSummary
 from ..presenters.presentation_models import NodePresentation
+from ..translation_strings import (
+    DIFF_SUMMARY_ADDED_LABEL,
+    DIFF_SUMMARY_DELETED_LABEL,
+    DIFF_SUMMARY_MODIFIED_LABEL,
+)
 
 
 @dataclass
@@ -111,6 +118,11 @@ class DiffPanelView(QWidget):
     metaclass conflicts between QWidget and Protocol classes.
     """
 
+    # Color palette for diff tree states
+    ADDED_COLOR = QColor(200, 255, 200)  # Light green
+    DELETED_COLOR = QColor(255, 200, 200)  # Light red
+    MODIFIED_COLOR = QColor(200, 200, 255)  # Light blue
+
     def __init__(self, parent=None):
         QWidget.__init__(self, parent)
         self._selected_items: dict[int, _SelectedItem] = {}  # row -> _SelectedItem
@@ -142,12 +154,37 @@ class DiffPanelView(QWidget):
         snapshot_container = QWidget()
         snapshot_container.setLayout(snapshot_layout)
 
-        # Column 2: Tree view (hidden initially)
+        # Summary labels container (above tree widget)
+        summary_container = QWidget()
+        summary_layout = QHBoxLayout(summary_container)
+        summary_layout.setContentsMargins(0, 0, 0, 0)
+        summary_layout.setSpacing(16)
+
+        self._added_label = QLabel("")
+        self._added_label.setStyleSheet("font-weight: bold;")
+        self._deleted_label = QLabel("")
+        self._deleted_label.setStyleSheet("font-weight: bold;")
+        self._modified_label = QLabel("")
+        self._modified_label.setStyleSheet("font-weight: bold;")
+
+        summary_layout.addWidget(self._added_label)
+        summary_layout.addWidget(self._deleted_label)
+        summary_layout.addWidget(self._modified_label)
+
         self.tree_widget = QTreeWidget()
         self.tree_widget.setHeaderLabels(["Tree"])
         self.tree_widget.setColumnCount(1)
         self.tree_widget.header().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
-        # self.tree_widget.hide()  # Hide until data available
+        # Note: Not calling hide() because QTreeWidget shows an empty column by default,
+        # which provides visual structure. The show_diff_tree() method will populate
+        # it with data and ensure visibility when needed.
+
+        # Column 2: Tree view container (with summary labels above it)
+        tree_container = QWidget()
+        tree_layout = QVBoxLayout(tree_container)
+        tree_layout.setContentsMargins(0, 0, 0, 0)
+        tree_layout.addWidget(summary_container)
+        tree_layout.addWidget(self.tree_widget)
 
         # Column 3: Properties table (hidden initially)
         self.properties_table = QTableWidget()
@@ -158,7 +195,7 @@ class DiffPanelView(QWidget):
 
         # Add to splitter
         splitter.addWidget(snapshot_container)
-        splitter.addWidget(self.tree_widget)
+        splitter.addWidget(tree_container)
         splitter.addWidget(self.properties_table)
 
         # Set initial sizes (equal thirds)
@@ -251,12 +288,86 @@ class DiffPanelView(QWidget):
 
     # DiffView protocol methods
     def show_diff_tree(self, nodes: list[NodePresentation]) -> None:
-        """Display the diff tree."""
-        pass
+        """Display the diff tree with color-coded nodes.
+
+        Args:
+            nodes: List of root-level NodePresentation objects with nested children.
+        """
+        # Clear existing tree items
+        self.tree_widget.clear()
+
+        # Guard: no nodes to display
+        if not nodes:
+            return
+
+        # Recursively build tree from root nodes
+        for node in nodes:
+            item = self._create_tree_item(node)
+            self.tree_widget.addTopLevelItem(item)
+
+        # Expand all nodes by default for immediate visibility
+        self.tree_widget.expandAll()
+
+        # Ensure tree widget is visible (in case it was hidden)
+        self.tree_widget.show()
+
+    def _create_tree_item(self, node: NodePresentation) -> QTreeWidgetItem:
+        """Recursively create a QTreeWidgetItem from NodePresentation.
+
+        Args:
+            node: The NodePresentation to convert.
+
+        Returns:
+            QTreeWidgetItem with text, color, and children populated.
+        """
+        # Extract display name: last path segment (e.g., "Pad" from "Body/Pad")
+        display_name = node.path.split("/")[-1] if node.path else node.type_id
+        text = f"{display_name} ({node.type_id})"
+
+        # Create tree item with display text
+        item = QTreeWidgetItem([text])
+
+        # Store path in UserRole for later property lookup
+        item.setData(0, Qt.ItemDataRole.UserRole, node.path)
+
+        # Apply color based on state (only for changed nodes)
+        if node.state == "ADDED":
+            item.setBackground(0, QBrush(self.ADDED_COLOR))
+        elif node.state == "DELETED":
+            item.setBackground(0, QBrush(self.DELETED_COLOR))
+        elif node.state == "MODIFIED":
+            item.setBackground(0, QBrush(self.MODIFIED_COLOR))
+        # UNCHANGED: no color (use default background)
+
+        # Recursively add children using explicit children field
+        for child in node.children:
+            child_item = self._create_tree_item(child)
+            item.addChild(child_item)
+
+        return item
 
     def show_summary(self, added: int, deleted: int, modified: int) -> None:
-        """Display the diff summary counts."""
-        pass
+        """Display the diff summary counts.
+
+        Args:
+            added: Number of added nodes.
+            deleted: Number of deleted nodes.
+            modified: Number of modified nodes.
+        """
+        # Translate labels
+        added_text = QCoreApplication.translate("DiffView", DIFF_SUMMARY_ADDED_LABEL)
+        deleted_text = QCoreApplication.translate("DiffView", DIFF_SUMMARY_DELETED_LABEL)
+        modified_text = QCoreApplication.translate("DiffView", DIFF_SUMMARY_MODIFIED_LABEL)
+
+        # Set text with counts
+        if added == 0 and deleted == 0 and modified == 0:
+            self._added_label.setText("No changes")
+            self._deleted_label.setText("")
+            self._modified_label.setText("")
+        else:
+            self._added_label.setText(f"{added_text} {added}")
+            self._deleted_label.setText(f"{deleted_text} {deleted}")
+            self._modified_label.setText(f"{modified_text} {modified}")
 
     # Selection management methods
     def _get_default_background(self) -> QColor:

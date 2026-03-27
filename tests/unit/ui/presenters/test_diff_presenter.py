@@ -150,3 +150,154 @@ class TestDiffPresenter:
         assert summary_call["added"] == 1
         assert summary_call["deleted"] == 1
         assert summary_call["modified"] == 1
+
+
+class TestDiffPresenterFormatsChildren:
+    """Tests for _format_node() populating children recursively."""
+
+    def test_format_node_populates_children_recursive(self) -> None:
+        """Test _format_node() populates children recursively from NodeDiff.children."""
+        # Arrange
+        fake_view = FakeDiffView()
+        presenter = DiffPresenter(fake_view)
+
+        # Create a nested tree structure using factory functions
+        grandchild = NodeDiff(
+            path="/Part/Body/Pad",
+            type_id="PartDesign::Pad",
+            _force_state=DiffState.UNCHANGED,
+        )
+        child = NodeDiff(
+            path="/Part/Body",
+            type_id="PartDesign::Body",
+            children=[grandchild],
+            _force_state=DiffState.MODIFIED,
+        )
+        parent = NodeDiff(
+            path="/Part",
+            type_id="Part::Feature",
+            children=[child],
+            _force_state=DiffState.UNCHANGED,
+        )
+        diff_result = DiffResult(
+            old_snapshot_name="v1",
+            new_snapshot_name="v2",
+            node_diffs=[parent],
+        )
+
+        # Act
+        presenter.present_diff(diff_result)
+
+        # Assert
+        calls = fake_view.get_calls()
+        presentations = calls[0]["nodes"]
+        assert len(presentations) == 1
+
+        # Check parent presentation
+        parent_pres = presentations[0]
+        assert parent_pres.path == "/Part"
+        assert len(parent_pres.children) == 1
+
+        # Check child presentation (recursive)
+        child_pres = parent_pres.children[0]
+        assert child_pres.path == "/Part/Body"
+        assert len(child_pres.children) == 1
+
+        # Check grandchild presentation (deeply nested)
+        grandchild_pres = child_pres.children[0]
+        assert grandchild_pres.path == "/Part/Body/Pad"
+        assert len(grandchild_pres.children) == 0
+
+    def test_complete_tree_structure_preserved_through_transformation(self) -> None:
+        """Test complete tree structure is preserved through transformation."""
+        # Arrange
+        fake_view = FakeDiffView()
+        presenter = DiffPresenter(fake_view)
+
+        # Create a complex multi-level tree with multiple branches
+        leaf1 = NodeDiff(path="/Part/Body/Pad", type_id="PartDesign::Pad", _force_state=DiffState.ADDED)
+        leaf2 = NodeDiff(path="/Part/Body/Pocket", type_id="PartDesign::Pocket", _force_state=DiffState.DELETED)
+        body = NodeDiff(
+            path="/Part/Body",
+            type_id="PartDesign::Body",
+            children=[leaf1, leaf2],
+            _force_state=DiffState.MODIFIED,
+        )
+        leaf3 = NodeDiff(path="/Part/Sketch", type_id="Sketcher::SketchObject", _force_state=DiffState.UNCHANGED)
+        part = NodeDiff(
+            path="/Part",
+            type_id="Part::Feature",
+            children=[body, leaf3],
+            _force_state=DiffState.MODIFIED,
+        )
+
+        diff_result = DiffResult(
+            old_snapshot_name="old",
+            new_snapshot_name="new",
+            node_diffs=[part],
+        )
+
+        # Act
+        presenter.present_diff(diff_result)
+
+        # Assert
+        calls = fake_view.get_calls()
+        presentations = calls[0]["nodes"]
+
+        # Root level
+        assert len(presentations) == 1
+        root = presentations[0]
+        assert root.path == "/Part"
+        assert root.state == "MODIFIED"
+        assert len(root.children) == 2
+
+        # First branch - Body with two leaves
+        body_pres = root.children[0]
+        assert body_pres.path == "/Part/Body"
+        assert body_pres.state == "MODIFIED"
+        assert len(body_pres.children) == 2
+
+        # Body's children
+        pad_pres = body_pres.children[0]
+        assert pad_pres.path == "/Part/Body/Pad"
+        assert pad_pres.state == "ADDED"
+        assert pad_pres.has_changes is True
+
+        pocket_pres = body_pres.children[1]
+        assert pocket_pres.path == "/Part/Body/Pocket"
+        assert pocket_pres.state == "DELETED"
+        assert pocket_pres.has_changes is True
+
+        # Second branch - Sketch (unchanged leaf)
+        sketch_pres = root.children[1]
+        assert sketch_pres.path == "/Part/Sketch"
+        assert sketch_pres.state == "UNCHANGED"
+        assert sketch_pres.has_changes is False
+        assert len(sketch_pres.children) == 0
+
+    def test_format_node_handles_empty_children(self) -> None:
+        """Test _format_node() handles nodes with no children."""
+        # Arrange
+        fake_view = FakeDiffView()
+        presenter = DiffPresenter(fake_view)
+
+        leaf_node = NodeDiff(
+            path="/Part/Leaf",
+            type_id="Part::Feature",
+            _force_state=DiffState.ADDED,
+        )
+        diff_result = DiffResult(
+            old_snapshot_name="old",
+            new_snapshot_name="new",
+            node_diffs=[leaf_node],
+        )
+
+        # Act
+        presenter.present_diff(diff_result)
+
+        # Assert
+        calls = fake_view.get_calls()
+        presentations = calls[0]["nodes"]
+        assert len(presentations) == 1
+        assert presentations[0].path == "/Part/Leaf"
+        assert presentations[0].children == []

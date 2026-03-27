@@ -216,16 +216,28 @@ class TreeComparator:
             _force_state=DiffState.DELETED,
         )
 
-    def _reconstruct_hierarchy(self, node_diffs: list[NodeDiff]) -> list[NodeDiff]:
+    def _reconstruct_hierarchy(
+        self,
+        node_diffs: list[NodeDiff],
+        old_index: dict[str, TreeNode] | None = None,
+        new_index: dict[str, TreeNode] | None = None,
+    ) -> list[NodeDiff]:
         """Reconstruct hierarchical structure from a flat list of NodeDiff objects.
 
         Takes a list of NodeDiff objects (which may be at various depths) and
         organizes them into a proper tree structure based on path hierarchy.
         The result is sorted so that parents appear before their children,
-        and siblings are sorted alphabetically by path.
+        and siblings are sorted alphabetically.
+
+        If a parent node is missing from the diff list but is needed to maintain
+        hierarchy (e.g., a child has changes but the parent doesn't), placeholder
+        parent nodes with UNCHANGED state are inserted using type information from
+        the provided indices.
 
         Args:
             node_diffs: Flat list of NodeDiff objects
+            old_index: Optional path index for the old snapshot (for placeholder types)
+            new_index: Optional path index for the new snapshot (for placeholder types)
 
         Returns:
             Hierarchical list of NodeDiff objects with children properly nested
@@ -266,7 +278,104 @@ class TreeComparator:
             if diff.path not in has_parent:
                 root_diffs.append(diff)
 
+        # Third pass: Insert placeholder parent nodes for missing ancestors
+        # This ensures children are properly nested under their parents even when
+        # the parents themselves have no changes
+        root_diffs = self._insert_missing_ancestors(root_diffs, diff_by_path, old_index or {}, new_index or {})
+
         return root_diffs
+
+    def _insert_missing_ancestors(
+        self,
+        root_diffs: list[NodeDiff],
+        existing_diffs: dict[str, NodeDiff],
+        old_index: dict[str, TreeNode],
+        new_index: dict[str, TreeNode],
+    ) -> list[NodeDiff]:
+        """Insert placeholder parent nodes for missing ancestors.
+
+        When a node has changes but its parent doesn't (and thus isn't in the diff
+        list), this method creates placeholder parent nodes with UNCHANGED state
+        to preserve the hierarchy. The type_id for placeholders is retrieved from
+        the old/new indices.
+
+        Args:
+            root_diffs: Current list of root NodeDiff objects
+            existing_diffs: Dictionary of all existing NodeDiff by path
+            old_index: Path index for the old snapshot
+            new_index: Path index for the new snapshot
+
+        Returns:
+            Updated list of root NodeDiff objects with placeholder ancestors inserted
+        """
+        # Collect all paths that need to be represented (from current root_diffs)
+        all_paths: set[str] = set()
+
+        def collect_paths(nodes: list[NodeDiff]) -> None:
+            for node in nodes:
+                all_paths.add(node.path)
+                collect_paths(node.children)
+
+        collect_paths(root_diffs)
+
+        # For each path, check if all ancestors exist; if not, create placeholders
+        def ensure_ancestor_path(path: str) -> None:
+            """Ensure all ancestors of a path exist by creating placeholders."""
+            path_parts = [p for p in path.split("/") if p]  # Filter out empty segments
+            if len(path_parts) <= 1:
+                return
+
+            # Check each ancestor from root down to direct parent
+            for i in range(1, len(path_parts)):
+                ancestor_path = "/".join(path_parts[:i])
+                if ancestor_path not in all_paths and ancestor_path not in existing_diffs:
+                    # Need to create a placeholder for this ancestor
+                    # Get type_id from old or new index
+                    old_node = old_index.get(ancestor_path)
+                    new_node = new_index.get(ancestor_path)
+                    type_id = old_node.type_id if old_node else (new_node.type_id if new_node else "Unknown")
+
+                    placeholder = NodeDiff(
+                        path=ancestor_path,
+                        type_id=type_id,
+                        property_diffs=[],
+                        children=[],
+                        _force_state=DiffState.UNCHANGED,
+                    )
+                    existing_diffs[ancestor_path] = placeholder
+                    all_paths.add(ancestor_path)
+
+        # Process all paths to ensure ancestors exist
+        paths_to_process = list(all_paths)
+        for path in paths_to_process:
+            ensure_ancestor_path(path)
+
+        # Rebuild the hierarchy with placeholders included
+        # Re-sort to include new placeholders
+        all_diffs = list(existing_diffs.values())
+        sorted_diffs = sorted(all_diffs, key=lambda d: d.path.split("/"))
+
+        # Clear children and rebuild relationships
+        for diff in sorted_diffs:
+            object.__setattr__(diff, "children", [])
+
+        has_parent: set[str] = set()
+        for diff in sorted_diffs:
+            path_parts = diff.path.split("/")
+            if len(path_parts) > 1:
+                parent_path = "/".join(path_parts[:-1])
+                if parent_path in existing_diffs:
+                    parent_diff = existing_diffs[parent_path]
+                    object.__setattr__(parent_diff, "children", parent_diff.children + [diff])
+                    has_parent.add(diff.path)
+
+        # Collect final root nodes
+        final_roots: list[NodeDiff] = []
+        for diff in sorted_diffs:
+            if diff.path not in has_parent:
+                final_roots.append(diff)
+
+        return final_roots
 
     def compare_snapshots(
         self,
@@ -316,8 +425,8 @@ class TreeComparator:
             if node_diff is not None:
                 all_node_diffs.append(node_diff)
 
-        # Reconstruct hierarchy
-        hierarchical_diffs = self._reconstruct_hierarchy(all_node_diffs)
+        # Reconstruct hierarchy (pass indices for placeholder type resolution)
+        hierarchical_diffs = self._reconstruct_hierarchy(all_node_diffs, old_index, new_index)
 
         return TreeDiffResult(
             added_paths=added_paths,

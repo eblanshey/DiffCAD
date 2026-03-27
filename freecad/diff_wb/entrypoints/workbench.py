@@ -131,6 +131,12 @@ if Gui is not None:
                     list_snapshots_action=_container.list_snapshots_action,
                 )
 
+                # Update container's diff_presenter to use the real DiffPanelView
+                # This fixes the bug where compare command couldn't display diff results
+                from ..ui.presenters.diff_presenter import DiffPresenter
+
+                _container.diff_presenter = DiffPresenter(view=panel)
+
                 # Add as subwindow (QMdiSubWindow created automatically)
                 # Do NOT call setParent - let FreeCAD handle it
                 self._subwindow = mdi_area.addSubWindow(panel)

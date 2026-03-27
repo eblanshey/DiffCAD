@@ -425,3 +425,53 @@ class TestSnapshotSelection:
         # Then: All selections and roles cleared
         assert len(panel._selected_items) == 0
         assert panel.snapshot_list.selectedItems() == []
+
+
+class TestDiffPanelViewShowSummary:
+    """Tests for DiffPanelView.show_summary() method."""
+
+    def test_show_summary_displays_counts(self, panel) -> None:  # type: ignore[no-untyped-def]
+        """show_summary() displays translated labels with counts."""
+        # When: Call show_summary with non-zero counts
+        panel.show_summary(added=3, deleted=2, modified=5)
+
+        # Then: Each label shows its translated text with count
+        assert panel._added_label.text() == "Added: 3"
+        assert panel._deleted_label.text() == "Deleted: 2"
+        assert panel._modified_label.text() == "Modified: 5"
+
+    def test_show_summary_with_zero_counts_shows_no_changes(self, panel) -> None:  # type: ignore[no-untyped-def]
+        """show_summary() displays 'No changes' when all counts are zero."""
+        # When: Call show_summary with all zeros
+        panel.show_summary(added=0, deleted=0, modified=0)
+
+        # Then: Added label shows "No changes", others empty
+        assert panel._added_label.text() == "No changes"
+        assert panel._deleted_label.text() == ""
+        assert panel._modified_label.text() == ""
+
+    def test_show_summary_with_partial_zeros(self, panel) -> None:  # type: ignore[no-untyped-def]
+        """show_summary() displays counts even when some are zero."""
+        # When: Call show_summary with some zero counts
+        panel.show_summary(added=0, deleted=3, modified=0)
+
+        # Then: Each label shows its count (including zeros)
+        assert panel._added_label.text() == "Added: 0"
+        assert panel._deleted_label.text() == "Deleted: 3"
+        assert panel._modified_label.text() == "Modified: 0"
+
+    def test_show_summary_overwrites_previous_text(self, panel) -> None:  # type: ignore[no-untyped-def]
+        """show_summary() overwrites previous summary text."""
+        # Given: Previous summary displayed
+        panel.show_summary(added=1, deleted=1, modified=1)
+        assert panel._added_label.text() == "Added: 1"
+        assert panel._deleted_label.text() == "Deleted: 1"
+        assert panel._modified_label.text() == "Modified: 1"
+
+        # When: Call show_summary with new counts
+        panel.show_summary(added=5, deleted=0, modified=2)
+
+        # Then: New summary replaces old one
+        assert panel._added_label.text() == "Added: 5"
+        assert panel._deleted_label.text() == "Deleted: 0"
+        assert panel._modified_label.text() == "Modified: 2"

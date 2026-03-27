@@ -45,6 +45,69 @@ class TestNodePresentation:
         assert node.state == "ADDED"
         assert node.has_changes is False
 
+    def test_node_presentation_accepts_children_list_parameter(self) -> None:
+        """Verify NodePresentation accepts children list parameter."""
+        # Arrange & Act
+        child1 = NodePresentation(
+            path="/Part/Body/Pad",
+            type_id="PartDesign::Pad",
+            state="UNCHANGED",
+            has_changes=False,
+        )
+        child2 = NodePresentation(
+            path="/Part/Body/Pocket",
+            type_id="PartDesign::Pocket",
+            state="MODIFIED",
+            has_changes=True,
+        )
+        parent = NodePresentation(
+            path="/Part/Body",
+            type_id="PartDesign::Body",
+            state="MODIFIED",
+            has_changes=True,
+            children=[child1, child2],
+        )
+
+        # Assert
+        assert len(parent.children) == 2
+        assert parent.children[0] == child1
+        assert parent.children[1] == child2
+        assert parent.children[0].path == "/Part/Body/Pad"
+        assert parent.children[1].path == "/Part/Body/Pocket"
+
+    def test_node_presentation_children_default_empty_list(self) -> None:
+        """Verify children defaults to empty list when not provided."""
+        # Arrange & Act
+        node = NodePresentation(
+            path="/Part",
+            type_id="Part::Feature",
+            state="UNCHANGED",
+            has_changes=False,
+        )
+
+        # Assert
+        assert node.children == []
+        assert isinstance(node.children, list)
+
+    def test_node_presentation_children_are_independent_instances(self) -> None:
+        """Verify each instance gets its own children list (not shared)."""
+        # Arrange & Act
+        node1 = NodePresentation(
+            path="/Part1",
+            type_id="Part::Feature",
+            state="UNCHANGED",
+            has_changes=False,
+        )
+        node2 = NodePresentation(
+            path="/Part2",
+            type_id="Part::Feature",
+            state="UNCHANGED",
+            has_changes=False,
+        )
+
+        # Each should have its own list
+        assert node1.children is not node2.children
+
 
 class TestPropertyPresentation:
     """Tests for PropertyPresentation dataclass."""

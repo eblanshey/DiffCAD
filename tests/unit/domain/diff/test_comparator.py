@@ -657,6 +657,123 @@ class TestReconstructHierarchy:
         paths = {d.path for d in result}
         assert paths == {"Body", "Cube"}
 
+    def test_inserts_missing_parent_nodes(self):
+        """Test that missing parent nodes are inserted to preserve hierarchy.
+
+        When a child node has changes but its parent doesn't (and thus isn't in
+        the diff list), placeholder parent nodes should be inserted so children
+        appear nested under their parents.
+        """
+        from freecad.diff_wb.domain.diff import PropertyDiff
+
+        # Only Body/Pocket has changes - Body itself is not in the diff list
+        # This simulates when Pocket was added but only its properties were compared
+        diffs = [
+            NodeDiff(
+                path="Body/Pocket",
+                type_id="PartDesign::Pocket",
+                property_diffs=[
+                    PropertyDiff(
+                        property_name="Depth",
+                        old_value=None,
+                        new_value=Property.create(PropertyType.FLOAT, 5.0),
+                    )
+                ],
+            ),
+        ]
+
+        # Create mock indices with type information
+        old_tree = TreeNode(name="Body", type_id="PartDesign::Body", label="Body", path="Body")
+        new_tree = TreeNode(
+            name="Body",
+            type_id="PartDesign::Body",
+            label="Body",
+            path="Body",
+            children=[
+                TreeNode(
+                    name="Pocket",
+                    type_id="PartDesign::Pocket",
+                    label="Pocket",
+                    path="Body/Pocket",
+                )
+            ],
+        )
+        old_index = {"Body": old_tree}
+        new_index = {"Body": new_tree, "Body/Pocket": new_tree.children[0]}
+
+        result = _tree_comparator._reconstruct_hierarchy(diffs, old_index, new_index)
+
+        # Should have Body as root (placeholder, UNCHANGED)
+        assert len(result) == 1
+        assert result[0].path == "Body"
+        assert result[0].state == DiffState.UNCHANGED
+        assert result[0].type_id == "PartDesign::Body"
+
+        # Body should have Pocket as child (MODIFIED because it has added properties)
+        assert len(result[0].children) == 1
+        assert result[0].children[0].path == "Body/Pocket"
+        # Note: State is MODIFIED because the node has property additions
+        assert result[0].children[0].state == DiffState.MODIFIED
+
+    def test_inserts_missing_ancestor_chain(self):
+        """Test that entire ancestor chain is inserted when multiple levels are missing.
+
+        When deeply nested nodes have changes but intermediate parents don't,
+        all missing ancestors should be inserted.
+        """
+        from freecad.diff_wb.domain.diff import PropertyDiff
+
+        # Only Body/Pad/Sketch has changes - Body and Pad are not in diff list
+        diffs = [
+            NodeDiff(
+                path="Body/Pad/Sketch",
+                type_id="PartDesign::Sketch",
+                property_diffs=[
+                    PropertyDiff(
+                        property_name="Name",
+                        old_value=None,
+                        new_value=Property.create(PropertyType.STRING, "NewSketch"),
+                    )
+                ],
+            ),
+        ]
+
+        # Create mock indices with type information for the full hierarchy
+        sketch = TreeNode(name="Sketch", type_id="PartDesign::Sketch", label="Sketch", path="Body/Pad/Sketch")
+        pad = TreeNode(
+            name="Pad",
+            type_id="PartDesign::Pad",
+            label="Pad",
+            path="Body/Pad",
+            children=[sketch],
+        )
+        body = TreeNode(
+            name="Body",
+            type_id="PartDesign::Body",
+            label="Body",
+            path="Body",
+            children=[pad],
+        )
+
+        old_index: dict[str, TreeNode] = {}
+        new_index = {"Body": body, "Body/Pad": pad, "Body/Pad/Sketch": sketch}
+
+        result = _tree_comparator._reconstruct_hierarchy(diffs, old_index, new_index)
+
+        # Should have Body as root (placeholder, UNCHANGED)
+        assert len(result) == 1
+        assert result[0].path == "Body"
+        assert result[0].state == DiffState.UNCHANGED
+
+        # Body -> Pad (placeholder, UNCHANGED) -> Sketch (MODIFIED)
+        assert len(result[0].children) == 1
+        assert result[0].children[0].path == "Body/Pad"
+        assert result[0].children[0].state == DiffState.UNCHANGED
+
+        assert len(result[0].children[0].children) == 1
+        assert result[0].children[0].children[0].path == "Body/Pad/Sketch"
+        assert result[0].children[0].children[0].state == DiffState.MODIFIED
+
 
 class TestCompareSnapshots:
     """Tests for compare_snapshots function (end-to-end tree comparison)."""
@@ -811,9 +928,14 @@ class TestCompareSnapshots:
         assert result.added_paths == set()
         assert result.deleted_paths == set()
         assert result.common_paths == {"Body/Pad"}
+        # Body is inserted as a placeholder parent since it wasn't in the diff
         assert len(result.node_diffs) == 1
-        assert result.node_diffs[0].path == "Body/Pad"
-        assert result.node_diffs[0].state == DiffState.MODIFIED
+        assert result.node_diffs[0].path == "Body"
+        assert result.node_diffs[0].state == DiffState.UNCHANGED
+        # Body/Pad is nested under Body
+        assert len(result.node_diffs[0].children) == 1
+        assert result.node_diffs[0].children[0].path == "Body/Pad"
+        assert result.node_diffs[0].children[0].state == DiffState.MODIFIED
 
     def test_complex_hierarchy_changes(self):
         """Test complex hierarchy with additions and modifications."""

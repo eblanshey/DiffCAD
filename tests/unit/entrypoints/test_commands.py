@@ -6,8 +6,6 @@ These tests verify that commands correctly delegate to actions and presenters.
 
 from unittest.mock import MagicMock, Mock, patch
 
-import pytest
-
 from freecad.diff_wb.application.actions.result_models import CompareResult, SnapshotResult
 from freecad.diff_wb.entrypoints.commands import (
     _CompareCommand,
@@ -78,9 +76,14 @@ class TestTakeSnapshotCommand:
 class TestCompareCommand:
     """Tests for _CompareCommand."""
 
+    @patch("PySide6.QtWidgets.QMessageBox")
     @patch("freecad.diff_wb._container.get_container")
-    def test_compare_command_calls_action_and_presenter(self, mock_get_container: Mock) -> None:
-        """Verifies comparison flow from command to action to presenter."""
+    def test_compare_command_calls_view_get_selected_snapshot_ids(
+        self,
+        mock_get_container: Mock,
+        mock_message_box: Mock,
+    ) -> None:
+        """Verifies that Compare command calls view's get_selected_snapshot_ids()."""
         # Setup
         mock_container = MagicMock()
         mock_action = MagicMock()
@@ -88,6 +91,10 @@ class TestCompareCommand:
         mock_container.compare_snapshots_action = mock_action
         mock_container.diff_presenter = mock_presenter
         mock_get_container.return_value = mock_container
+
+        # Create a mock view
+        mock_view = MagicMock()
+        mock_view.get_selected_snapshot_ids.return_value = ["old-id-123", "new-id-456"]
 
         expected_diff_result = MagicMock()
         expected_result = CompareResult(
@@ -98,14 +105,160 @@ class TestCompareCommand:
         mock_action.execute.return_value = expected_result
 
         command = _CompareCommand()
-
-        # Note: The compare command will raise NotImplementedError because
-        # snapshot selection is not yet implemented (Phase 8 UI)
-        with pytest.raises(NotImplementedError, match="Phase 8"):
+        # Mock the _get_view method
+        with patch.object(command, "_get_view", return_value=mock_view):
+            # Execute
             command.Activated()
 
+        # Verify
+        mock_view.get_selected_snapshot_ids.assert_called_once()
+        mock_action.execute.assert_called_once_with("old-id-123", "new-id-456")
+        mock_presenter.present_diff.assert_called_once_with(expected_diff_result)
+
+    @patch("PySide6.QtWidgets.QMessageBox")
     @patch("freecad.diff_wb._container.get_container")
-    def test_compare_command_error_result_no_presenter_call(self, mock_get_container: Mock) -> None:
+    def test_compare_command_handles_zero_selected_snapshots(
+        self,
+        mock_get_container: Mock,
+        mock_message_box: Mock,
+    ) -> None:
+        """When 0 snapshots selected, shows warning and doesn't call compare action."""
+        # Setup
+        mock_container = MagicMock()
+        mock_action = MagicMock()
+        mock_container.compare_snapshots_action = mock_action
+        mock_get_container.return_value = mock_container
+
+        mock_view = MagicMock()
+        mock_view.get_selected_snapshot_ids.return_value = []  # No snapshots selected
+
+        command = _CompareCommand()
+        with patch.object(command, "_get_view", return_value=mock_view):
+            # Execute
+            command.Activated()
+
+        # Verify
+        mock_view.get_selected_snapshot_ids.assert_called_once()
+        mock_action.execute.assert_not_called()
+        mock_message_box.warning.assert_called_once()
+        # Verify warning message content
+        call_args = mock_message_box.warning.call_args
+        assert call_args[0][1] == "Selection Required"  # title
+        assert "select" in call_args[0][2].lower()  # message contains "select"
+
+    @patch("PySide6.QtWidgets.QMessageBox")
+    @patch("freecad.diff_wb._container.get_container")
+    def test_compare_command_handles_one_selected_snapshot(
+        self,
+        mock_get_container: Mock,
+        mock_message_box: Mock,
+    ) -> None:
+        """When 1 snapshot selected, shows warning and doesn't call compare action."""
+        # Setup
+        mock_container = MagicMock()
+        mock_action = MagicMock()
+        mock_container.compare_snapshots_action = mock_action
+        mock_get_container.return_value = mock_container
+
+        mock_view = MagicMock()
+        mock_view.get_selected_snapshot_ids.return_value = ["only-one-id"]  # Only one selected
+
+        command = _CompareCommand()
+        with patch.object(command, "_get_view", return_value=mock_view):
+            # Execute
+            command.Activated()
+
+        # Verify
+        mock_view.get_selected_snapshot_ids.assert_called_once()
+        mock_action.execute.assert_not_called()
+        mock_message_box.warning.assert_called_once()
+        # Verify warning message content
+        call_args = mock_message_box.warning.call_args
+        assert call_args[0][1] == "Selection Required"  # title
+        assert "select" in call_args[0][2].lower()  # message contains "select"
+
+    @patch("PySide6.QtWidgets.QMessageBox")
+    @patch("freecad.diff_wb._container.get_container")
+    def test_compare_command_handles_two_selected_snapshots(
+        self,
+        mock_get_container: Mock,
+        mock_message_box: Mock,
+    ) -> None:
+        """When exactly 2 snapshots selected, calls compare action with correct IDs."""
+        # Setup
+        mock_container = MagicMock()
+        mock_action = MagicMock()
+        mock_presenter = MagicMock()
+        mock_container.compare_snapshots_action = mock_action
+        mock_container.diff_presenter = mock_presenter
+        mock_get_container.return_value = mock_container
+
+        mock_view = MagicMock()
+        mock_view.get_selected_snapshot_ids.return_value = ["old-123", "new-456"]
+
+        expected_diff_result = MagicMock()
+        expected_result = CompareResult(
+            success=True,
+            diff_result=expected_diff_result,
+            error_message=None,
+        )
+        mock_action.execute.return_value = expected_result
+
+        command = _CompareCommand()
+        with patch.object(command, "_get_view", return_value=mock_view):
+            # Execute
+            command.Activated()
+
+        # Verify
+        mock_view.get_selected_snapshot_ids.assert_called_once()
+        mock_action.execute.assert_called_once_with("old-123", "new-456")
+        mock_presenter.present_diff.assert_called_once_with(expected_diff_result)
+        mock_message_box.warning.assert_not_called()
+
+    @patch("PySide6.QtWidgets.QMessageBox")
+    @patch("freecad.diff_wb._container.get_container")
+    def test_compare_command_handles_more_than_two_selected_snapshots(
+        self,
+        mock_get_container: Mock,
+        mock_message_box: Mock,
+    ) -> None:
+        """When more than 2 snapshots selected, uses only the first 2."""
+        # Setup
+        mock_container = MagicMock()
+        mock_action = MagicMock()
+        mock_presenter = MagicMock()
+        mock_container.compare_snapshots_action = mock_action
+        mock_container.diff_presenter = mock_presenter
+        mock_get_container.return_value = mock_container
+
+        mock_view = MagicMock()
+        # More than 2 selected - should use first 2
+        mock_view.get_selected_snapshot_ids.return_value = ["old-123", "new-456", "extra-789"]
+
+        expected_diff_result = MagicMock()
+        expected_result = CompareResult(
+            success=True,
+            diff_result=expected_diff_result,
+            error_message=None,
+        )
+        mock_action.execute.return_value = expected_result
+
+        command = _CompareCommand()
+        with patch.object(command, "_get_view", return_value=mock_view):
+            # Execute
+            command.Activated()
+
+        # Verify - should use only first 2 IDs
+        mock_action.execute.assert_called_once_with("old-123", "new-456")
+        mock_message_box.warning.assert_not_called()
+
+    @patch("PySide6.QtWidgets.QMessageBox")
+    @patch("freecad.diff_wb._container.get_container")
+    def test_compare_command_error_result_no_presenter_call(
+        self,
+        mock_get_container: Mock,
+        mock_message_box: Mock,
+    ) -> None:
         """When result is error, presenter is not called."""
         # Setup
         mock_container = MagicMock()
@@ -115,6 +268,9 @@ class TestCompareCommand:
         mock_container.diff_presenter = mock_presenter
         mock_get_container.return_value = mock_container
 
+        mock_view = MagicMock()
+        mock_view.get_selected_snapshot_ids.return_value = ["old-123", "new-456"]
+
         expected_result = CompareResult(
             success=False,
             diff_result=None,
@@ -123,14 +279,37 @@ class TestCompareCommand:
         mock_action.execute.return_value = expected_result
 
         command = _CompareCommand()
-
-        # Note: The compare command will raise NotImplementedError because
-        # snapshot selection is not yet implemented (Phase 8 UI)
-        with pytest.raises(NotImplementedError, match="Phase 8"):
+        with patch.object(command, "_get_view", return_value=mock_view):
+            # Execute
             command.Activated()
 
-        # Verify presenter was never called since we can't get past the NotImplementedError
+        # Verify presenter was never called since result was an error
         mock_presenter.present_diff.assert_not_called()
+
+    @patch("PySide6.QtWidgets.QMessageBox")
+    @patch("freecad.diff_wb._container.get_container")
+    def test_compare_command_handles_no_view(
+        self,
+        mock_get_container: Mock,
+        mock_message_box: Mock,
+    ) -> None:
+        """When view is None, shows critical error and doesn't proceed."""
+        # Setup
+        mock_container = MagicMock()
+        mock_get_container.return_value = mock_container
+
+        command = _CompareCommand()
+        with patch.object(command, "_get_view", return_value=None):
+            # Execute
+            command.Activated()
+
+        # Verify
+        mock_message_box.critical.assert_called_once()
+        mock_message_box.warning.assert_not_called()
+        # Verify critical error message content
+        call_args = mock_message_box.critical.call_args
+        assert call_args[0][1] == "Error"  # title
+        assert "view" in call_args[0][2].lower()  # message contains "view"
 
     def test_compare_command_resources_correct(self) -> None:
         """Menu text, tooltips, icons are correct."""

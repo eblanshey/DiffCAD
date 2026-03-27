@@ -57,4 +57,5 @@ class DiffPresenter:
             type_id=node_diff.type_id,
             state=node_diff.state.name,
             has_changes=node_diff.has_changes,
+            children=[self._format_node(child) for child in node_diff.children],
         )
