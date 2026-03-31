@@ -8,11 +8,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Protocol
+from typing import TYPE_CHECKING, Protocol
 
 
 if TYPE_CHECKING:
-    pass
+    import FreeCAD  # noqa: F401
+    import FreeCADGui  # noqa: F401
 
 
 class ConsoleLike(Protocol):
@@ -52,12 +53,6 @@ class AppLike(Protocol):
     def Qt(self) -> QtModule: ...
 
 
-class GuiLike(Protocol):
-    """Minimal Protocol for the FreeCAD GUI module."""
-
-    def update(self) -> None: ...
-
-
 @dataclass(frozen=True)
 class FreeCadContext:
     """Bundle of runtime bindings for the Diff Workbench.
@@ -67,11 +62,9 @@ class FreeCadContext:
 
     Attributes:
         app: The FreeCAD application module (AppLike protocol)
-        gui: The FreeCAD GUI module if available, None otherwise
     """
 
     app: AppLike
-    gui: GuiLike | None = None
 
 
 class FreeCadPort(Protocol):
@@ -91,10 +84,6 @@ class FreeCadPort(Protocol):
 
     def try_recompute_active_document(self) -> None:
         """Recompute the active document if one exists."""
-        ...
-
-    def try_update_gui(self) -> None:
-        """Trigger a GUI update if the GUI is available."""
         ...
 
     def log(self, text: str) -> None:
@@ -126,42 +115,12 @@ class AppPort(Protocol):
         ...
 
 
-class GuiPort(Protocol):
-    """Interface for FreeCAD GUI operations.
-
-    This Protocol defines operations for loading Qt UI files and
-    managing MDI subwindows, allowing for test doubles.
-    """
-
-    def load_ui(self, ui_path: str) -> object:
-        """Load a Qt UI file and return the widget."""
-        ...
-
-    def get_main_window(self) -> object:
-        """Get the main application window."""
-        ...
-
-    def get_mdi_area(self) -> Any:
-        """Get the MDI area for subwindows, or None if not available."""
-        ...
-
-    def add_subwindow(self, *, mdi_area: object, widget: object) -> object:
-        """Add a widget as an MDI subwindow and return the QMdiSubWindow."""
-        ...
-
-    def find_subwindow(self, *, mdi_area: object, title: str) -> object | None:
-        """Find an existing subwindow by title, or None if not found."""
-        ...
-
-
 __all__ = [
     "FreeCadContext",
     "FreeCadPort",
     "AppPort",
-    "GuiPort",
     "DocumentLike",
     "ConsoleLike",
     "QtModule",
     "AppLike",
-    "GuiLike",
 ]

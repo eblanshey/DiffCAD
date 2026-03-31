@@ -267,4 +267,223 @@ Part_MyPart (App::Part)
         finally:
             freecad_app.closeDocument(doc.Name)
 
-        print("\nDone! Set breakpoints above to inspect variables.")
+            print("\nDone! Set breakpoints above to inspect variables.")
+
+    def test_claimchildren_gui_api(
+        self, freecad_app: AppLike, project_root: object, freecad_gui: object | None
+    ) -> None:
+        """Test Option A: Use GUI-level claimChildren() API to build tree.
+
+        This test implements the recommended Option A from the task:
+        - Uses FreeCAD's authoritative tree-building logic via claimChildren()
+        - Requires FreeCAD GUI to be initialized during extraction
+
+        The algorithm:
+        1. Each ViewProvider declares its children via claimChildren() method
+        2. Recursive exclusion: If parent A claims child B, and B claims children C1, C2,
+           then C1/C2 are EXCLUDED from A's direct children (they appear nested under B)
+
+        This is implemented in ViewProviderGeoFeatureGroupExtension::extensionClaimChildren()
+        in the FreeCAD C++ source.
+        """
+        from pathlib import Path
+
+        # Try to get FreeCADGui from fixture first
+        gui = freecad_gui
+
+        if gui is None:
+            print("FreeCADGui not available - skipping test")
+            return
+
+        # Open the BasicFile test document BEFORE setupWithoutGUI
+        # to ensure the GUI document is created
+        doc_path = Path(project_root) / "tests/freecad/BasicFile.FCStd"
+        doc = freecad_app.open(str(doc_path))
+
+        # Now setup GUI - this may create view providers for already-open document
+        if hasattr(gui, "setupWithoutGUI"):
+            gui.setupWithoutGUI()
+
+        try:
+            print("=" * 80)
+            print("OPTION A: Using claimChildren() GUI-level API")
+            print("=" * 80)
+            print(f"Document: {doc.Name}")
+            print()
+
+            # Get GUI document after setupWithoutGUI()
+            gui_doc = None
+            if hasattr(gui, "getDocument"):
+                gui_doc = gui.getDocument(doc.Name)
+
+            print(f"GUI document: {gui_doc}")
+
+            all_objects = {}
+            for obj in doc.Objects:
+                if hasattr(obj, "Name"):
+                    all_objects[obj.Name] = obj
+
+            # Get claimChildren for each object
+            claim_children_map = {}
+
+            # Check GUI availability
+            gui_available = gui_doc is not None
+
+            for obj in doc.Objects:
+                if not hasattr(obj, "Name"):
+                    continue
+                name = obj.Name
+
+                # Get ViewProvider - try ViewObject property first
+                vp = None
+                if hasattr(obj, "ViewObject"):
+                    view_obj = obj.ViewObject
+                    if view_obj is not None:
+                        vp = view_obj
+
+                # Also try via gui_doc if available
+                if vp is None and gui_doc is not None and hasattr(gui_doc, "getViewProvider"):
+                    vp = gui_doc.getViewProvider(obj)
+
+                if vp is not None and hasattr(vp, "claimChildren"):
+                    try:
+                        claimed = vp.claimChildren()
+                        # claimed can be a list of objects or pybind11 proxy
+                        if claimed:
+                            child_names = []
+                            for child in claimed:
+                                if hasattr(child, "Name"):
+                                    child_names.append(child.Name)
+                                elif hasattr(child, "name"):
+                                    # Some objects use 'name' instead of 'Name'
+                                    child_names.append(child.name)
+                            claim_children_map[name] = child_names
+                    except Exception as e:
+                        print(f"  Warning: claimChildren failed for {name}: {e}")
+
+            # Report GUI availability status
+            if not gui_available:
+                print("NOTE: Running in headless mode - GUI not fully initialized.")
+                print("      claimChildren() requires FreeCAD GUI to be running with display.")
+                print("      In production, this would work with proper GUI initialization.")
+                print()
+
+            print("Claimed children from ViewProviders:")
+            for parent, children in claim_children_map.items():
+                print(f"  {parent}: {children}")
+
+            print()
+
+            # Now build the tree with recursive exclusion
+            # Algorithm: For each parent, exclude children that are claimed by claimed children
+
+            # Build effective children map
+            effective_children_map = {}
+            for parent_name in claim_children_map:
+                direct_claims = claim_children_map.get(parent_name, [])
+
+                result = []
+                excluded = set()  # Track objects excluded by nested claims
+
+                # First, get all recursively claimed children
+                def get_all_descendants(name: str) -> set:
+                    desc = set()
+                    children = claim_children_map.get(name, [])
+                    for child in children:
+                        desc.add(child)
+                        desc.update(get_all_descendants(child))
+                    return desc
+
+                # For each direct claim, get its descendants
+                for child_name in direct_claims:
+                    # Add the child itself
+                    if child_name not in excluded:
+                        result.append(child_name)
+                    # Exclude descendants (recursive exclusion)
+                    excluded.update(get_all_descendants(child_name))
+
+                effective_children_map[parent_name] = result
+
+            print("Effective children (with recursive exclusion):")
+            for parent, children in effective_children_map.items():
+                print(f"  {parent}: {children}")
+
+            print()
+
+            # Find root objects (those not claimed by anyone)
+            all_claimed = set()
+            for children in claim_children_map.values():
+                all_claimed.update(children)
+
+            root_objects = []
+            for obj in doc.Objects:
+                if hasattr(obj, "Name"):
+                    name = obj.Name
+                    if name not in all_claimed:
+                        root_objects.append(name)
+
+            print(f"Root objects: {root_objects}")
+
+            # Build and print the tree
+            def print_claim_tree(parent_name: str, indent: int = 0) -> None:
+                prefix = "    " * indent
+                children = effective_children_map.get(parent_name, [])
+                for i, child_name in enumerate(children):
+                    if child_name not in all_objects:
+                        continue
+                    child_obj = all_objects[child_name]
+                    is_last = i == len(children) - 1
+                    connector = "└── " if is_last else "├── "
+                    print(f"{prefix}{connector}{child_name} ({child_obj.TypeId})")
+                    print_claim_tree(child_name, indent + 1)
+
+            print()
+            print("Built tree using claimChildren():")
+            for root_name in root_objects:
+                if root_name not in all_objects:
+                    continue
+                root_obj = all_objects[root_name]
+                print(f"{root_name} ({root_obj.TypeId})")
+                print_claim_tree(root_name, 1)
+
+            print()
+            print("=" * 80)
+            print("EXPECTED FREECAD GUI TREE (from task):")
+            print("=" * 80)
+            print("""
+Part_MyPart
+├── Origin
+│   ├── X_Axis
+│   ├── Y_Axis
+│   ├── Z_Axis
+│   ├── XY_Plane
+│   ├── XZ_Plane
+│   ├── YZ_Plane
+│   └── Origin001
+├── Body_MyBody
+│   ├── Origin004
+│   │   ├── X_Axis001
+│   │   ├── Y_Axis001
+│   │   ├── Z_Axis001
+│   │   ├── XY_Plane001
+│   │   ├── XZ_Plane001
+│   │   ├── YZ_Plane001
+│   │   └── Origin003
+│   ├── Pad_Main
+│   │   └── Sketch_Pad
+│   └── Pocket_Main
+│       └── Sketch_Pocket
+└── MyVarSet
+Page
+├── Template
+└── View
+    ├── Dimension
+    ├── Dimension001
+    ├── Dimension002
+    └── Balloon
+""")
+
+        finally:
+            freecad_app.closeDocument(doc.Name)
+
+        print("\nDone! Compare the built tree with expected FreeCAD GUI tree.")

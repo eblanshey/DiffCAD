@@ -3,7 +3,7 @@
 import datetime
 
 from ....domain.ports import FreeCadPort
-from ....domain.snapshots.extractor import SnapshotExtractor
+from ....domain.snapshots.gui_extractor import SnapshotExtractor
 from ....domain.snapshots.repository import SnapshotRepository
 from ..result_models import SnapshotResult
 

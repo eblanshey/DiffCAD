@@ -19,7 +19,7 @@ import pytest
 
 
 if TYPE_CHECKING:
-    from freecad.diff_wb.domain.ports import FreeCadContext, GuiLike
+    from freecad.diff_wb.domain.ports import FreeCadContext
 
 
 def pytest_configure(config: object) -> None:
@@ -85,7 +85,7 @@ def freecad_app() -> Any:
 
 
 @pytest.fixture
-def freecad_gui(freecad_app: Any) -> GuiLike | None:
+def freecad_gui(freecad_app: Any) -> object | None:
     """Import and return the FreeCAD GUI module.
 
     Args:
@@ -103,7 +103,7 @@ def freecad_gui(freecad_app: Any) -> GuiLike | None:
 
 
 @pytest.fixture
-def freecad_context(freecad_app: Any, freecad_gui: GuiLike | None) -> FreeCadContext:
+def freecad_context(freecad_app: Any, freecad_gui: object | None) -> FreeCadContext:
     """Create a FreeCAD runtime context for testing.
 
     Args:

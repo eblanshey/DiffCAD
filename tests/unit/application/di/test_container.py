@@ -21,7 +21,7 @@ class TestApplicationContainer:
     def test_container_creates_all_actions(self) -> None:
         """All actions are instantiated by the container."""
         # Setup
-        ctx = FreeCadContext(app=None, gui=None)  # type: ignore
+        ctx = FreeCadContext(app=None)  # type: ignore
         snapshot_repo = InMemorySnapshotRepository()
 
         # Execute
@@ -35,7 +35,7 @@ class TestApplicationContainer:
     def test_container_creates_all_presenters(self) -> None:
         """All presenters are instantiated by the container."""
         # Setup
-        ctx = FreeCadContext(app=None, gui=None)  # type: ignore
+        ctx = FreeCadContext(app=None)  # type: ignore
         snapshot_repo = InMemorySnapshotRepository()
 
         # Execute
@@ -49,7 +49,7 @@ class TestApplicationContainer:
     def test_container_with_diff_view_creates_diff_presenter(self) -> None:
         """Diff presenter is created when diff_view is provided."""
         # Setup
-        ctx = FreeCadContext(app=None, gui=None)  # type: ignore
+        ctx = FreeCadContext(app=None)  # type: ignore
         snapshot_repo = InMemorySnapshotRepository()
 
         fake_diff_view = FakeDiffView()
@@ -63,7 +63,7 @@ class TestApplicationContainer:
     def test_container_wires_dependencies_correctly(self) -> None:
         """Actions have correct dependencies injected."""
         # Setup
-        ctx = FreeCadContext(app=None, gui=None)  # type: ignore
+        ctx = FreeCadContext(app=None)  # type: ignore
         snapshot_repo = InMemorySnapshotRepository()
 
         # Execute
@@ -88,7 +88,7 @@ class TestApplicationContainer:
 
     def test_container_injects_view_into_presenters(self) -> None:
         """Presenters receive views."""
-        _ctx = FreeCadContext(app=None, gui=None)  # type: ignore  # Setup for context
+        _ctx = FreeCadContext(app=None)  # type: ignore  # Setup for context
         _snapshot_repo = InMemorySnapshotRepository()  # Setup for snapshot repo
 
         fake_snapshot_view = FakeSnapshotView()
@@ -109,7 +109,7 @@ class TestApplicationContainer:
     def test_container_returns_application_container_instance(self) -> None:
         """Container returns an ApplicationContainer instance."""
         # Setup
-        ctx = FreeCadContext(app=None, gui=None)  # type: ignore
+        ctx = FreeCadContext(app=None)  # type: ignore
         snapshot_repo = InMemorySnapshotRepository()
 
         # Execute
@@ -121,7 +121,7 @@ class TestApplicationContainer:
     def test_container_accepts_snapshot_view_parameter(self) -> None:
         """Container accepts snapshot_view parameter and passes it to SnapshotPresenter."""
         # Setup
-        ctx = FreeCadContext(app=None, gui=None)  # type: ignore
+        ctx = FreeCadContext(app=None)  # type: ignore
         snapshot_repo = InMemorySnapshotRepository()
 
         fake_view = FakeSnapshotView()
@@ -140,7 +140,7 @@ class TestApplicationContainer:
     def test_container_wires_list_snapshots_action_to_presenter(self) -> None:
         """Container wires list_snapshots_action to SnapshotPresenter."""
         # Setup
-        ctx = FreeCadContext(app=None, gui=None)  # type: ignore
+        ctx = FreeCadContext(app=None)  # type: ignore
         snapshot_repo = InMemorySnapshotRepository()
 
         fake_view = FakeSnapshotView()

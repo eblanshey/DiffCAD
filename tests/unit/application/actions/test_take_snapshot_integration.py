@@ -7,7 +7,7 @@ See AGENTS.md in this directory for more information about application action te
 """
 
 from freecad.diff_wb.application.actions.commands.take_snapshot import TakeSnapshotAction
-from freecad.diff_wb.domain.snapshots.extractor import SnapshotExtractor
+from freecad.diff_wb.domain.snapshots.gui_extractor import SnapshotExtractor
 from freecad.diff_wb.domain.snapshots.repository import InMemorySnapshotRepository
 from tests.fakes.fake_freecad_port import FakeFreeCadPort
 

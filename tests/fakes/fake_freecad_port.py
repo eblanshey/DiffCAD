@@ -29,10 +29,6 @@ class FakeFreeCadPort(FreeCadPort):
         """Log the call (not actually recomputing)."""
         self._call_log.append("try_recompute_active_document")
 
-    def try_update_gui(self) -> None:
-        """Log the call (not actually updating GUI)."""
-        self._call_log.append("try_update_gui")
-
     def log(self, text: str) -> None:
         """Log the call (not actually logging)."""
         self._call_log.append(f"log:{text}")
