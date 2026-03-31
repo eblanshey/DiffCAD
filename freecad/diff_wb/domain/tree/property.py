@@ -68,12 +68,13 @@ class PropertyHandler:
         return prop_name in cls.PROPERTY_NAMES
 
     @classmethod
-    def from_freecad_value(cls, value: Any, expression: str | None = None) -> "Property":
+    def from_freecad_value(cls, value: Any, expression: str | None = None, group: str = "Base") -> "Property":
         """Create a Property from a FreeCAD object.
 
         Args:
             value: The FreeCAD object/property value to extract
             expression: Optional expression that drives this value
+            group: The FreeCAD property group
 
         Returns:
             A Property instance with the extracted value
@@ -118,12 +119,13 @@ class Vector(PropertyHandler):
         )
 
     @classmethod
-    def from_freecad_value(cls, value: Any, expression: str | None = None) -> "Property":
+    def from_freecad_value(cls, value: Any, expression: str | None = None, group: str = "Base") -> "Property":
         """Extract Vector property from FreeCAD object.
 
         Args:
             value: The FreeCAD object or vector containing x, y, z attributes
             expression: Optional expression that drives this value
+            group: The FreeCAD property group
 
         Returns:
             A Property instance with the extracted Vector value
@@ -136,6 +138,7 @@ class Vector(PropertyHandler):
                 type_=PropertyType.VECTOR,
                 value=cls(x=float(value.x), y=float(value.y), z=float(value.z)),
                 expression=expression,
+                group=group,
             )
         except Exception as e:
             logger.warning("Failed to extract Vector property: %s", e)
@@ -214,12 +217,13 @@ class Placement(PropertyHandler):
         return cls(position=Vector(0.0, 0.0, 0.0), rotation=Rotation.identity())
 
     @classmethod
-    def from_freecad_value(cls, value: Any, expression: str | None = None) -> "Property":
+    def from_freecad_value(cls, value: Any, expression: str | None = None, group: str = "Base") -> "Property":
         """Extract Placement property from FreeCAD object.
 
         Args:
             value: The FreeCAD Placement object with Base (position) and Rotation attributes
             expression: Optional expression that drives this value
+            group: The FreeCAD property group
 
         Returns:
             A Property instance with the extracted Placement value
@@ -244,6 +248,7 @@ class Placement(PropertyHandler):
                     ),
                 ),
                 expression=expression,
+                group=group,
             )
         except Exception as e:
             logger.warning("Failed to extract Placement property: %s", e)
@@ -261,11 +266,13 @@ class Property:
         type_: The type of this property value
         value: The actual value (type depends on type_)
         expression: Optional expression if this value is driven by an expression
+        group: The FreeCAD property group (e.g., "Base", "Data", "View")
     """
 
     type_: PropertyType
     value: Any
     expression: str | None = None
+    group: str = "Base"
 
     def __str__(self) -> str:
         """String representation suitable for display."""
@@ -296,7 +303,7 @@ class Property:
         return bool(self.value == other.value)
 
     @classmethod
-    def create(cls, type_: PropertyType, value: Any, expression: str | None = None) -> "Property":
+    def create(cls, type_: PropertyType, value: Any, expression: str | None = None, group: str = "Base") -> "Property":
         """Create a Property with proper type handling.
 
         This factory method accepts structured data (tuples/dicts) as the value
@@ -309,6 +316,7 @@ class Property:
                 - VECTOR: tuple (x, y, z)
                 - PLACEMENT: dict {"position": (x, y, z), "rotation": (ax, ay, az, angle)}
             expression: Optional expression that drives this value
+            group: The FreeCAD property group (e.g., "Base", "Data", "View")
 
         Returns:
             A Property instance with properly structured value
@@ -324,17 +332,17 @@ class Property:
             ... )
         """
         if type_ == PropertyType.BOOL:
-            return cls(type_=type_, value=bool(value), expression=expression)
+            return cls(type_=type_, value=bool(value), expression=expression, group=group)
         elif type_ == PropertyType.INT:
-            return cls(type_=type_, value=int(value), expression=expression)
+            return cls(type_=type_, value=int(value), expression=expression, group=group)
         elif type_ == PropertyType.FLOAT:
-            return cls(type_=type_, value=float(value), expression=expression)
+            return cls(type_=type_, value=float(value), expression=expression, group=group)
         elif type_ == PropertyType.STRING:
-            return cls(type_=type_, value=str(value), expression=expression)
+            return cls(type_=type_, value=str(value), expression=expression, group=group)
         elif type_ == PropertyType.VECTOR:
             # value is expected to be a tuple (x, y, z)
             x, y, z = value
-            return cls(type_=type_, value=Vector(x=x, y=y, z=z), expression=expression)
+            return cls(type_=type_, value=Vector(x=x, y=y, z=z), expression=expression, group=group)
         elif type_ == PropertyType.PLACEMENT:
             # value is expected to be a dict {"position": (x,y,z), "rotation": (ax,ay,az,angle)}
             pos = value["position"]
@@ -346,13 +354,16 @@ class Property:
                     rotation=Rotation(axis_x=rot[0], axis_y=rot[1], axis_z=rot[2], angle_degrees=rot[3]),
                 ),
                 expression=expression,
+                group=group,
             )
         else:
             # For unknown/expression/shape/material types, store value as-is
-            return cls(type_=type_, value=value, expression=expression)
+            return cls(type_=type_, value=value, expression=expression, group=group)
 
     @staticmethod
-    def from_freecad_property(prop_name: str, value: Any, expression: str | None = None) -> "Property":
+    def from_freecad_property(
+        prop_name: str, value: Any, expression: str | None = None, group: str = "Base"
+    ) -> "Property":
         """Create a Property from a FreeCAD property value.
 
         This factory method delegates to registered handlers for complex types
@@ -362,6 +373,7 @@ class Property:
             prop_name: The FreeCAD property name (e.g., "Placement", "Position", "Length")
             value: The raw value from the FreeCAD object
             expression: Optional expression that drives this value
+            group: The FreeCAD property group (e.g., "Base", "Data", "View")
 
         Returns:
             A Property with properly detected type and converted value
@@ -369,11 +381,11 @@ class Property:
         # Try registered handlers first
         for handler in _PROPERTY_HANDLERS:
             if handler.handles(prop_name):
-                return handler.from_freecad_value(value, expression)
+                return handler.from_freecad_value(value, expression, group)
 
         # Fall back to type inference from value
         prop_type = Property._infer_type_from_value(value)
-        return Property.create(prop_type, value, expression=expression)
+        return Property.create(prop_type, value, expression=expression, group=group)
 
     @staticmethod
     def _infer_type_from_value(val: Any) -> PropertyType:

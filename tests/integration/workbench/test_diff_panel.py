@@ -41,11 +41,11 @@ class TestDiffPanelView:
 
         Verifies presence of:
         - tree_widget: QTreeWidget for displaying diff tree
-        - properties_table: QTableWidget for property details
+        - properties_tree: QTreeWidget for property details (replaces QTableWidget)
         - snapshot_list: QListWidget for snapshot selection
         """
         assert hasattr(panel, "tree_widget"), "Missing tree_widget"
-        assert hasattr(panel, "properties_table"), "Missing properties_table"
+        assert hasattr(panel, "properties_tree"), "Missing properties_tree"
         assert hasattr(panel, "snapshot_list"), "Missing snapshot_list"
 
     def test_diff_panel_implements_protocols(self, panel) -> None:  # type: ignore[no-untyped-def]

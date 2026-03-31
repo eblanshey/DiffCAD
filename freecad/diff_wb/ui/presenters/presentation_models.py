@@ -1,6 +1,11 @@
 """File responsibility: UI-friendly presentation models for diff display."""
 
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Any
+
+
+if TYPE_CHECKING:
+    pass
 
 
 __all__ = ["NodePresentation", "PropertyPresentation", "SnapshotPresentation"]
@@ -25,6 +30,8 @@ class PropertyPresentation:
     old_display: str  # Formatted string like "10.0 (via Sketch.X)"
     new_display: str  # Formatted string like "20.0"
     state: str  # "ADDED", "DELETED", "MODIFIED", "UNCHANGED"
+    value: Any = None  # Actual value for expandable properties (optional)
+    group: str | None = None  # Group name for grouping (e.g., "Base", "Format")
 
 
 @dataclass(frozen=True)

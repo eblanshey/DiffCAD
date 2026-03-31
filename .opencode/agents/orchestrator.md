@@ -62,8 +62,9 @@ After implementer confirms (tests already run by implementer), delegate to **rev
 - Do NOT tell reviewer to run tests or linting, as they don't have the ability
 
 **Decision point based on reviewer output:**
-- If reviewer says "Approved" → Continue to STEP 3
+- If reviewer says "Approved" but suggests improvements → Continue to STEP 4 (Fix Loop)
 - If reviewer says "Request Changes" → Go to STEP 4 (Fix Loop)
+- If reviewer says "Approved" and has no suggestions -> Continue to STEP 3
 
 ### STEP 3: Complete Phase
 After reviewer approval:

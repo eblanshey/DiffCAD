@@ -6,7 +6,12 @@
 
 from unittest.mock import MagicMock, patch
 
-from freecad.diff_wb.domain.snapshots.gui_extractor import GuiNotAvailableError, SnapshotExtractor
+from freecad.diff_wb.domain.snapshots.gui_extractor import (
+    GuiNotAvailableError,
+    SnapshotExtractor,
+    _get_property_group,
+    _is_property_hidden,
+)
 from freecad.diff_wb.domain.snapshots.models import Snapshot
 
 
@@ -49,6 +54,8 @@ class MockFreeCADObject:
         expression_engine=None,
         property_editor_modes=None,
         property_groups=None,
+        property_status=None,
+        property_types=None,
     ):
         """Initialize a mock FreeCAD object.
 
@@ -65,6 +72,11 @@ class MockFreeCADObject:
                 e.g., {"HiddenProp": ["Hidden"], "VisibleProp": []}
             property_groups: Dict mapping property name to group name
                 e.g., {"Shape": "", "Length": "Side1"}
+            property_status: Dict mapping property name to status integer
+                e.g., {"SavedGeometry": 4} for Prop_Hidden bit (value 4)
+                See FreeCAD's Prop_Hidden constant (value 4)
+            property_types: Dict mapping property name to type list from getTypeOfProperty()
+                e.g., {"Shape": ["Hidden", "Link"], "Label": ["App::Property"]}
         """
         object.__setattr__(self, "_name", name)
         object.__setattr__(self, "_type_id", type_id)
@@ -77,6 +89,8 @@ class MockFreeCADObject:
         object.__setattr__(self, "_properties_values", {})
         object.__setattr__(self, "_property_editor_modes", property_editor_modes or {})
         object.__setattr__(self, "_property_groups", property_groups or {})
+        object.__setattr__(self, "_property_status", property_status or {})
+        object.__setattr__(self, "_property_types", property_types or {})
         object.__setattr__(self, "_view_object", None)
 
     @property
@@ -118,6 +132,38 @@ class MockFreeCADObject:
     def getGroupOfProperty(self, prop_name):
         groups = object.__getattribute__(self, "_property_groups")
         return groups.get(prop_name, "")
+
+    def getPropertyStatus(self, prop_name):
+        """Get property status bits.
+
+        Args:
+            prop_name: Name of the property
+
+        Returns:
+            List containing status integer, or empty list if not found.
+            Prop_Hidden = 4 (bit value for hidden properties like SavedGeometry)
+        """
+        status_dict = object.__getattribute__(self, "_property_status")
+        status_value = status_dict.get(prop_name, None)
+        if status_value is not None:
+            return [status_value]
+        return []
+
+    def getTypeOfProperty(self, prop_name):
+        """Get property type from getTypeOfProperty().
+
+        This replicates FreeCAD's getTypeOfProperty() which returns a list
+        of strings describing the property type. Some properties like Shape
+        and ShapeMaterial return lists containing 'Hidden'.
+
+        Args:
+            prop_name: Name of the property
+
+        Returns:
+            List of type strings, e.g., ["Hidden", "Link"] or ["App::Property"]
+        """
+        types_dict = object.__getattribute__(self, "_property_types")
+        return types_dict.get(prop_name, [])
 
     def __getattr__(self, name):
         props = object.__getattribute__(self, "_properties_values")
@@ -757,11 +803,12 @@ class TestSnapshotExtractor:
         assert "ExpressionEngine" not in node.properties
         assert "Visibility" not in node.properties
 
-    def test_extract_tree_filters_hidden_properties_by_empty_group(self):
-        """Test that properties with empty group are filtered out.
+    def test_extract_tree_properties_with_empty_group_are_visible(self):
+        """Test that properties with empty group ARE visible.
 
-        Properties with getGroupOfProperty() returning empty string are hidden
-        in FreeCAD's property editor (shown only with "show hidden" enabled).
+        Properties with getGroupOfProperty() returning empty string ARE visible
+        in FreeCAD's property editor - they map to "Base" group. The old behavior
+        of treating empty group as hidden was incorrect.
         """
         mock_doc = MagicMock()
         mock_doc.Name = "TestDoc"
@@ -771,14 +818,14 @@ class TestSnapshotExtractor:
             type_id="PartDesign::Pad",
             label="Test Pad",
             properties=["Label", "Length", "Shape", "SuppressedShape", "AddSubShape", "ShapeMaterial"],
-            # Property groups: empty for hidden properties, non-empty for visible
+            # Property groups: empty groups ARE visible (map to "Base")
             property_groups={
                 "Label": "Base",
                 "Length": "Side1",
-                "Shape": "",  # Empty group = hidden
-                "SuppressedShape": "",  # Empty group = hidden
-                "AddSubShape": "",  # Empty group = hidden
-                "ShapeMaterial": "",  # Empty group = hidden
+                "Shape": "",  # Empty group = visible (maps to Base)
+                "SuppressedShape": "",  # Empty group = visible
+                "AddSubShape": "",  # Empty group = visible
+                "ShapeMaterial": "",  # Empty group = visible
             },
         )
         obj.Label = "Test Pad"
@@ -803,18 +850,16 @@ class TestSnapshotExtractor:
         assert len(result.root_nodes) == 1
         node = result.root_nodes[0]
 
-        # Visible properties (with non-empty groups) should be present
+        # All properties should be present (including those with empty groups)
         assert "Label" in node.properties
         assert "Length" in node.properties
-
-        # Properties with empty groups should be filtered out
-        assert "Shape" not in node.properties
-        assert "SuppressedShape" not in node.properties
-        assert "AddSubShape" not in node.properties
-        assert "ShapeMaterial" not in node.properties
+        assert "Shape" in node.properties
+        assert "SuppressedShape" in node.properties
+        assert "AddSubShape" in node.properties
+        assert "ShapeMaterial" in node.properties
 
     def test_extract_tree_filters_combined_hidden_conditions(self):
-        """Test filtering with both editor mode and empty group conditions."""
+        """Test filtering with both editor mode and property status conditions."""
         mock_doc = MagicMock()
         mock_doc.Name = "TestDoc"
 
@@ -828,10 +873,14 @@ class TestSnapshotExtractor:
                 "Placement": ["ReadOnly", "Hidden"],
                 "_ElementMapVersion": ["Hidden"],
             },
+            # Empty group is now visible - Shape should be visible
             property_groups={
                 "Label": "Base",
                 "Length": "Side1",
-                "Shape": "",  # Empty group
+                "Shape": "",  # Empty group = visible (maps to Base)
+                "Visibility": "Base",
+                "Placement": "Base",
+                "_ElementMapVersion": "Base",
             },
         )
         obj.Label = "Test Pad"
@@ -852,10 +901,15 @@ class TestSnapshotExtractor:
         assert len(result.root_nodes) == 1
         node = result.root_nodes[0]
 
-        # Only Label and Length should be present (both visible by editor mode AND group)
+        # Visible: Label, Length, Shape (empty group is visible now)
+        # Hidden: Visibility, Placement, _ElementMapVersion (hidden by editor mode)
         assert "Label" in node.properties
         assert "Length" in node.properties
-        assert len(node.properties) == 2
+        assert "Shape" in node.properties, "Shape with empty group should be visible"
+        assert "Visibility" not in node.properties
+        assert "Placement" not in node.properties
+        assert "_ElementMapVersion" not in node.properties
+        assert len(node.properties) == 3
 
     def test_extract_tree_includes_properties_with_non_empty_group(self):
         """Test that properties with non-empty groups are included."""
@@ -1246,4 +1300,465 @@ class TestSnapshotExtractor:
         # of each other). D and E are grandchildren, not direct children.
         assert complex_result["Part"] == ["A", "B", "C"], (
             f"Expected ['A', 'B', 'C'], got {complex_result['Part']}. A, B, C should remain as direct children."
+        )
+
+
+class TestIsPropertyHidden:
+    """Tests for hidden property detection logic."""
+
+    def test_hidden_property_detection_savedgeometry_has_prop_hidden_bit(self):
+        """Test that SavedGeometry is detected as hidden via Prop_Hidden bit.
+
+        SavedGeometry has Prop_Hidden bit set (value 4), which should be detected
+        by checking getPropertyStatus().
+        """
+
+        # Create object with SavedGeometry having Prop_Hidden bit (value 4)
+        obj = MockFreeCADObject(
+            name="TestObj",
+            type_id="App::DocumentObject",
+            label="Test",
+            properties=["Label", "SavedGeometry", "Placement"],
+            property_status={
+                "SavedGeometry": 4,  # Prop_Hidden = 4
+            },
+            # SavedGeometry has empty group in real FreeCAD (maps to "Base")
+            property_groups={
+                "Label": "Base",
+                "SavedGeometry": "",
+                "Placement": "Base",
+            },
+        )
+        obj.Label = "Test"
+        obj.SavedGeometry = "geometry_data"
+        obj.Placement = "placement"
+
+        # SavedGeometry should be hidden due to Prop_Hidden bit
+        is_hidden, reason = _is_property_hidden(obj, "SavedGeometry")
+        assert is_hidden, "SavedGeometry should be hidden (has Prop_Hidden bit)"
+        assert "prop_hidden_bit" in reason, f"Reason should mention prop_hidden_bit, got: {reason}"
+
+    def test_hidden_property_detection_label_is_visible(self):
+        """Test that Label is visible (no Prop_Hidden bit, no Hidden editor mode)."""
+
+        obj = MockFreeCADObject(
+            name="TestObj",
+            type_id="App::DocumentObject",
+            label="Test",
+            properties=["Label", "Placement"],
+            property_groups={
+                "Label": "Base",
+                "Placement": "Base",
+            },
+        )
+        obj.Label = "Test"
+
+        # Label should be visible
+        is_hidden, reason = _is_property_hidden(obj, "Label")
+        assert not is_hidden, "Label should be visible (no Prop_Hidden bit)"
+        assert reason == "", f"Reason should be empty for visible property, got: {reason}"
+
+    def test_hidden_property_detection_editor_mode_hidden(self):
+        """Test that properties with getEditorMode=["Hidden"] are hidden."""
+
+        obj = MockFreeCADObject(
+            name="TestObj",
+            type_id="App::DocumentObject",
+            label="Test",
+            properties=["Label", "Visibility", "Placement"],
+            property_editor_modes={
+                "Visibility": ["Hidden"],
+            },
+            property_groups={
+                "Label": "Base",
+                "Visibility": "Base",
+                "Placement": "Base",
+            },
+        )
+        obj.Label = "Test"
+        obj.Visibility = True
+
+        # Visibility with ["Hidden"] editor mode should be hidden
+        is_hidden, reason = _is_property_hidden(obj, "Visibility")
+        assert is_hidden, "Visibility should be hidden (editor mode = Hidden)"
+        assert "editor_mode" in reason.lower(), f"Reason should mention editor_mode, got: {reason}"
+
+        # Label should still be visible
+        is_hidden_label, _ = _is_property_hidden(obj, "Label")
+        assert not is_hidden_label, "Label should be visible"
+
+    def test_hidden_property_detection_empty_group_is_visible(self):
+        """Test that properties with empty group are VISIBLE (not hidden).
+
+        This is the BUG FIX: Properties with empty getGroupOfProperty() should
+        be visible (they map to "Base" group in FreeCAD's UI). The old logic
+        incorrectly treated empty group as hidden.
+        """
+
+        # Properties with empty group (like Shape in Part::Feature)
+        obj = MockFreeCADObject(
+            name="TestObj",
+            type_id="Part::Feature",
+            label="Test",
+            properties=["Label", "Shape", "Placement"],
+            # Empty group - should be VISIBLE (maps to "Base")
+            property_groups={
+                "Label": "Base",
+                "Shape": "",  # Empty group should be visible, not hidden!
+                "Placement": "Base",
+            },
+        )
+        obj.Label = "Test"
+        obj.Shape = "shape_data"
+
+        # Shape with empty group should be VISIBLE (this is the fix!)
+        is_hidden, reason = _is_property_hidden(obj, "Shape")
+        assert not is_hidden, "Shape with empty group should be VISIBLE (maps to Base)"
+        assert reason == "", f"Reason should be empty for visible property, got: {reason}"
+
+    def test_hidden_property_detection_combined_conditions(self):
+        """Test detection when both editor mode and property status are checked."""
+
+        # Object with both hidden by editor mode and hidden by Prop_Hidden bit
+        obj = MockFreeCADObject(
+            name="TestObj",
+            type_id="App::DocumentObject",
+            label="Test",
+            properties=["Label", "SavedGeometry", "Visibility", "Placement", "Shape"],
+            property_editor_modes={
+                "Visibility": ["Hidden"],
+            },
+            property_status={
+                "SavedGeometry": 4,  # Prop_Hidden
+            },
+            property_groups={
+                "Label": "Base",
+                "SavedGeometry": "",
+                "Visibility": "Base",
+                "Placement": "Base",
+                "Shape": "",  # Empty but no Prop_Hidden - should be visible
+            },
+        )
+        obj.Label = "Test"
+
+        # Label: visible
+        is_hidden, reason = _is_property_hidden(obj, "Label")
+        assert not is_hidden, "Label should be visible"
+
+        # SavedGeometry: hidden by Prop_Hidden bit
+        is_hidden, reason = _is_property_hidden(obj, "SavedGeometry")
+        assert is_hidden, "SavedGeometry should be hidden (Prop_Hidden bit)"
+
+        # Visibility: hidden by editor mode
+        is_hidden, reason = _is_property_hidden(obj, "Visibility")
+        assert is_hidden, "Visibility should be hidden (editor mode)"
+
+        # Shape: empty group but no Prop_Hidden - should be VISIBLE
+        is_hidden, reason = _is_property_hidden(obj, "Shape")
+        assert not is_hidden, "Shape with empty group but no Prop_Hidden should be visible"
+
+    def test_hidden_property_detection_prop_hidden_bit_value(self):
+        """Test that Prop_Hidden bit (value 4) is correctly detected.
+
+        FreeCAD's Prop_Hidden constant has value 4. Properties with this bit
+        set in their status should be hidden.
+        """
+
+        # Test with Prop_Hidden bit set (value 4)
+        obj = MockFreeCADObject(
+            name="TestObj",
+            type_id="App::DocumentObject",
+            label="Test",
+            properties=["Label", "HiddenProp", "VisibleProp"],
+            property_status={
+                "HiddenProp": 4,  # Prop_Hidden = 4
+                "VisibleProp": 0,  # No bits set
+            },
+            property_groups={
+                "Label": "Base",
+                "HiddenProp": "Base",
+                "VisibleProp": "Base",
+            },
+        )
+
+        # Property with status=4 should be hidden
+        is_hidden, reason = _is_property_hidden(obj, "HiddenProp")
+        assert is_hidden, "Property with status=4 (Prop_Hidden) should be hidden"
+
+        # Property with status=0 should be visible
+        is_hidden, reason = _is_property_hidden(obj, "VisibleProp")
+        assert not is_hidden, "Property with status=0 should be visible"
+
+    def test_hidden_property_detection_no_getpropertystatus(self):
+        """Test behavior when getPropertyStatus is not available."""
+
+        # Create a minimal mock object without getPropertyStatus method
+        class MinimalMockObject:
+            """Minimal mock object without getPropertyStatus."""
+
+            def __init__(self):
+                self._properties = ["Label"]
+
+            @property
+            def PropertiesList(self):
+                return self._properties
+
+            def getEditorMode(self, prop_name):
+                return []
+
+        obj = MinimalMockObject()
+
+        # Should handle gracefully and not crash
+        is_hidden, reason = _is_property_hidden(obj, "Label")
+        assert not is_hidden, "Label should be visible when getPropertyStatus is not available"
+
+    def test_hidden_property_detection_mixed_status_list(self):
+        """Test detection with mixed list containing both strings and integers.
+
+        FreeCAD can return a mixed list like ["Hidden", 27] or just [27].
+        The function should handle both cases.
+        """
+        from freecad.diff_wb.domain.snapshots.gui_extractor import _is_property_hidden
+
+        # Update mock to return lists with mixed content
+        class MockObjectWithMixedStatus:
+            """Mock object returning mixed status lists."""
+
+            def __init__(self):
+                self._properties = ["Label", "HiddenByString", "HiddenByBit", "Visible"]
+
+            @property
+            def PropertiesList(self):
+                return self._properties
+
+            def getEditorMode(self, prop_name):
+                return []
+
+            def getGroupOfProperty(self, prop_name):
+                return "Base"
+
+            def getPropertyStatus(self, prop_name):
+                # FreeCAD can return mixed lists like ["Hidden", 27]
+                status_map = {
+                    "HiddenByString": ["Hidden", 27],
+                    "HiddenByBit": [28],  # 28 = 16 + 8 + 4 (Prop_Hidden is 4)
+                    "Visible": [0],
+                }
+                return status_map.get(prop_name, [])
+
+        obj = MockObjectWithMixedStatus()
+
+        # HiddenByString: should be hidden due to string "Hidden"
+        is_hidden, reason = _is_property_hidden(obj, "HiddenByString")
+        assert is_hidden, "Property with 'Hidden' string in status should be hidden"
+
+        # HiddenByBit: should be hidden due to Prop_Hidden bit (value 4)
+        is_hidden, reason = _is_property_hidden(obj, "HiddenByBit")
+        assert is_hidden, "Property with Prop_Hidden bit should be hidden"
+
+        # Visible: should be visible
+        is_hidden, reason = _is_property_hidden(obj, "Visible")
+        assert not is_hidden, "Property with no hidden bits should be visible"
+
+    def test_hidden_property_detection_gettypeofproperty_returns_hidden(self):
+        """Test that properties with getTypeOfProperty returning ['Hidden'] are detected as hidden.
+
+        This replicates FreeCAD's PropertyView::isPropertyHidden() logic from
+        src/Gui/PropertyView.cpp line 242-246:
+        - Checks if prop->getType() & App::Prop_Hidden is true
+        - Maps to getTypeOfProperty() returning a list containing 'Hidden'
+        """
+        from freecad.diff_wb.domain.snapshots.gui_extractor import _is_property_hidden
+
+        # Create object where Shape has "Hidden" in its getTypeOfProperty result
+        obj = MockFreeCADObject(
+            name="Body",
+            type_id="PartDesign::Body",
+            label="Test Body",
+            properties=["Label", "Placement", "Shape", "ShapeMaterial"],
+            property_groups={
+                "Label": "Base",
+                "Placement": "Base",
+                "Shape": "",
+                "ShapeMaterial": "",
+            },
+            # getTypeOfProperty returns lists with 'Hidden' for Shape and ShapeMaterial
+            property_types={
+                "Label": ["App::Property"],
+                "Placement": ["App::Property"],
+                "Shape": ["Hidden", "Link"],
+                "ShapeMaterial": ["Hidden"],
+            },
+        )
+        obj.Label = "Test Body"
+
+        # Shape should be hidden due to "Hidden" in getTypeOfProperty result
+        is_hidden, reason = _is_property_hidden(obj, "Shape")
+        assert is_hidden, "Shape should be hidden (getTypeOfProperty returns 'Hidden')"
+        assert reason == "type_hidden", f"Reason should be 'type_hidden', got: {reason}"
+
+        # ShapeMaterial should also be hidden
+        is_hidden, reason = _is_property_hidden(obj, "ShapeMaterial")
+        assert is_hidden, "ShapeMaterial should be hidden (getTypeOfProperty returns 'Hidden')"
+        assert reason == "type_hidden"
+
+        # Label and Placement should still be visible
+        is_hidden, reason = _is_property_hidden(obj, "Label")
+        assert not is_hidden, "Label should be visible"
+        is_hidden, reason = _is_property_hidden(obj, "Placement")
+        assert not is_hidden, "Placement should be visible"
+
+    def test_hidden_property_detection_gettypeofproperty_filters_in_extraction(self):
+        """Test that properties with Hidden in getTypeOfProperty are filtered out during extraction."""
+        from freecad.diff_wb.domain.snapshots.gui_extractor import _extract_visible_properties
+
+        # Create object mimicking a PartDesign::Body with Shape and ShapeMaterial
+        obj = MockFreeCADObject(
+            name="Body",
+            type_id="PartDesign::Body",
+            label="My Body",
+            properties=["Label", "Length", "Shape", "ShapeMaterial", "Result"],
+            property_groups={
+                "Label": "Base",
+                "Length": "Side1",
+                "Shape": "",
+                "ShapeMaterial": "",
+                "Result": "",
+            },
+            # getTypeOfProperty returns 'Hidden' for Shape and ShapeMaterial
+            property_types={
+                "Label": ["App::Property"],
+                "Length": ["App::Property"],
+                "Shape": ["Hidden", "Link"],
+                "ShapeMaterial": ["Hidden"],
+                "Result": ["Hidden", "Link"],
+            },
+        )
+        obj.Label = "My Body"
+        obj.Length = 10.0
+        obj.Shape = "shape_data"
+        obj.ShapeMaterial = "material_data"
+        obj.Result = "result_data"
+
+        # Extract visible properties
+        properties = _extract_visible_properties(obj, "Body")
+
+        # Visible properties should be present
+        assert "Label" in properties, "Label should be extracted"
+        assert "Length" in properties, "Length should be extracted"
+
+        # Hidden properties (via getTypeOfProperty) should be filtered out
+        assert "Shape" not in properties, "Shape should be filtered (type_hidden)"
+        assert "ShapeMaterial" not in properties, "ShapeMaterial should be filtered (type_hidden)"
+        assert "Result" not in properties, "Result should be filtered (type_hidden)"
+
+        # Verify we got exactly 2 visible properties
+        assert len(properties) == 2, f"Expected 2 visible properties, got {len(properties)}"
+
+
+class TestGetPropertyGroup:
+    """Tests for property group extraction."""
+
+    def test_property_group_returns_correct_group_name(self):
+        """Test that properties return the correct group name from getGroupOfProperty."""
+
+        obj = MockFreeCADObject(
+            name="TestObj",
+            type_id="App::DocumentObject",
+            label="Test",
+            properties=["Label", "Placement", "Shape", "Length"],
+            property_groups={
+                "Label": "Base",
+                "Placement": "Base",
+                "Shape": "Input",
+                "Length": "Side1",
+            },
+        )
+
+        # Test various property groups
+        group_label = _get_property_group(obj, "Label")
+        assert group_label == "Base", f"Expected 'Base', got '{group_label}'"
+
+        group_placement = _get_property_group(obj, "Placement")
+        assert group_placement == "Base", f"Expected 'Base', got '{group_placement}'"
+
+        group_shape = _get_property_group(obj, "Shape")
+        assert group_shape == "Input", f"Expected 'Input', got '{group_shape}'"
+
+        group_length = _get_property_group(obj, "Length")
+        assert group_length == "Side1", f"Expected 'Side1', got '{group_length}'"
+
+    def test_empty_group_returns_base(self):
+        """Test that empty group strings return 'Base'.
+
+        FreeCAD properties with no explicit group have getGroupOfProperty()
+        returning an empty string. These should map to "Base" group in our
+        property viewer.
+        """
+
+        obj = MockFreeCADObject(
+            name="TestObj",
+            type_id="Part::Feature",
+            label="Test",
+            properties=["Label", "Shape", "Placement", "MapPath"],
+            property_groups={
+                "Label": "Base",
+                "Shape": "",  # Empty group should map to "Base"
+                "Placement": "Base",
+                "MapPath": "",  # Empty group should map to "Base"
+            },
+        )
+
+        # Empty group should return "Base"
+        group_shape = _get_property_group(obj, "Shape")
+        assert group_shape == "Base", f"Empty group should map to 'Base', got '{group_shape}'"
+
+        group_mappath = _get_property_group(obj, "MapPath")
+        assert group_mappath == "Base", f"Empty group should map to 'Base', got '{group_mappath}'"
+
+        # Non-empty group should return as-is
+        group_label = _get_property_group(obj, "Label")
+        assert group_label == "Base", f"Expected 'Base', got '{group_label}'"
+
+    def test_property_group_no_method_returns_base(self):
+        """Test that objects without getGroupOfProperty return 'Base'."""
+
+        # Object without getGroupOfProperty method
+        class NoGroupMethod:
+            pass
+
+        obj = NoGroupMethod()
+        group = _get_property_group(obj, "AnyProperty")
+        assert group == "Base", f"Expected 'Base' for objects without getGroupOfProperty, got '{group}'"
+
+    def test_property_group_in_extracted_properties(self):
+        """Test that extracted properties include the group field."""
+        from freecad.diff_wb.domain.snapshots.gui_extractor import _extract_visible_properties
+
+        obj = MockFreeCADObject(
+            name="Pad",
+            type_id="PartDesign::Pad",
+            label="Test Pad",
+            properties=["Label", "Length", "Type", "Shape"],
+            property_groups={
+                "Label": "Base",
+                "Length": "Side1",
+                "Type": "Side1",
+                "Shape": "",  # Empty group -> "Base"
+            },
+        )
+        obj.Label = "Test Pad"
+        obj.Length = 10.0
+        obj.Type = "Length"
+        obj.Shape = "shape_data"
+
+        # Extract visible properties
+        properties = _extract_visible_properties(obj, "Pad")
+
+        # Verify groups are correctly extracted
+        assert properties["Label"].group == "Base", f"Expected 'Base', got '{properties['Label'].group}'"
+        assert properties["Length"].group == "Side1", f"Expected 'Side1', got '{properties['Length'].group}'"
+        assert properties["Type"].group == "Side1", f"Expected 'Side1', got '{properties['Type'].group}'"
+        assert properties["Shape"].group == "Base", (
+            f"Empty group should map to 'Base', got '{properties['Shape'].group}'"
         )

@@ -372,3 +372,331 @@ class TestDiffPresenterPropertyHandling:
         prop_call = next((c for c in calls if c["method"] == "show_properties"), None)
         assert prop_call is not None
         assert prop_call["properties"] == []
+
+
+class TestPropertyValueTypeExtraction:
+    """Tests for property value extraction - ensures .value is extracted from Property object.
+
+    This tests the fix for Phase 3 where the Property object itself was being passed
+    instead of its .value attribute, causing incorrect expansion in the UI.
+    """
+
+    def test_property_with_list_value_expands_correctly(self) -> None:
+        """Property with list value passes the list (not Property) to presentation.value.
+
+        For a property like Constraints containing a list of Constraint objects,
+        the value field should contain the list itself, not the Property wrapper.
+        """
+        # Arrange
+        fake_view = FakeDiffView()
+        presenter = DiffPresenter(fake_view)
+
+        # Simulate a list of constraint objects as property value
+        # Using UNKNOWN type preserves the raw list value (as FreeCAD integration does)
+        constraint_values = ["Constraint1", "Constraint2", "Constraint3"]
+        old_prop = Property(type_=PropertyType.UNKNOWN, value=constraint_values, group="Sketch")
+        new_prop = Property(type_=PropertyType.UNKNOWN, value=constraint_values + ["Constraint4"], group="Sketch")
+        node_diff = NodeDiff(
+            path="Sketch",
+            type_id="Sketcher::SketchObject",
+            property_diffs=[
+                PropertyDiff(property_name="Constraints", old_value=old_prop, new_value=new_prop),
+            ],
+            _force_state=DiffState.MODIFIED,
+        )
+        diff_result = DiffResult(
+            old_snapshot_name="v1",
+            new_snapshot_name="v2",
+            node_diffs=[node_diff],
+        )
+
+        presenter.present_diff(diff_result)
+
+        # Act
+        presenter.on_node_selected("Sketch")
+
+        # Assert
+        calls = fake_view.get_calls()
+        prop_call = next((c for c in calls if c["method"] == "show_properties"), None)
+        assert prop_call is not None
+
+        properties = prop_call["properties"]
+        assert len(properties) == 1
+
+        prop_pres = properties[0]
+        assert prop_pres.name == "Constraints"
+
+        # CRITICAL: The value should be the actual list, NOT the Property object
+        # If it were the Property object, str(value) would show "Property(type_=...)"
+        # Instead, it should show the list itself
+        assert prop_pres.value == ["Constraint1", "Constraint2", "Constraint3", "Constraint4"]
+        # Verify it's NOT a Property object
+        assert not isinstance(prop_pres.value, Property)
+
+    def test_property_with_dict_value_expands_correctly(self) -> None:
+        """Property with dict value passes the dict (not Property) to presentation.value."""
+        # Arrange
+        fake_view = FakeDiffView()
+        presenter = DiffPresenter(fake_view)
+
+        # Simulate a dict value using UNKNOWN type to preserve raw dict
+        old_dict = {"key1": "value1", "key2": "value2"}
+        new_dict = {"key1": "value1", "key2": "modified"}
+        old_prop = Property(type_=PropertyType.UNKNOWN, value=old_dict)
+        new_prop = Property(type_=PropertyType.UNKNOWN, value=new_dict)
+        node_diff = NodeDiff(
+            path="Part",
+            type_id="Part::Feature",
+            property_diffs=[
+                PropertyDiff(property_name="Data", old_value=old_prop, new_value=new_prop),
+            ],
+            _force_state=DiffState.MODIFIED,
+        )
+        diff_result = DiffResult(
+            old_snapshot_name="v1",
+            new_snapshot_name="v2",
+            node_diffs=[node_diff],
+        )
+
+        presenter.present_diff(diff_result)
+
+        # Act
+        presenter.on_node_selected("Part")
+
+        # Assert
+        calls = fake_view.get_calls()
+        prop_call = next((c for c in calls if c["method"] == "show_properties"), None)
+        assert prop_call is not None
+
+        properties = prop_call["properties"]
+        assert len(properties) == 1
+
+        prop_pres = properties[0]
+        assert prop_pres.name == "Data"
+
+        # CRITICAL: The value should be the actual dict, NOT the Property object
+        assert prop_pres.value == {"key1": "value1", "key2": "modified"}
+        # Verify it's a dict, not a Property
+        assert isinstance(prop_pres.value, dict)
+
+    def test_property_with_vector_expands_correctly(self) -> None:
+        """Property with Vector value passes the Vector (not Property) to presentation.value."""
+        # Arrange
+        from freecad.diff_wb.domain.tree import Vector
+
+        fake_view = FakeDiffView()
+        presenter = DiffPresenter(fake_view)
+
+        old_vec = Vector(x=1.0, y=2.0, z=3.0)
+        new_vec = Vector(x=4.0, y=5.0, z=6.0)
+        old_prop = Property(type_=PropertyType.VECTOR, value=old_vec)
+        new_prop = Property(type_=PropertyType.VECTOR, value=new_vec)
+        node_diff = NodeDiff(
+            path="Part",
+            type_id="Part::Feature",
+            property_diffs=[
+                PropertyDiff(property_name="Position", old_value=old_prop, new_value=new_prop),
+            ],
+            _force_state=DiffState.MODIFIED,
+        )
+        diff_result = DiffResult(
+            old_snapshot_name="v1",
+            new_snapshot_name="v2",
+            node_diffs=[node_diff],
+        )
+
+        presenter.present_diff(diff_result)
+
+        # Act
+        presenter.on_node_selected("Part")
+
+        # Assert
+        calls = fake_view.get_calls()
+        prop_call = next((c for c in calls if c["method"] == "show_properties"), None)
+        assert prop_call is not None
+
+        properties = prop_call["properties"]
+        assert len(properties) == 1
+
+        prop_pres = properties[0]
+        assert prop_pres.name == "Position"
+
+        # CRITICAL: The value should be the Vector object, NOT the Property wrapper
+        assert isinstance(prop_pres.value, Vector)
+        assert prop_pres.value.x == 4.0
+        assert prop_pres.value.y == 5.0
+        assert prop_pres.value.z == 6.0
+        # Verify it's NOT a Property object
+        assert not hasattr(prop_pres.value, "expression")
+
+    def test_property_with_placement_expands_correctly(self) -> None:
+        """Property with Placement value passes the Placement (not Property) to presentation.value."""
+        # Arrange
+        from freecad.diff_wb.domain.tree import Placement, Rotation, Vector
+
+        fake_view = FakeDiffView()
+        presenter = DiffPresenter(fake_view)
+
+        old_placement = Placement(position=Vector(0, 0, 0), rotation=Rotation(0, 0, 1, 0))
+        new_placement = Placement(position=Vector(10, 20, 30), rotation=Rotation(0, 0, 1, 90))
+        old_prop = Property(type_=PropertyType.PLACEMENT, value=old_placement)
+        new_prop = Property(type_=PropertyType.PLACEMENT, value=new_placement)
+        node_diff = NodeDiff(
+            path="Part",
+            type_id="Part::Feature",
+            property_diffs=[
+                PropertyDiff(property_name="Placement", old_value=old_prop, new_value=new_prop),
+            ],
+            _force_state=DiffState.MODIFIED,
+        )
+        diff_result = DiffResult(
+            old_snapshot_name="v1",
+            new_snapshot_name="v2",
+            node_diffs=[node_diff],
+        )
+
+        presenter.present_diff(diff_result)
+
+        # Act
+        presenter.on_node_selected("Part")
+
+        # Assert
+        calls = fake_view.get_calls()
+        prop_call = next((c for c in calls if c["method"] == "show_properties"), None)
+        assert prop_call is not None
+
+        properties = prop_call["properties"]
+        assert len(properties) == 1
+
+        prop_pres = properties[0]
+        assert prop_pres.name == "Placement"
+
+        # CRITICAL: The value should be the Placement object, NOT the Property wrapper
+        assert isinstance(prop_pres.value, Placement)
+        assert prop_pres.value.position.x == 10
+        assert prop_pres.value.position.y == 20
+        assert prop_pres.value.position.z == 30
+        assert prop_pres.value.rotation.angle_degrees == 90
+        # Verify it's NOT a Property object
+        assert not hasattr(prop_pres.value, "expression")
+
+    def test_property_deleted_uses_old_value_for_expansion(self) -> None:
+        """When property is deleted (new_value is None), uses old_value.value for expansion."""
+        # Arrange
+        fake_view = FakeDiffView()
+        presenter = DiffPresenter(fake_view)
+
+        old_list = ["item1", "item2"]
+        old_prop = Property(type_=PropertyType.UNKNOWN, value=old_list)
+        node_diff = NodeDiff(
+            path="Part",
+            type_id="Part::Feature",
+            property_diffs=[
+                PropertyDiff(property_name="Items", old_value=old_prop, new_value=None),
+            ],
+            _force_state=DiffState.MODIFIED,
+        )
+        diff_result = DiffResult(
+            old_snapshot_name="v1",
+            new_snapshot_name="v2",
+            node_diffs=[node_diff],
+        )
+
+        presenter.present_diff(diff_result)
+
+        # Act
+        presenter.on_node_selected("Part")
+
+        # Assert
+        calls = fake_view.get_calls()
+        prop_call = next((c for c in calls if c["method"] == "show_properties"), None)
+        assert prop_call is not None
+
+        properties = prop_call["properties"]
+        assert len(properties) == 1
+
+        prop_pres = properties[0]
+        assert prop_pres.state == "DELETED"
+
+        # Should use old_value when new_value is None
+        assert prop_pres.value == ["item1", "item2"]
+        assert isinstance(prop_pres.value, list)
+
+    def test_property_added_uses_new_value_for_expansion(self) -> None:
+        """When property is added (old_value is None), uses new_value.value for expansion."""
+        # Arrange
+        fake_view = FakeDiffView()
+        presenter = DiffPresenter(fake_view)
+
+        new_list = ["new_item"]
+        new_prop = Property(type_=PropertyType.UNKNOWN, value=new_list)
+        node_diff = NodeDiff(
+            path="Part",
+            type_id="Part::Feature",
+            property_diffs=[
+                PropertyDiff(property_name="Items", old_value=None, new_value=new_prop),
+            ],
+            _force_state=DiffState.MODIFIED,
+        )
+        diff_result = DiffResult(
+            old_snapshot_name="v1",
+            new_snapshot_name="v2",
+            node_diffs=[node_diff],
+        )
+
+        presenter.present_diff(diff_result)
+
+        # Act
+        presenter.on_node_selected("Part")
+
+        # Assert
+        calls = fake_view.get_calls()
+        prop_call = next((c for c in calls if c["method"] == "show_properties"), None)
+        assert prop_call is not None
+
+        properties = prop_call["properties"]
+        assert len(properties) == 1
+
+        prop_pres = properties[0]
+        assert prop_pres.state == "ADDED"
+
+        # Should use new_value when available
+        assert prop_pres.value == ["new_item"]
+        assert isinstance(prop_pres.value, list)
+
+    def test_property_both_none_has_no_value(self) -> None:
+        """When both old and new values are None, presentation.value is None."""
+        # Arrange
+        fake_view = FakeDiffView()
+        presenter = DiffPresenter(fake_view)
+
+        node_diff = NodeDiff(
+            path="Part",
+            type_id="Part::Feature",
+            property_diffs=[
+                PropertyDiff(property_name="Empty", old_value=None, new_value=None),
+            ],
+            _force_state=DiffState.MODIFIED,
+        )
+        diff_result = DiffResult(
+            old_snapshot_name="v1",
+            new_snapshot_name="v2",
+            node_diffs=[node_diff],
+        )
+
+        presenter.present_diff(diff_result)
+
+        # Act
+        presenter.on_node_selected("Part")
+
+        # Assert
+        calls = fake_view.get_calls()
+        prop_call = next((c for c in calls if c["method"] == "show_properties"), None)
+        assert prop_call is not None
+
+        properties = prop_call["properties"]
+        assert len(properties) == 1
+
+        prop_pres = properties[0]
+        # When both values are None, value should be None
+        assert prop_pres.value is None

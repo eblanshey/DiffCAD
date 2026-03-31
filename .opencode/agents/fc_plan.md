@@ -224,3 +224,5 @@ After writing the plan file, inform the user that the plan is saved and they can
 - Ask questions when requirements are ambiguous.
 - Present tradeoffs when multiple approaches exist.
 - The plan file should be comprehensive enough for implementation to proceed without further clarification.
+
+**IF YOU TRY TO WRITE A TASK FILE BEFORE GETTING THE USER'S APPROVAL OF THE PLAN, YOU WILL BE FLOGGED.**

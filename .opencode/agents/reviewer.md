@@ -135,8 +135,8 @@ A high-level overview of what was reviewed and general assessment.
 
 ### Conclusion
 Clear recommendation:
-- **Approved**: No critical issues, minor improvements optional
-- **Request Changes**: Critical issues or significant architecture violations must be fixed before merging
+- **Approved**: No issues of any kind -- even nitpicks are considered blockers
+- **Request Changes**: Critical issues, significant architecture violations, general improvements, and nitpicks that enhance overall maintainability must be fixed before merging
 
 ## Tone and Approach
 

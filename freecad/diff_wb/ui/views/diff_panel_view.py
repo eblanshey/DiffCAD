@@ -18,8 +18,6 @@ from PySide6.QtWidgets import (
     QSplitter,
     QStyledItemDelegate,
     QStyleOptionViewItem,
-    QTableWidget,
-    QTableWidgetItem,
     QTreeWidget,
     QTreeWidgetItem,
     QVBoxLayout,
@@ -33,6 +31,7 @@ from ..translation_strings import (
     DIFF_SUMMARY_DELETED_LABEL,
     DIFF_SUMMARY_MODIFIED_LABEL,
 )
+from .property_tree import _camelcase_to_spaces, get_property_children, is_expandable
 
 
 @dataclass
@@ -188,21 +187,18 @@ class DiffPanelView(QWidget):
         tree_layout.addWidget(summary_container)
         tree_layout.addWidget(self.tree_widget)
 
-        # Column 3: Properties table (hidden initially)
-        self.properties_table = QTableWidget()
-        self.properties_table.setColumnCount(2)
-        self.properties_table.setHorizontalHeaderLabels(["Property", "Value"])
-        self.properties_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
-        self.properties_table.horizontalHeader().setStretchLastSection(True)
-        self.properties_table.horizontalHeader().setDefaultSectionSize(150)
-        self.properties_table.setColumnWidth(0, 150)
-        self.properties_table.setColumnWidth(1, 300)
-        # self.properties_table.hide()  # Hide until data available
+        # Column 3: Properties tree widget (replaces QTableWidget)
+        self.properties_tree = QTreeWidget()
+        self.properties_tree.setColumnCount(2)
+        self.properties_tree.setHeaderLabels(["Property", "Value"])
+        self.properties_tree.header().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        self.properties_tree.header().setStretchLastSection(True)
+        # self.properties_tree.hide()  # Hide until data available
 
         # Add to splitter
         splitter.addWidget(snapshot_container)
         splitter.addWidget(tree_container)
-        splitter.addWidget(self.properties_table)
+        splitter.addWidget(self.properties_tree)
 
         # Set initial sizes: narrower snapshot, narrower tree, wider property table
         splitter.setSizes([150, 150, 400])
@@ -397,59 +393,116 @@ class DiffPanelView(QWidget):
             self._modified_label.setText(f"{modified_text} {modified}")
 
     def show_properties(self, properties: list[PropertyPresentation]) -> None:
-        """Display property diffs in the properties table.
+        """Display property diffs in the properties tree widget.
 
         Args:
             properties: List of PropertyPresentation objects to display.
-                       Each row shows: Property Name | Value
+                       Properties are grouped by their group (or default to "Properties").
+                       Each property row shows: Property Name | Value
                        Color coding: green=added, red=deleted, blue=modified, gray=unchanged
-                       Expression rows are shown as child rows with → prefix.
+                       Expandable properties can be expanded to show their children.
         """
-        # Clear existing rows
-        self.properties_table.setRowCount(0)
+        # Clear existing tree items
+        self.properties_tree.clear()
 
-        # Include all properties (including unchanged)
-        all_properties = properties
+        # Guard: no properties to display
+        if not properties:
+            return
 
-        # Set row count to number of properties
-        self.properties_table.setRowCount(len(all_properties))
+        # Group properties by group name (default to "Properties" if no group)
+        groups: dict[str, list[PropertyPresentation]] = {}
+        for prop in properties:
+            # Use getattr to check for group attribute, default to "Properties" if not present
+            group_name = getattr(prop, "group", None) or "Properties"
+            if group_name not in groups:
+                groups[group_name] = []
+            groups[group_name].append(prop)
 
-        # Populate rows
-        for row, prop in enumerate(all_properties):
-            is_expression = prop.name == "Expression"
+        # Create tree items for each group (sorted alphabetically)
+        for group_name in sorted(groups.keys()):
+            group_props = groups[group_name]
+            # Create group header item
+            group_item = self._create_group_header_item(group_name)
+            self.properties_tree.addTopLevelItem(group_item)
 
-            # Build value text based on state
-            if prop.state == "ADDED":
-                bg_color = self.ADDED_COLOR
-                value_text = f"{prop.new_display}"
-            elif prop.state == "DELETED":
-                bg_color = self.DELETED_COLOR
-                value_text = f"{prop.old_display}"
-            elif prop.state == "MODIFIED":
-                bg_color = self.MODIFIED_COLOR
-                value_text = f"{prop.old_display} → {prop.new_display}"
-            else:  # UNCHANGED
-                bg_color = self.UNCHANGED_COLOR
-                value_text = prop.new_display
+            # Add properties under this group
+            for prop in group_props:
+                prop_item = self._create_property_tree_item(prop)
+                group_item.addChild(prop_item)
 
-            if is_expression:
-                # Expression row shows → Expression in key column, uses its own state color
-                name_item = QTableWidgetItem("→ Expression")
-                value_item = QTableWidgetItem(value_text)
-                name_item.setBackground(QBrush(bg_color))
-                value_item.setBackground(QBrush(bg_color))
-                self.properties_table.setItem(row, 0, name_item)
-                self.properties_table.setItem(row, 1, value_item)
-            else:
-                # Regular property rows
-                name_item = QTableWidgetItem(prop.name)
-                value_item = QTableWidgetItem(value_text)
+            # Expand groups by default so properties are visible
+            group_item.setExpanded(True)
 
-                name_item.setBackground(QBrush(bg_color))
-                value_item.setBackground(QBrush(bg_color))
+    def _create_group_header_item(self, group_name: str) -> QTreeWidgetItem:
+        """Create a non-selectable group header item with gray background.
 
-                self.properties_table.setItem(row, 0, name_item)
-                self.properties_table.setItem(row, 1, value_item)
+        Args:
+            group_name: The name of the group (e.g., "Base", "Format").
+
+        Returns:
+            QTreeWidgetItem configured as a group header.
+        """
+        # Gray background for group headers (similar to FreeCAD's property panel)
+        GROUP_HEADER_COLOR = QColor(220, 220, 220)
+
+        item = QTreeWidgetItem([group_name, ""])
+        # Make header non-selectable
+        item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsSelectable)
+        # Apply gray background to both columns
+        item.setBackground(0, QBrush(GROUP_HEADER_COLOR))
+        item.setBackground(1, QBrush(GROUP_HEADER_COLOR))
+        # Make the group header bold
+        font = item.font(0)
+        font.setBold(True)
+        item.setFont(0, font)
+        item.setFont(1, font)
+        return item
+
+    def _create_property_tree_item(self, prop: PropertyPresentation) -> QTreeWidgetItem:
+        """Create a property tree item with diff coloring and expandability.
+
+        Args:
+            prop: The PropertyPresentation to display.
+
+        Returns:
+            QTreeWidgetItem with text, color, and children if expandable.
+        """
+        # Determine background color based on state
+        if prop.state == "ADDED":
+            bg_color = self.ADDED_COLOR
+            value_text = prop.new_display
+        elif prop.state == "DELETED":
+            bg_color = self.DELETED_COLOR
+            value_text = prop.old_display
+        elif prop.state == "MODIFIED":
+            bg_color = self.MODIFIED_COLOR
+            value_text = f"{prop.old_display} → {prop.new_display}"
+        else:  # UNCHANGED
+            bg_color = self.UNCHANGED_COLOR
+            value_text = prop.new_display
+
+        # Convert CamelCase to spaced name for display
+        display_name = _camelcase_to_spaces(prop.name)
+
+        item = QTreeWidgetItem([display_name, value_text])
+
+        # Apply diff coloring to both columns
+        item.setBackground(0, QBrush(bg_color))
+        item.setBackground(1, QBrush(bg_color))
+
+        # Check if the property value is expandable and add children
+        if prop.value is not None and is_expandable(prop.value):
+            children = get_property_children(prop.name, prop.value)
+            for child_name, child_value in children:
+                child_display_name = _camelcase_to_spaces(child_name)
+                child_value_text = str(child_value) if child_value is not None else ""
+                child_item = QTreeWidgetItem([child_display_name, child_value_text])
+                # Apply same background color to children
+                child_item.setBackground(0, QBrush(bg_color))
+                child_item.setBackground(1, QBrush(bg_color))
+                item.addChild(child_item)
+
+        return item
 
     # Selection management methods
     def _get_default_background(self) -> QColor:

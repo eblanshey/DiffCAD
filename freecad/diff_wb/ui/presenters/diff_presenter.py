@@ -1,5 +1,7 @@
 """File responsibility: Diff result presenter for UI."""
 
+from typing import Any
+
 from ...domain.diff.engine import DiffResult
 from ...domain.diff.models import NodeDiff
 from ...domain.tree import Property
@@ -124,6 +126,20 @@ class DiffPresenter:
             old_display = self._format_property_value(prop_diff.old_value)
             new_display = self._format_property_value(prop_diff.new_value)
 
+            # Determine value to pass for expandable properties
+            # Extract .value from Property object so UI expands the actual value,
+            # not the Property wrapper (which would show type_, value, expression, group)
+            # Use new_value if available (for ADDED/MODIFIED/UNCHANGED), otherwise old_value (for DELETED)
+            value = self._extract_property_value(
+                prop_diff.new_value if prop_diff.new_value is not None else prop_diff.old_value
+            )
+
+            # Determine group from the property value
+            # Use new_value's group if available, otherwise old_value's group
+            group = self._extract_property_group(
+                prop_diff.new_value if prop_diff.new_value is not None else prop_diff.old_value
+            )
+
             # Create main property row
             presentations.append(
                 PropertyPresentation(
@@ -131,6 +147,8 @@ class DiffPresenter:
                     old_display=old_display,
                     new_display=new_display,
                     state=prop_diff.state.name,
+                    value=value,
+                    group=group,
                 )
             )
 
@@ -174,3 +192,11 @@ class DiffPresenter:
         if prop is None:
             return ""
         return str(prop)
+
+    def _extract_property_value(self, prop: Property | None) -> Any:
+        """Extract the underlying value from a Property object."""
+        return prop.value if prop is not None else None
+
+    def _extract_property_group(self, prop: Property | None) -> str | None:
+        """Extract the group attribute from a Property object."""
+        return getattr(prop, "group", None) if prop is not None else None

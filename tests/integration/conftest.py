@@ -103,19 +103,18 @@ def freecad_gui(freecad_app: Any) -> object | None:
 
 
 @pytest.fixture
-def freecad_context(freecad_app: Any, freecad_gui: object | None) -> FreeCadContext:
+def freecad_context(freecad_app: Any) -> FreeCadContext:
     """Create a FreeCAD runtime context for testing.
 
     Args:
         freecad_app: FreeCAD application module.
-        freecad_gui: FreeCAD GUI module (may be None).
 
     Returns:
         FreeCadContext instance.
     """
     from freecad.diff_wb.domain.ports import FreeCadContext
 
-    return FreeCadContext(app=freecad_app, gui=freecad_gui)
+    return FreeCadContext(app=freecad_app)
 
 
 @pytest.fixture

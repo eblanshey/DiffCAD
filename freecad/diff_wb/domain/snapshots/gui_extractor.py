@@ -273,6 +273,26 @@ def _get_expression_for_property(obj: object, prop_name: str) -> str | None:
     return None
 
 
+def _get_property_group(obj: object, prop_name: str) -> str:
+    """Get the group name for a property.
+
+    FreeCAD properties can belong to different groups (like "Base", "Format", "Data", etc.).
+    Empty group strings should map to "Base".
+
+    Args:
+        obj: The FreeCAD object
+        prop_name: Name of the property
+
+    Returns:
+        The group name, or "Base" if empty or not available
+    """
+    get_group = getattr(obj, "getGroupOfProperty", None)
+    if get_group is not None:
+        group = get_group(prop_name)
+        return group if group else "Base"
+    return "Base"
+
+
 def _extract_property_value(obj: object, prop_name: str) -> Property | None:
     """Extract a single property value from a FreeCAD object.
 
@@ -292,7 +312,8 @@ def _extract_property_value(obj: object, prop_name: str) -> Property | None:
         #    considered different
         value = getattr(obj, prop_name)
         expression = _get_expression_for_property(obj, prop_name)
-        return Property.from_freecad_property(prop_name, value, expression=expression)
+        group = _get_property_group(obj, prop_name)
+        return Property.from_freecad_property(prop_name, value, expression=expression, group=group)
     except Exception as e:
         Log.warning(f"Failed to extract property {prop_name}: {e}")
         return None
@@ -301,9 +322,14 @@ def _extract_property_value(obj: object, prop_name: str) -> Property | None:
 def _is_property_hidden(obj: object, prop_name: str) -> tuple[bool, str]:
     """Check if a property should be hidden from the property editor.
 
-    Two conditions make a property hidden:
+    Three conditions make a property hidden (replicates FreeCAD's
+    PropertyView::isPropertyHidden() from src/Gui/PropertyView.cpp line 242-246):
     1. getEditorMode() returns ['Hidden']
-    2. getGroupOfProperty() returns empty string (shown only with "show hidden")
+    2. getPropertyStatus() returns status with Prop_Hidden bit (value 4) or "Hidden" string
+    3. getTypeOfProperty() returns a list containing 'Hidden'
+
+    Note: Empty group does NOT mean hidden - properties with empty group
+    are visible and map to "Base" group in FreeCAD's UI.
 
     Args:
         obj: The FreeCAD object
@@ -313,17 +339,35 @@ def _is_property_hidden(obj: object, prop_name: str) -> tuple[bool, str]:
         Tuple of (is_hidden, reason_for_hiding)
     """
     get_editor_mode = getattr(obj, "getEditorMode", None)
-    get_group_of_property = getattr(obj, "getGroupOfProperty", None)
 
     if get_editor_mode is not None:
         editor_mode = get_editor_mode(prop_name)
         if "Hidden" in editor_mode:
-            return True, f"editor_mode={editor_mode}"
+            return True, "editor_mode_hidden"
 
-    if get_group_of_property is not None:
-        prop_group = get_group_of_property(prop_name)
-        if not prop_group:
-            return True, "empty_group"
+    # Check 2: getPropertyStatus() may contain Prop_Hidden bit (value 4) or "Hidden" string
+    # FreeCAD can return a mixed list like ["Hidden", 27] or just [27]
+    get_property_status = getattr(obj, "getPropertyStatus", None)
+    if get_property_status is not None:
+        status = get_property_status(prop_name)
+        if status:
+            # Check for string "Hidden" in status list
+            if "Hidden" in status:
+                return True, "prop_hidden_bit"
+            # Check for Prop_Hidden bit (value 4) in any integer value
+            for item in status:
+                if isinstance(item, int) and (item & 4):  # Prop_Hidden = 4
+                    return True, "prop_hidden_bit"
+
+    # Check 3: Replicates FreeCAD's PropertyView::isPropertyHidden() logic
+    # from src/Gui/PropertyView.cpp line 242-246
+    # Checks if prop->getType() & App::Prop_Hidden is true
+    # This maps to getTypeOfProperty() returning a list containing 'Hidden'
+    get_type_of_property = getattr(obj, "getTypeOfProperty", None)
+    if get_type_of_property is not None:
+        prop_types = get_type_of_property(prop_name)
+        if "Hidden" in prop_types:
+            return True, "type_hidden"
 
     return False, ""
 
