@@ -43,6 +43,8 @@ def _values_are_equal_ignoring_expression(old_value: Property, new_value: Proper
     if old_value.type_ == PropertyType.FLOAT:
         tolerance = 1e-9
         return bool(abs(old_value.value - new_value.value) < tolerance)
+    if old_value.type_ == PropertyType.LIST:
+        return Property._compare_lists_as_strings(old_value.value, new_value.value)
     return bool(old_value.value == new_value.value)
 
 

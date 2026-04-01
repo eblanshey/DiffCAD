@@ -26,13 +26,14 @@ from PySide6.QtWidgets import (
 
 from ...application.actions.result_models import SnapshotSummary
 from ...domain.diff.models import DiffState
+from ...utils import Log
 from ..presenters.presentation_models import NodePresentation, PropertyPresentation
 from ..translation_strings import (
     DIFF_SUMMARY_ADDED_LABEL,
     DIFF_SUMMARY_DELETED_LABEL,
     DIFF_SUMMARY_MODIFIED_LABEL,
 )
-from .property_tree import _camelcase_to_spaces, get_property_children
+from .property_tree import _camelcase_to_spaces, get_property_children, is_expandable
 
 
 @dataclass
@@ -475,6 +476,10 @@ class DiffPanelView(QWidget):
         Returns:
             QTreeWidgetItem with text, color, and children if expandable.
         """
+        Log.debug(f"[DEBUG] _create_property_tree_item: property={prop.name!r}, group={prop.group!r}")
+        Log.debug(f"  old_value type: {type(prop.old_value).__name__ if prop.old_value is not None else None}")
+        Log.debug(f"  new_value type: {type(prop.new_value).__name__ if prop.new_value is not None else None}")
+
         # Get display values based on state
         bg_color, left_value, right_value = self._get_property_display_values(prop.state, prop)
 
@@ -484,7 +489,15 @@ class DiffPanelView(QWidget):
         item = QTreeWidgetItem([display_name, left_value, right_value])
 
         # Check if the property value is expandable and add children with diff comparison
-        has_changed_children = self._add_child_items_with_diffs(item, prop)
+        has_changed_children = self._add_child_items_with_diffs(
+            item,
+            prop.name,
+            prop.old_value,
+            prop.new_value,
+        )
+
+        # Always expand property items so their content is visible
+        item.setExpanded(True)
 
         # If any child has MODIFIED/ADDED/DELETED state, color the parent row blue
         if has_changed_children:
@@ -521,24 +534,57 @@ class DiffPanelView(QWidget):
         new_str = str(prop.new_value) if prop.new_value is not None else ""
         return self.UNCHANGED_COLOR, new_str, new_str
 
-    def _add_child_items_with_diffs(self, parent_item: QTreeWidgetItem, prop: PropertyPresentation) -> bool:
+    def _add_child_items_with_diffs(
+        self,
+        parent_item: QTreeWidgetItem,
+        child_name: str,
+        old_value: Any,
+        new_value: Any,
+        visited: set[int] | None = None,
+        depth: int = 0,
+    ) -> bool:
         """Add child items with diff comparison for expandable properties.
 
-        Compares old_value and new_value children to determine individual child states.
-        Only changed children receive background coloring; unchanged children use default.
+        Recursively expands children that are themselves expandable (e.g., Placement -> Base -> x,y,z).
 
         Args:
             parent_item: The parent QTreeWidgetItem to add children to.
-            prop: The PropertyPresentation object with old_value and new_value.
+            child_name: The name of the property/child to expand.
+            old_value: The old value to expand.
+            new_value: The new value to expand.
+            visited: Set of object IDs already visited (to prevent circular references).
+            depth: Current recursion depth.
 
         Returns:
             True if any child has MODIFIED/ADDED/DELETED state, False otherwise.
         """
+        # Max depth to prevent infinite recursion (safety limit)
+        MAX_DEPTH = 10
+        if depth >= MAX_DEPTH:
+            Log.debug("[DEBUG] _add_child_items_with_diffs: max depth reached")
+            return False
+
+        Log.debug(f"[DEBUG] _add_child_items_with_diffs: property={child_name!r}, depth={depth}")
+        Log.debug(f"  old_value: {old_value!r} (type: {type(old_value).__name__ if old_value is not None else None})")
+        Log.debug(f"  new_value: {new_value!r} (type: {type(new_value).__name__ if new_value is not None else None})")
+
+        # Initialize visited set on first call
+        if visited is None:
+            visited = set()
+
+        # Track this level's objects to prevent circular references
+        current_visited = visited | {id(old_value), id(new_value)} - {None}
+
         has_changed_children = False
 
         # Get children from both old and new values
-        old_children = get_property_children(prop.name, prop.old_value) if prop.old_value is not None else []
-        new_children = get_property_children(prop.name, prop.new_value) if prop.new_value is not None else []
+        old_is_expandable = is_expandable(old_value, "", child_name)
+        new_is_expandable = is_expandable(new_value, "", child_name)
+        Log.debug(f"  is_expandable: old={old_is_expandable}, new={new_is_expandable}")
+
+        old_children = get_property_children(child_name, old_value) if old_value is not None else []
+        new_children = get_property_children(child_name, new_value) if new_value is not None else []
+        Log.debug(f"  children count: old={len(old_children)}, new={len(new_children)}")
 
         # Create dictionaries for easy lookup by child name
         old_child_map = dict(old_children)
@@ -547,30 +593,61 @@ class DiffPanelView(QWidget):
         # Get all unique child names
         all_child_names = set(old_child_map.keys()) | set(new_child_map.keys())
 
-        for child_name in sorted(all_child_names):
-            old_child_value = old_child_map.get(child_name)
-            new_child_value = new_child_map.get(child_name)
+        for grandchild_name in sorted(all_child_names):
+            old_grandchild_value = old_child_map.get(grandchild_name)
+            new_grandchild_value = new_child_map.get(grandchild_name)
 
-            # Determine child state by comparing old and new values
-            child_state = self._determine_child_state(old_child_value, new_child_value)
+            # Determine grandchild state by comparing old and new values
+            grandchild_state = self._determine_child_state(old_grandchild_value, new_grandchild_value)
 
-            # Track if any child has changes
-            if child_state in (DiffState.MODIFIED, DiffState.ADDED, DiffState.DELETED):
+            # Track if any grandchild has changes
+            if grandchild_state in (DiffState.MODIFIED, DiffState.ADDED, DiffState.DELETED):
                 has_changed_children = True
 
-            # Format child values for display
-            old_value_str = str(old_child_value) if old_child_value is not None else ""
-            new_value_str = str(new_child_value) if new_child_value is not None else ""
+            # Check if this grandchild is itself expandable
+            old_is_expandable = is_expandable(old_grandchild_value)
+            new_is_expandable = is_expandable(new_grandchild_value)
 
-            # Create child item with 3 columns: name, old_value, new_value
-            child_display_name = _camelcase_to_spaces(child_name)
-            child_item = QTreeWidgetItem([child_display_name, old_value_str, new_value_str])
+            # Check for circular references - skip if already visited
+            old_id = id(old_grandchild_value) if old_grandchild_value is not None else None
+            new_id = id(new_grandchild_value) if new_grandchild_value is not None else None
+            old_already_visited = old_id in current_visited
+            new_already_visited = new_id in current_visited
 
-            # Apply background color only if child state is MODIFIED/ADDED/DELETED
-            self._apply_child_background(child_item, child_state)
+            # Skip expansion if either value has been visited (prevents circular refs)
+            is_expandable_grandchild = (old_is_expandable or new_is_expandable) and not (
+                old_already_visited or new_already_visited
+            )
 
-            parent_item.addChild(child_item)
+            grandchild_display_name = _camelcase_to_spaces(grandchild_name)
 
+            if is_expandable_grandchild:
+                # Grandchild is expandable - show empty values and recurse
+                grandchild_item = QTreeWidgetItem([grandchild_display_name, "", ""])
+                Log.debug(f"  Recursing into expandable grandchild: {grandchild_name!r}")
+                # Recursively add great-grandchildren with updated visited set and depth
+                deeper_has_changes = self._add_child_items_with_diffs(
+                    grandchild_item,
+                    grandchild_name,
+                    old_grandchild_value,
+                    new_grandchild_value,
+                    current_visited,
+                    depth + 1,
+                )
+                # If deeper levels have changes, this grandchild also has changes
+                if deeper_has_changes:
+                    has_changed_children = True
+                    self._apply_child_background(grandchild_item, DiffState.MODIFIED)
+            else:
+                # Leaf node - show actual values
+                old_value_str = str(old_grandchild_value) if old_grandchild_value is not None else ""
+                new_value_str = str(new_grandchild_value) if new_grandchild_value is not None else ""
+                grandchild_item = QTreeWidgetItem([grandchild_display_name, old_value_str, new_value_str])
+                self._apply_child_background(grandchild_item, grandchild_state)
+
+            parent_item.addChild(grandchild_item)
+
+        Log.debug(f"[DEBUG] _add_child_items_with_diffs returning: has_changed_children={has_changed_children}")
         return has_changed_children
 
     def _apply_background_to_all_columns(self, item: QTreeWidgetItem, color: QColor) -> None:
@@ -629,8 +706,14 @@ class DiffPanelView(QWidget):
         if old_value == new_value:
             return DiffState.UNCHANGED
 
-        # For complex objects, check if they're the same object
+        # For complex objects
+        # check if they're the same object
         if old_value is new_value:
+            return DiffState.UNCHANGED
+
+        # For complex objects where == returns False even when identical
+        # (e.g., FreeCAD C++ wrapped objects), compare string representations
+        if str(old_value) == str(new_value):
             return DiffState.UNCHANGED
 
         # Values differ: MODIFIED

@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from ...utils import Log
+
 
 if TYPE_CHECKING:
     from typing import Any
@@ -66,12 +68,14 @@ def _camelcase_to_spaces(name: str) -> str:
 def get_property_children(name: str, value: Any) -> list[tuple[str, Any]]:
     """Get children for any property value.
 
-    Recursively expands:
+    Only expands explicitly approved types:
     - Explicit types (Placement, Rotation) with named children
     - Vector-like objects (x, y, z attributes)
     - Lists/tuples (by index)
     - Dicts (by key)
-    - Objects with __dict__ (by attribute)
+
+    All other types (including FreeCAD C++ wrapped objects like Constraint) are
+    treated as leaf nodes and converted to strings.
 
     Note: This function is part of Phase 4 implementation but is included
     here for forward compatibility and to keep related functionality together.
@@ -83,81 +87,132 @@ def get_property_children(name: str, value: Any) -> list[tuple[str, Any]]:
     Returns:
         List of (child_name, child_value) tuples for expandable properties.
     """
+    Log.debug(f"[DEBUG] get_property_children called: name={name!r}, value={value!r}, type={type(value).__name__}")
+
     if value is None:
+        Log.debug("[DEBUG]   value is None, returning []")
+        return []
+
+    # Exclude Python primitive types (they should be leaf nodes, not expanded)
+    if isinstance(value, (int, float, bool, str, bytes)):
+        Log.debug(f"[DEBUG]   value is primitive type ({type(value).__name__}), returning []")
         return []
 
     # 1. Explicit types with known structure
     if name == "Placement":
-        return _expand_placement(value)
+        Log.debug("[DEBUG]   Expanding as Placement")
+        result = _expand_placement(value)
+        Log.debug(f"[DEBUG]   Placement expansion result: {result}")
+        return result
     if name == "Rotation":
-        return _expand_rotation(value)
-    if name == "Material":
-        return _expand_material(value)
+        Log.debug("[DEBUG]   Expanding as Rotation")
+        result = _expand_rotation(value)
+        Log.debug(f"[DEBUG]   Rotation expansion result: {result}")
+        return result
 
     # 2. Vector-like objects (has x, y, z)
     if hasattr(value, "x") and hasattr(value, "y") and hasattr(value, "z"):
-        return [("x", value.x), ("y", value.y), ("z", value.z)]
+        Log.debug("[DEBUG]   Expanding as vector-like object")
+        result = [("x", value.x), ("y", value.y), ("z", value.z)]
+        Log.debug(f"[DEBUG]   Vector expansion result: {result}")
+        return result
 
     # 3. Lists/tuples - expand by index
     if isinstance(value, (list, tuple)) and len(value) > 0:
-        return [(f"[{i}]", v) for i, v in enumerate(value)]
+        Log.debug(f"[DEBUG]   Expanding as list/tuple with {len(value)} items")
+        result = [(str(i), v) for i, v in enumerate(value)]
+        Log.debug(f"[DEBUG]   List expansion result: {len(result)} children")
+        return result
 
     # 4. Dicts - expand by key
     if isinstance(value, dict) and len(value) > 0:
-        return [(str(k), v) for k, v in value.items()]
+        Log.debug(f"[DEBUG]   Expanding as dict with {len(value)} keys")
+        result = [(str(k), v) for k, v in value.items()]
+        Log.debug(f"[DEBUG]   Dict expansion result: {len(result)} children")
+        return result
 
-    # 5. Objects with __dict__ - expand public attributes
-    attrs = getattr(value, "__dict__", None)
-    if attrs:
-        return [(k, v) for k, v in attrs.items() if not k.startswith("_")]
-
+    # All other types are not expanded (including FreeCAD C++ wrapped objects)
+    Log.debug(f"[DEBUG]   value is not an approved expandable type ({type(value).__name__}), returning []")
     return []
 
 
-def is_expandable(value: Any) -> bool:
+def is_expandable(value: Any, feature_name: str = "", property_name: str = "") -> bool:
     """Check if value should display as expandable (has children).
+
+    Only explicitly approved types are expandable:
+    - Lists/tuples
+    - Dicts
+    - Vector-like objects (x, y, z)
+
+    All other types (including Placement, Rotation, and FreeCAD C++ wrapped objects)
+    are handled by get_property_children() based on the property name.
 
     Args:
         value: The property value to check.
+        feature_name: Name of the FreeCAD feature (for debug logging).
+        property_name: Name of the property (for debug logging).
 
     Returns:
         True if the value should be displayed as expandable, False otherwise.
     """
+    # Debug logging
+    Log.debug(
+        f"[DEBUG] is_expandable: feature={feature_name!r}, property={property_name!r}, "
+        f"value_type={type(value).__name__}"
+    )
+
     if value is None:
+        Log.debug("  -> False (None)")
         return False
 
-    # Check each expansion type
+    # Exclude Python primitive types
+    if isinstance(value, (int, float, bool, str, bytes)):
+        Log.debug("  -> False (primitive type)")
+        return False
+
+    # Approved expandable types
     if isinstance(value, (list, tuple)) and len(value) > 0:
+        Log.debug(f"  -> True (list/tuple with {len(value)} items)")
         return True
     if isinstance(value, dict) and len(value) > 0:
+        Log.debug(f"  -> True (dict with {len(value)} keys)")
         return True
     if hasattr(value, "x") and hasattr(value, "y") and hasattr(value, "z"):
+        Log.debug("  -> True (vector-like)")
         return True
-    return bool(getattr(value, "__dict__", None))
+
+    # All other types are not directly expandable here
+    # (Placement/Rotation expansion is handled by property name in get_property_children)
+    Log.debug("  -> False (not an approved expandable type)")
+    return False
 
 
 def _expand_placement(value: Any) -> list[tuple[str, Any]]:
     """Expand a Placement property into its components.
 
+    FreeCAD Placement has:
+    - position: Vector (position)
+    - rotation: Rotation object
+
     Args:
-        value: A Placement object with Position, Rotation, and Axis properties.
+        value: A Placement object.
 
     Returns:
         List of (component_name, component_value) tuples.
     """
     result = []
 
-    # Try to get Position (Vector)
-    if hasattr(value, "Position") and value.Position is not None:
-        result.append(("Position", value.Position))
+    # Try both 'position' and 'Base' attributes (different FreeCAD versions/APIs)
+    if hasattr(value, "position") and value.position is not None:
+        result.append(("Position", value.position))
+    elif hasattr(value, "Base") and value.Base is not None:
+        result.append(("Base", value.Base))
 
-    # Try to get Rotation (Rotation/Angle)
-    if hasattr(value, "Rotation") and value.Rotation is not None:
+    # Try both 'rotation' and 'Rotation' attributes
+    if hasattr(value, "rotation") and value.rotation is not None:
+        result.append(("Rotation", value.rotation))
+    elif hasattr(value, "Rotation") and value.Rotation is not None:
         result.append(("Rotation", value.Rotation))
-
-    # Try to get Axis (Vector)
-    if hasattr(value, "Axis") and value.Axis is not None:
-        result.append(("Axis", value.Axis))
 
     return result
 
@@ -166,40 +221,23 @@ def _expand_rotation(value: Any) -> list[tuple[str, Any]]:
     """Expand a Rotation property into its components.
 
     Args:
-        value: A Rotation object with Angle and Axis properties.
+        value: A Rotation object with angle/axis properties.
 
     Returns:
         List of (component_name, component_value) tuples.
     """
     result = []
 
-    # Try to get Angle
-    if hasattr(value, "Angle") and value.Angle is not None:
+    # Try both 'angle' and 'Angle' attributes
+    if hasattr(value, "angle") and value.angle is not None:
+        result.append(("Angle", value.angle))
+    elif hasattr(value, "Angle") and value.Angle is not None:
         result.append(("Angle", value.Angle))
 
-    # Try to get Axis (Vector)
-    if hasattr(value, "Axis") and value.Axis is not None:
+    # Try both 'axis' and 'Axis' attributes
+    if hasattr(value, "axis") and value.axis is not None:
+        result.append(("Axis", value.axis))
+    elif hasattr(value, "Axis") and value.Axis is not None:
         result.append(("Axis", value.Axis))
 
     return result
-
-
-def _expand_material(value: Any) -> list[tuple[str, Any]]:
-    """Expand a Material property into its components.
-
-    Args:
-        value: A Material object (dict-like or object with __dict__).
-
-    Returns:
-        List of (component_name, component_value) tuples.
-    """
-    # Material is typically a dict
-    if isinstance(value, dict):
-        return [(str(k), v) for k, v in value.items()]
-
-    # Or an object with __dict__
-    attrs = getattr(value, "__dict__", None)
-    if attrs:
-        return [(k, v) for k, v in attrs.items() if not k.startswith("_")]
-
-    return []

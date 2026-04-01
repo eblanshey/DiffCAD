@@ -37,6 +37,8 @@ class GuiNotAvailableError(Exception):
 # These properties are hidden in FreeCAD's property editor
 # Format: Full TypeId as returned by getTypeIdOfProperty()
 # All types VERIFIED against FreeCAD source code for getEditorName() implementation
+# To add a new type: check FreeCAD source for getEditorName() returning ""
+#   Example: Materials::PropertyMaterial::getEditorName() always returns ""
 # Note: PropertyQuantity and ALL its subclasses HAVE editors (e.g., Length, Angle, Mass)
 NO_EDITOR_PROPERTY_TYPES: frozenset[str] = frozenset(
     {
@@ -46,7 +48,7 @@ NO_EDITOR_PROPERTY_TYPES: frozenset[str] = frozenset(
         "App::PropertyComplexGeoData",  # Inherits from PropertyGeometry - no override
         "App::PropertyLists",  # Base list class - no override
         "App::PropertyMap",  # Verified: Part.Meta - commented out in source
-        "App::PropertyMaterial",  # Returns "" unless MaterialEdit status set
+        "Materials::PropertyMaterial",  # ShapeMaterial - no editor (verified in runtime)
         "App::PropertyIntegerSet",  # No getEditorName override
         "App::PropertyPersistentObject",  # No override
         "App::PropertyFile",  # No override (PropertyFileIncluded has one)

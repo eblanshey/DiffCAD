@@ -6,7 +6,6 @@ These tests verify:
 - is_expandable() correctly identifies expandable values
 - _expand_placement() expands Placement objects correctly
 - _expand_rotation() expands Rotation objects correctly
-- _expand_material() expands Material objects correctly
 """
 
 from __future__ import annotations
@@ -16,7 +15,6 @@ from typing import Any
 
 from freecad.diff_wb.ui.views.property_tree import (
     _camelcase_to_spaces,
-    _expand_material,
     _expand_placement,
     _expand_rotation,
     get_property_children,
@@ -44,11 +42,34 @@ class MockRotation:
 
 @dataclass
 class MockPlacement:
-    """Mock Placement class with Position, Rotation, Axis."""
+    """Mock Placement class with Base (position), Rotation, and Axis.
 
-    Position: Any = None
+    Note: FreeCAD Placement uses 'Base' for position, not 'Position'.
+    """
+
+    Base: Any = None  # Position vector (FreeCAD uses 'Base', not 'Position')
     Rotation: Any = None
     Axis: Any = None
+
+
+class MockConstraint:
+    """Mock Constraint class simulating a FreeCAD C++ wrapped object.
+
+    This class has attributes accessible via dir()/getattr but no __dict__,
+    simulating how FreeCAD exposes C++ objects to Python.
+    """
+
+    __slots__ = ("_name",)
+
+    def __init__(self, name: str = "Coincident") -> None:
+        self._name = name
+
+    @property
+    def Type(self) -> str:
+        return self._name
+
+    def __repr__(self) -> str:
+        return f"<Constraint '{self._name}'>"
 
 
 class TestCamelCaseToSpaces:
@@ -156,10 +177,11 @@ class TestIsExpandable:
         vector = MockVector(1.0, 2.0, 3.0)
         assert is_expandable(vector) is True
 
-    def test_object_with_dict_is_expandable(self) -> None:
-        """Test: Objects with __dict__ are expandable."""
-        obj = MockPlacement(Position=MockVector(0, 0, 0))
-        assert is_expandable(obj) is True
+    def test_object_with_dict_is_not_expandable_by_default(self) -> None:
+        """Test: Objects with __dict__ are NOT expandable unless they match approved patterns."""
+        # Generic Python objects with __dict__ are not auto-expanded
+        obj = MockPlacement(Base=MockVector(0, 0, 0))
+        assert is_expandable(obj) is False
 
     def test_object_without_dict_is_not_expandable(self) -> None:
         """Test: Objects without __dict__ are not expandable."""
@@ -172,34 +194,32 @@ class TestExpandPlacement:
     """Tests for _expand_placement() function."""
 
     def test_expand_placement_with_all_components(self) -> None:
-        """Test: Placement with Position, Rotation, and Axis expands correctly."""
+        """Test: Placement with Base (position), Rotation, and Axis expands correctly."""
         rotation = MockRotation(Angle=45.0, Axis=MockVector(0, 0, 1))
-        position = MockVector(10.0, 20.0, 30.0)
+        base = MockVector(10.0, 20.0, 30.0)
         axis = MockVector(0, 0, 1)
-        placement = MockPlacement(Position=position, Rotation=rotation, Axis=axis)
+        placement = MockPlacement(Base=base, Rotation=rotation, Axis=axis)
 
         result = _expand_placement(placement)
 
-        assert len(result) == 3
+        assert len(result) == 2  # Only Base and Rotation (not Axis directly)
         names = [item[0] for item in result]
-        assert "Position" in names
+        assert "Base" in names
         assert "Rotation" in names
-        assert "Axis" in names
         # Check values
-        assert result[0][1] == position
+        assert result[0][1] == base
         assert result[1][1] == rotation
-        assert result[2][1] == axis
 
-    def test_expand_placement_with_only_position(self) -> None:
-        """Test: Placement with only Position expands correctly."""
-        position = MockVector(1.0, 2.0, 3.0)
-        placement = MockPlacement(Position=position)
+    def test_expand_placement_with_only_base(self) -> None:
+        """Test: Placement with only Base (position) expands correctly."""
+        base = MockVector(1.0, 2.0, 3.0)
+        placement = MockPlacement(Base=base)
 
         result = _expand_placement(placement)
 
         assert len(result) == 1
-        assert result[0][0] == "Position"
-        assert result[0][1] == position
+        assert result[0][0] == "Base"
+        assert result[0][1] == base
 
     def test_expand_placement_with_only_rotation(self) -> None:
         """Test: Placement with only Rotation expands correctly."""
@@ -214,7 +234,7 @@ class TestExpandPlacement:
 
     def test_expand_placement_with_none_components(self) -> None:
         """Test: Placement with all None components returns empty list."""
-        placement = MockPlacement(Position=None, Rotation=None, Axis=None)
+        placement = MockPlacement(Base=None, Rotation=None, Axis=None)
 
         result = _expand_placement(placement)
 
@@ -265,77 +285,6 @@ class TestExpandRotation:
         assert result == []
 
 
-class TestExpandMaterial:
-    """Tests for _expand_material() function."""
-
-    def test_expand_material_dict(self) -> None:
-        """Test: Material as dict expands correctly."""
-        material = {"diffuse": (1, 0, 0), "ambient": (0.5, 0.5, 0.5)}
-
-        result = _expand_material(material)
-
-        assert len(result) == 2
-        names = [item[0] for item in result]
-        assert "diffuse" in names
-        assert "ambient" in names
-
-    def test_expand_material_dict_with_string_keys(self) -> None:
-        """Test: Material dict with string keys expands correctly."""
-        material = {"name": "test", "color": "red"}
-
-        result = _expand_material(material)
-
-        assert len(result) == 2
-        assert ("name", "test") in result
-        assert ("color", "red") in result
-
-    def test_expand_material_object_with_dict(self) -> None:
-        """Test: Material as object with __dict__ expands correctly."""
-
-        class MaterialObject:
-            def __init__(self):
-                self.diffuse = (1, 0, 0)
-                self.ambient = (0.5, 0.5, 0.5)
-
-        material = MaterialObject()
-
-        result = _expand_material(material)
-
-        assert len(result) == 2
-        names = [item[0] for item in result]
-        assert "diffuse" in names
-        assert "ambient" in names
-
-    def test_expand_material_object_excludes_private_attrs(self) -> None:
-        """Test: Material expansion excludes private attributes."""
-
-        class MaterialObject:
-            def __init__(self):
-                self.diffuse = (1, 0, 0)
-                self._private = "hidden"
-
-        material = MaterialObject()
-
-        result = _expand_material(material)
-
-        assert len(result) == 1
-        assert result[0][0] == "diffuse"
-
-    def test_expand_material_empty_dict(self) -> None:
-        """Test: Empty dict material returns empty list."""
-        material = {}
-
-        result = _expand_material(material)
-
-        assert result == []
-
-    def test_expand_material_object_without_dict(self) -> None:
-        """Test: Material without dict returns empty list."""
-        # An object that doesn't have __dict__ (unlikely but possible)
-        result = _expand_material(42)
-        assert result == []
-
-
 class TestGetPropertyChildren:
     """Tests for get_property_children() function."""
 
@@ -347,17 +296,15 @@ class TestGetPropertyChildren:
     def test_get_children_for_placement(self) -> None:
         """Test: Placement property expands correctly."""
         rotation = MockRotation(Angle=45.0, Axis=MockVector(0, 0, 1))
-        position = MockVector(10.0, 20.0, 30.0)
-        axis = MockVector(0, 0, 1)
-        placement = MockPlacement(Position=position, Rotation=rotation, Axis=axis)
+        base = MockVector(10.0, 20.0, 30.0)
+        placement = MockPlacement(Base=base, Rotation=rotation)
 
         result = get_property_children("Placement", placement)
 
-        assert len(result) == 3
+        assert len(result) == 2  # Base and Rotation only
         names = [item[0] for item in result]
-        assert "Position" in names
+        assert "Base" in names
         assert "Rotation" in names
-        assert "Axis" in names
 
     def test_get_children_for_rotation(self) -> None:
         """Test: Rotation property expands correctly."""
@@ -370,12 +317,14 @@ class TestGetPropertyChildren:
         assert "Angle" in names
         assert "Axis" in names
 
-    def test_get_children_for_material_dict(self) -> None:
-        """Test: Material property as dict expands correctly."""
+    def test_get_children_for_material_not_expanded(self) -> None:
+        """Test: Material property is not auto-expanded (treated as special object)."""
         material = {"diffuse": (1, 0, 0), "ambient": (0.5, 0.5, 0.5)}
 
         result = get_property_children("Material", material)
 
+        # Material is no longer auto-expanded - falls through to generic object expansion or dict expansion
+        # Since it's a dict, it will be expanded by the dict handler
         assert len(result) == 2
 
     def test_get_children_for_vector(self) -> None:
@@ -396,9 +345,9 @@ class TestGetPropertyChildren:
         result = get_property_children("Items", items)
 
         assert len(result) == 3
-        assert ("[0]", "a") in result
-        assert ("[1]", "b") in result
-        assert ("[2]", "c") in result
+        assert ("0", "a") in result
+        assert ("1", "b") in result
+        assert ("2", "c") in result
 
     def test_get_children_for_tuple(self) -> None:
         """Test: Tuples expand by index."""
@@ -407,9 +356,9 @@ class TestGetPropertyChildren:
         result = get_property_children("Items", items)
 
         assert len(result) == 3
-        assert ("[0]", 1) in result
-        assert ("[1]", 2) in result
-        assert ("[2]", 3) in result
+        assert ("0", 1) in result
+        assert ("1", 2) in result
+        assert ("2", 3) in result
 
     def test_get_children_for_empty_list(self) -> None:
         """Test: Empty list returns empty list."""
@@ -431,8 +380,8 @@ class TestGetPropertyChildren:
         result = get_property_children("Data", {})
         assert result == []
 
-    def test_get_children_for_object_with_dict(self) -> None:
-        """Test: Objects with __dict__ expand by attribute."""
+    def test_get_children_for_generic_object_not_expanded(self) -> None:
+        """Test: Generic Python objects with __dict__ are NOT expanded (whitelist approach)."""
 
         class CustomObject:
             def __init__(self):
@@ -443,25 +392,27 @@ class TestGetPropertyChildren:
 
         result = get_property_children("Custom", obj)
 
-        assert len(result) == 2
-        names = [item[0] for item in result]
-        assert "prop1" in names
-        assert "prop2" in names
+        # Generic objects are not in the whitelist - they should NOT be expanded
+        assert result == []
 
-    def test_get_children_for_object_excludes_private(self) -> None:
-        """Test: Object expansion excludes private attributes."""
+    def test_get_children_for_vector_like_object_is_expanded(self) -> None:
+        """Test: Objects with x, y, z (vector-like) ARE expanded."""
 
-        class CustomObject:
+        class VectorLikeObject:
             def __init__(self):
-                self.public = "value"
-                self._private = "hidden"
+                self.x = 1
+                self.y = 2
+                self.z = 3
 
-        obj = CustomObject()
+        obj = VectorLikeObject()
 
-        result = get_property_children("Custom", obj)
+        result = get_property_children("Data", obj)
 
-        assert len(result) == 1
-        assert result[0][0] == "public"
+        # Vector-like objects are in the whitelist
+        assert len(result) == 3
+        assert ("x", 1) in result
+        assert ("y", 2) in result
+        assert ("z", 3) in result
 
     def test_get_children_for_nested_list(self) -> None:
         """Test: Nested lists expand correctly."""
@@ -470,8 +421,8 @@ class TestGetPropertyChildren:
         result = get_property_children("Items", items)
 
         assert len(result) == 2
-        assert ("[0]", [1, 2]) in result
-        assert ("[1]", [3, 4]) in result
+        assert ("0", [1, 2]) in result
+        assert ("1", [3, 4]) in result
 
     def test_get_children_for_nested_vector_in_list(self) -> None:
         """Test: Lists containing Vectors also expand."""
@@ -481,9 +432,9 @@ class TestGetPropertyChildren:
 
         assert len(result) == 2
         # Each item in the list should be a Vector
-        assert result[0][0] == "[0]"
+        assert result[0][0] == "0"
         assert isinstance(result[0][1], MockVector)
-        assert result[1][0] == "[1]"
+        assert result[1][0] == "1"
         assert isinstance(result[1][1], MockVector)
 
     def test_get_children_for_non_expandable_value(self) -> None:
@@ -495,3 +446,47 @@ class TestGetPropertyChildren:
         """Test: Integer values return empty list."""
         result = get_property_children("Count", 42)
         assert result == []
+
+    def test_get_children_for_constraint_like_object(self) -> None:
+        """Test: Constraint-like objects (C++ wrapped, no __dict__) are not expanded."""
+        constraint = MockConstraint("Coincident")
+
+        result = get_property_children("Constraint", constraint)
+
+        # Should return empty list - Constraint should be displayed as string
+        assert result == []
+
+    def test_is_expandable_false_for_constraint_like_object(self) -> None:
+        """Test: Constraint-like objects are not expandable."""
+        constraint = MockConstraint("Coincident")
+
+        assert is_expandable(constraint) is False
+
+    def test_get_children_for_python_class_named_constraint_not_expanded(self) -> None:
+        """Test: Python classes named 'Constraint' are also not expanded (by name)."""
+
+        class Constraint:
+            """A Python class named Constraint with __dict__."""
+
+            def __init__(self) -> None:
+                self.some_attr = "value"
+
+        constraint = Constraint()
+
+        result = get_property_children("Constraint", constraint)
+
+        # Should return empty list - any object of type "Constraint" should not be expanded
+        assert result == []
+
+    def test_is_expandable_false_for_python_class_named_constraint(self) -> None:
+        """Test: Python classes named 'Constraint' are not expandable."""
+
+        class Constraint:
+            """A Python class named Constraint with __dict__."""
+
+            def __init__(self) -> None:
+                self.some_attr = "value"
+
+        constraint = Constraint()
+
+        assert is_expandable(constraint) is False

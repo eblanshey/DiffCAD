@@ -94,7 +94,9 @@ class Logger:
         Args:
             message: The message to log
         """
-        _logger.debug(message)
+
+        # During development just use info for now
+        _logger.info(message)
 
     def info(self, message: str) -> None:
         """Log an informational message.

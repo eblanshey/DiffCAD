@@ -30,11 +30,12 @@ class PropertyType(Enum):
 
     # Compound types
     EXPRESSION = auto()  # Expression string
+    LIST = auto()  # Lists/tuples (e.g., Constraints)
 
     # Special types (deferred for later phases)
     SHAPE = auto()  # Geometry data
     MATERIAL = auto()  # Material assignment
-    UNKNOWN = auto()
+    UNKNOWN = auto()  # Fallback for unhandled types
 
 
 # Registry of property type handlers. Consulted by Property.from_freecad_property() to delegate
@@ -283,6 +284,9 @@ class Property:
 
         Two property values are equal if they have the same type, value, and expression.
         Expression differences are considered significant even if values are the same.
+
+        For LIST types (e.g., Constraints), compares string representations of elements
+        to handle FreeCAD C++ wrapped objects that lack proper __eq__ implementations.
         """
         if not isinstance(other, Property):
             return NotImplemented
@@ -300,7 +304,41 @@ class Property:
             tolerance = 1e-9
             return bool(abs(self.value - other.value) < tolerance)
 
+        # For lists, compare element string representations
+        # This handles FreeCAD C++ wrapped objects (e.g., Constraint) that lack __eq__
+        if self.type_ == PropertyType.LIST:
+            return self._compare_lists_as_strings(self.value, other.value)
+
         return bool(self.value == other.value)
+
+    @staticmethod
+    def _compare_lists_as_strings(list1: Any, list2: Any) -> bool:
+        """Compare two lists by string representation of their elements.
+
+        Args:
+            list1: First list to compare
+            list2: Second list to compare
+
+        Returns:
+            True if lists have same length and all corresponding elements
+            have equal string representations.
+        """
+        # Handle None cases
+        if list1 is None and list2 is None:
+            return True
+        if list1 is None or list2 is None:
+            return False
+
+        # Must be same type (both lists/tuples)
+        if not isinstance(list1, (list, tuple)) or not isinstance(list2, (list, tuple)):
+            return False
+
+        # Must have same length
+        if len(list1) != len(list2):
+            return False
+
+        # Compare each element by string representation
+        return all(str(item1) == str(item2) for item1, item2 in zip(list1, list2, strict=True))
 
     @classmethod
     def create(cls, type_: PropertyType, value: Any, expression: str | None = None, group: str = "Base") -> "Property":
@@ -315,6 +353,7 @@ class Property:
                 - BOOL, INT, FLOAT, STRING: direct value
                 - VECTOR: tuple (x, y, z)
                 - PLACEMENT: dict {"position": (x, y, z), "rotation": (ax, ay, az, angle)}
+                - LIST: list or tuple (preserved as-is)
             expression: Optional expression that drives this value
             group: The FreeCAD property group (e.g., "Base", "Data", "View")
 
@@ -330,6 +369,7 @@ class Property:
             >>> Property.create(
             ...     PropertyType.PLACEMENT, {"position": (0, 0, 0), "rotation": (0, 0, 1, 90)}
             ... )
+            >>> Property.create(PropertyType.LIST, [item1, item2])
         """
         if type_ == PropertyType.BOOL:
             return cls(type_=type_, value=bool(value), expression=expression, group=group)
@@ -356,6 +396,9 @@ class Property:
                 expression=expression,
                 group=group,
             )
+        elif type_ == PropertyType.LIST:
+            # Preserve list/tuple objects as-is for expandable properties
+            return cls(type_=type_, value=value, expression=expression, group=group)
         else:
             # For unknown/expression/shape/material types, store value as-is
             return cls(type_=type_, value=value, expression=expression, group=group)
@@ -398,9 +441,12 @@ class Property:
             return PropertyType.FLOAT
         elif val is None or isinstance(val, str):
             return PropertyType.STRING
+        elif isinstance(val, (list, tuple)):
+            # Preserve list/tuple objects for expandable properties like Constraints
+            return PropertyType.LIST
         else:
-            # For complex types, default to STRING
-            return PropertyType.STRING
+            # For complex types (dict, custom objects), default to UNKNOWN to preserve the object
+            return PropertyType.UNKNOWN
 
 
 __all__ = ["Property", "PropertyType", "Vector", "Rotation", "Placement"]

@@ -6,6 +6,17 @@
 from freecad.diff_wb.domain import Placement, Property, PropertyType, Rotation, Vector
 
 
+class MockConstraint:
+    """Mock constraint simulating FreeCAD C++ wrapped object without __eq__."""
+
+    def __init__(self, name: str, constraint_type: str):
+        self.Name = name
+        self.Type = constraint_type
+
+    def __str__(self):
+        return "<Constraint '{}' type={}>".format(self.Name, self.Type)
+
+
 class TestProperty:
     """Tests for the Property class."""
 
@@ -254,6 +265,91 @@ class TestPlacementHandler:
 
         prop = Placement.from_freecad_value(MockPlacement(), expression="Body.Placement")
         assert prop.expression == "Body.Placement"
+
+
+class TestPropertyListComparison:
+    """Tests for LIST type property comparison (e.g., sketch Constraints)."""
+
+    def test_list_with_custom_objects_same_content(self):
+        """Lists with identical custom object content should be equal."""
+        constraints1 = [
+            MockConstraint("Coincident1", "Coincident"),
+            MockConstraint("Distance1", "Distance"),
+        ]
+        constraints2 = [
+            MockConstraint("Coincident1", "Coincident"),
+            MockConstraint("Distance1", "Distance"),
+        ]
+
+        prop1 = Property.create(PropertyType.LIST, constraints1)
+        prop2 = Property.create(PropertyType.LIST, constraints2)
+
+        # Different objects but same string representation -> should be equal
+        assert prop1 == prop2
+
+    def test_list_with_custom_objects_different_content(self):
+        """Lists with different custom object content should not be equal."""
+        constraints1 = [
+            MockConstraint("Coincident1", "Coincident"),
+            MockConstraint("Distance1", "Distance"),
+        ]
+        constraints2 = [
+            MockConstraint("Coincident1", "Coincident"),
+            MockConstraint("Distance2", "Distance"),  # Different name
+        ]
+
+        prop1 = Property.create(PropertyType.LIST, constraints1)
+        prop2 = Property.create(PropertyType.LIST, constraints2)
+
+        # Different string representations -> should not be equal
+        assert prop1 != prop2
+
+    def test_list_with_different_lengths(self):
+        """Lists with different lengths should not be equal."""
+        constraints1 = [
+            MockConstraint("Coincident1", "Coincident"),
+            MockConstraint("Distance1", "Distance"),
+        ]
+        constraints2 = [
+            MockConstraint("Coincident1", "Coincident"),
+            MockConstraint("Distance1", "Distance"),
+            MockConstraint("Angle1", "Angle"),  # Extra constraint
+        ]
+
+        prop1 = Property.create(PropertyType.LIST, constraints1)
+        prop2 = Property.create(PropertyType.LIST, constraints2)
+
+        assert prop1 != prop2
+
+    def test_list_with_simple_values(self):
+        """Lists with simple values (strings, ints) should work correctly."""
+        prop1 = Property.create(PropertyType.LIST, ["a", "b", "c"])
+        prop2 = Property.create(PropertyType.LIST, ["a", "b", "c"])
+
+        assert prop1 == prop2
+
+    def test_list_with_mixed_types(self):
+        """Lists with mixed types should compare correctly."""
+        prop1 = Property.create(PropertyType.LIST, [1, "a", 3.14])
+        prop2 = Property.create(PropertyType.LIST, [1, "a", 3.14])
+
+        assert prop1 == prop2
+
+    def test_list_creation_preserves_objects(self):
+        """LIST type creation should preserve the actual objects."""
+
+        class MockObj:
+            def __init__(self, value):
+                self.value = value
+
+        obj1 = MockObj(1)
+        obj2 = MockObj(2)
+        props = Property.create(PropertyType.LIST, [obj1, obj2])
+
+        assert isinstance(props.value, list)
+        assert len(props.value) == 2
+        assert props.value[0].value == 1
+        assert props.value[1].value == 2
 
 
 class TestRegistry:

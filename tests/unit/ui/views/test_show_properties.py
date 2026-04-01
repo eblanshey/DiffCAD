@@ -562,14 +562,14 @@ class TestDiffPanelViewExpandableProperties:
         assert prop_item is not None
         assert prop_item.text(0) == "Items"
 
-        # Verify children exist (includes added child [2])
+        # Verify children exist (includes added child 2)
         assert prop_item.childCount() == 3
 
-        # Verify child names ([0], [1], [2])
+        # Verify child names (0, 1, 2)
         child_names = [prop_item.child(i).text(0) for i in range(3)]
-        assert "[0]" in child_names
-        assert "[1]" in child_names
-        assert "[2]" in child_names
+        assert "0" in child_names
+        assert "1" in child_names
+        assert "2" in child_names
 
         # Verify old values in column 1
         old_values = [prop_item.child(i).text(1) for i in range(3)]
@@ -1163,7 +1163,7 @@ class TestDiffPanelViewExpandablePropertyChildDiffs:
         # When: Call show_properties
         panel.show_properties(properties)
 
-        # Then: The Items property should have children [0], [1], [2]
+        # Then: The Items property should have children 0, 1, 2
         group_item = panel.properties_tree.topLevelItem(0)
         prop_item = group_item.child(0)
         assert prop_item is not None
@@ -1171,24 +1171,24 @@ class TestDiffPanelViewExpandablePropertyChildDiffs:
 
         # Get child items by name
         child_items = {prop_item.child(i).text(0): prop_item.child(i) for i in range(3)}
-        assert "[0]" in child_items
-        assert "[1]" in child_items
-        assert "[2]" in child_items
+        assert "0" in child_items
+        assert "1" in child_items
+        assert "2" in child_items
 
-        # Check [0] child (UNCHANGED: same value 1)
-        child_0 = child_items["[0]"]
+        # Check 0 child (UNCHANGED: same value 1)
+        child_0 = child_items["0"]
         assert child_0.text(1) == "1"
         assert child_0.text(2) == "1"
 
-        # Check [1] child (MODIFIED: 2 -> 5)
-        child_1 = child_items["[1]"]
+        # Check 1 child (MODIFIED: 2 -> 5)
+        child_1 = child_items["1"]
         assert child_1.text(1) == "2"
         assert child_1.text(2) == "5"
         # Modified child should have blue background
         assert child_1.background(0).color() == QColor(200, 200, 255)
 
-        # Check [2] child (UNCHANGED: same value 3)
-        child_2 = child_items["[2]"]
+        # Check 2 child (UNCHANGED: same value 3)
+        child_2 = child_items["2"]
         assert child_2.text(1) == "3"
         assert child_2.text(2) == "3"
 
