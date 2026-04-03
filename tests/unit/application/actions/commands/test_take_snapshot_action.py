@@ -28,7 +28,7 @@ class TestTakeSnapshotAction:
             snapshot_id="",
             document_name="TestDocument",
             timestamp=datetime.datetime.now(),
-            root_nodes=[],
+            nodes=[],
         )
 
         action = TakeSnapshotAction(
@@ -110,7 +110,7 @@ class TestTakeSnapshotAction:
             snapshot_id="",
             document_name="TestDocument",
             timestamp=datetime.datetime.now(),
-            root_nodes=[],
+            nodes=[],
         )
         extractor = MagicMock(extract_tree=MagicMock(return_value=mock_snapshot))
 
@@ -141,7 +141,7 @@ class TestTakeSnapshotAction:
             snapshot_id="",
             document_name="TestDocument",
             timestamp=datetime.datetime.now(),
-            root_nodes=[],
+            nodes=[],
         )
         extractor = MagicMock(extract_tree=MagicMock(return_value=mock_snapshot))
 
@@ -173,7 +173,7 @@ class TestTakeSnapshotAction:
             snapshot_id="",
             document_name="TestDocument",
             timestamp=datetime.datetime.now(),
-            root_nodes=[],
+            nodes=[],
         )
         extractor = MagicMock(extract_tree=MagicMock(return_value=mock_snapshot))
 
@@ -246,7 +246,7 @@ class TestTakeSnapshotAction:
             snapshot_id="",
             document_name="TestDocument",
             timestamp=datetime.datetime.now(),
-            root_nodes=[],
+            nodes=[],
         )
         extractor = MagicMock(extract_tree=MagicMock(return_value=mock_snapshot))
 
@@ -280,7 +280,7 @@ class TestTakeSnapshotAction:
             snapshot_id="",
             document_name="TestDocument",
             timestamp=datetime.datetime.now(),
-            root_nodes=[],
+            nodes=[],
         )
         extractor = MagicMock(extract_tree=MagicMock(return_value=mock_snapshot))
 
@@ -309,15 +309,15 @@ class TestTakeSnapshotAction:
             snapshot_id="",
             document_name="TestDocument",
             timestamp=datetime.datetime.now(),
-            root_nodes=[
+            nodes=[
                 TreeNode(
+                    id=1,
                     name="TestObject",
                     type_id="Part::Feature",
                     label="TestObject",
-                    path="root",
-                    is_root=True,
+                    path="TestObject",
+                    after=None,
                     properties={},
-                    children=[],
                 )
             ],
         )
@@ -352,7 +352,7 @@ class TestTakeSnapshotAction:
             snapshot_id="",
             document_name="TestDocument",
             timestamp=datetime.datetime.now(),
-            root_nodes=[],
+            nodes=[],
         )
         extractor = MagicMock(extract_tree=MagicMock(return_value=mock_snapshot))
 
@@ -386,7 +386,7 @@ class TestTakeSnapshotAction:
             snapshot_id="",
             document_name="TestDocument",
             timestamp=datetime.datetime.now(),
-            root_nodes=[],
+            nodes=[],
         )
         extractor = MagicMock(extract_tree=MagicMock(return_value=mock_snapshot))
 
@@ -421,7 +421,7 @@ class TestTakeSnapshotAction:
             snapshot_id="",
             document_name="MyPart",
             timestamp=datetime.datetime.now(),
-            root_nodes=[],
+            nodes=[],
         )
         extractor = MagicMock(extract_tree=MagicMock(return_value=mock_snapshot))
 
@@ -463,7 +463,7 @@ class TestTakeSnapshotAction:
             snapshot_id="",
             document_name="fallback",
             timestamp=datetime.datetime.now(),
-            root_nodes=[],
+            nodes=[],
         )
         extractor = MagicMock(extract_tree=MagicMock(return_value=mock_snapshot))
 

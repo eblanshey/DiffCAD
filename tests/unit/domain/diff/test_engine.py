@@ -3,9 +3,15 @@
 # DiffState, PropertyDiff, NodeDiff, DiffSummary, and DiffResult.
 """Unit tests for DiffEngine and diff domain models."""
 
+import datetime
+import uuid
+
 from freecad.diff_wb.domain import Property, PropertyType
 from freecad.diff_wb.domain.diff import DiffResult, DiffState, NodeDiff, PropertyDiff
+from freecad.diff_wb.domain.diff.engine import DiffEngine
 from freecad.diff_wb.domain.diff.models import DiffSummary
+from freecad.diff_wb.domain.snapshots import Snapshot
+from freecad.diff_wb.domain.tree.node import TreeNode
 
 
 class TestDiffState:
@@ -224,3 +230,461 @@ class TestDiffResult:
         assert "Body/Pad/Sub" in changed_paths
         assert "Body/Pad" in changed_paths  # Parent included because child changed
         assert "Body" not in changed_paths  # Unchanged with no changed children
+
+
+class TestDiffEngineComputeDiff:
+    """Tests for DiffEngine.compute_diff() with flat Snapshot structure."""
+
+    def test_compute_diff_with_empty_snapshots(self):
+        """Test compute_diff with empty snapshots returns empty result."""
+        old_snapshot = Snapshot(
+            snapshot_id=str(uuid.uuid4()),
+            document_name="old",
+            timestamp=datetime.datetime.now(),
+            nodes=[],
+        )
+        new_snapshot = Snapshot(
+            snapshot_id=str(uuid.uuid4()),
+            document_name="new",
+            timestamp=datetime.datetime.now(),
+            nodes=[],
+        )
+
+        engine = DiffEngine()
+        result = engine.compute_diff(old_snapshot, new_snapshot)
+
+        assert result.old_snapshot_name == "old"
+        assert result.new_snapshot_name == "new"
+        assert result.node_diffs == []
+        assert result.has_changes is False
+
+    def test_compute_diff_detect_added_node(self):
+        """Test compute_diff detects added nodes with flat structure."""
+        old_snapshot = Snapshot(
+            snapshot_id=str(uuid.uuid4()),
+            document_name="old",
+            timestamp=datetime.datetime.now(),
+            nodes=[],
+        )
+        new_node = TreeNode(
+            id=1,
+            name="Body",
+            type_id="PartDesign::Body",
+            label="Body",
+            path="Body",
+            after=None,
+            properties={},
+        )
+        new_snapshot = Snapshot(
+            snapshot_id=str(uuid.uuid4()),
+            document_name="new",
+            timestamp=datetime.datetime.now(),
+            nodes=[new_node],
+        )
+
+        engine = DiffEngine()
+        result = engine.compute_diff(old_snapshot, new_snapshot)
+
+        assert result.has_changes is True
+        # The new node should appear as added
+        assert len(result.node_diffs) > 0
+
+    def test_compute_diff_detect_deleted_node(self):
+        """Test compute_diff detects deleted nodes with flat structure."""
+        old_node = TreeNode(
+            id=1,
+            name="Body",
+            type_id="PartDesign::Body",
+            label="Body",
+            path="Body",
+            after=None,
+            properties={},
+        )
+        old_snapshot = Snapshot(
+            snapshot_id=str(uuid.uuid4()),
+            document_name="old",
+            timestamp=datetime.datetime.now(),
+            nodes=[old_node],
+        )
+        new_snapshot = Snapshot(
+            snapshot_id=str(uuid.uuid4()),
+            document_name="new",
+            timestamp=datetime.datetime.now(),
+            nodes=[],
+        )
+
+        engine = DiffEngine()
+        result = engine.compute_diff(old_snapshot, new_snapshot)
+
+        assert result.has_changes is True
+
+    def test_compute_diff_detect_modified_node(self):
+        """Test compute_diff detects modified nodes with flat structure."""
+        from freecad.diff_wb.domain import Property
+
+        old_node = TreeNode(
+            id=1,
+            name="Body",
+            type_id="PartDesign::Body",
+            label="Body",
+            path="Body",
+            after=None,
+            properties={"Length": Property.create(PropertyType.FLOAT, 10.0)},
+        )
+        new_node = TreeNode(
+            id=1,
+            name="Body",
+            type_id="PartDesign::Body",
+            label="Body",
+            path="Body",
+            after=None,
+            properties={"Length": Property.create(PropertyType.FLOAT, 20.0)},
+        )
+        old_snapshot = Snapshot(
+            snapshot_id=str(uuid.uuid4()),
+            document_name="old",
+            timestamp=datetime.datetime.now(),
+            nodes=[old_node],
+        )
+        new_snapshot = Snapshot(
+            snapshot_id=str(uuid.uuid4()),
+            document_name="new",
+            timestamp=datetime.datetime.now(),
+            nodes=[new_node],
+        )
+
+        engine = DiffEngine()
+        result = engine.compute_diff(old_snapshot, new_snapshot)
+
+        assert result.has_changes is True
+        # Should find the modified property
+        node_diff = result.node_diffs[0]
+        assert len(node_diff.property_diffs) > 0
+
+    def test_compute_diff_with_nested_flat_nodes(self):
+        """Test compute_diff with flat nested nodes structure."""
+        # Old snapshot with parent and child
+        old_parent = TreeNode(
+            id=1,
+            name="Body",
+            type_id="PartDesign::Body",
+            label="Body",
+            path="Body",
+            after=None,
+            properties={},
+        )
+        old_child = TreeNode(
+            id=2,
+            name="Pad",
+            type_id="PartDesign::Pad",
+            label="Pad",
+            path="Body/Pad",
+            after="Body",
+            properties={},
+        )
+        old_snapshot = Snapshot(
+            snapshot_id=str(uuid.uuid4()),
+            document_name="old",
+            timestamp=datetime.datetime.now(),
+            nodes=[old_parent, old_child],
+        )
+
+        # New snapshot with parent and child (same structure)
+        new_parent = TreeNode(
+            id=1,
+            name="Body",
+            type_id="PartDesign::Body",
+            label="Body",
+            path="Body",
+            after=None,
+            properties={},
+        )
+        new_child = TreeNode(
+            id=2,
+            name="Pad",
+            type_id="PartDesign::Pad",
+            label="Pad",
+            path="Body/Pad",
+            after="Body",
+            properties={},
+        )
+        new_snapshot = Snapshot(
+            snapshot_id=str(uuid.uuid4()),
+            document_name="new",
+            timestamp=datetime.datetime.now(),
+            nodes=[new_parent, new_child],
+        )
+
+        engine = DiffEngine()
+        result = engine.compute_diff(old_snapshot, new_snapshot)
+
+        # No changes expected
+        assert result.has_changes is False
+
+    def test_compute_diff_filters_excluded_types(self):
+        """Test compute_diff filters out excluded node types."""
+
+        class MockSettingsRepo:
+            def get_excluded_types(self):
+                return ["PartDesign::Body"]
+
+            def get_excluded_properties(self):
+                return []
+
+        old_node = TreeNode(
+            id=1,
+            name="Body",
+            type_id="PartDesign::Body",
+            label="Body",
+            path="Body",
+            after=None,
+            properties={},
+        )
+        old_snapshot = Snapshot(
+            snapshot_id=str(uuid.uuid4()),
+            document_name="old",
+            timestamp=datetime.datetime.now(),
+            nodes=[old_node],
+        )
+        new_snapshot = Snapshot(
+            snapshot_id=str(uuid.uuid4()),
+            document_name="new",
+            timestamp=datetime.datetime.now(),
+            nodes=[],
+        )
+
+        engine = DiffEngine(settings_repo=MockSettingsRepo())
+        result = engine.compute_diff(old_snapshot, new_snapshot)
+
+        # With excluded type, should not report changes
+        assert result.has_changes is False
+
+
+class TestDiffEngineCompare:
+    """Tests for DiffEngine.compare() with Snapshot objects."""
+
+    def test_compare_with_empty_snapshots(self):
+        """Test compare with empty snapshots returns empty result."""
+        engine = DiffEngine()
+        old_snapshot = Snapshot(
+            snapshot_id="old",
+            document_name="OldDoc",
+            timestamp=datetime.datetime.now(),
+            nodes=[],
+        )
+        new_snapshot = Snapshot(
+            snapshot_id="new",
+            document_name="NewDoc",
+            timestamp=datetime.datetime.now(),
+            nodes=[],
+        )
+        result = engine.compare(
+            old_snapshot,
+            new_snapshot,
+            excluded_types=[],
+            excluded_properties=[],
+        )
+
+        assert result.node_diffs == []
+        assert result.has_changes is False
+
+    def test_compare_detect_added_nodes(self):
+        """Test compare detects added nodes in snapshot."""
+        new_node = TreeNode(
+            id=1,
+            name="Body",
+            type_id="PartDesign::Body",
+            label="Body",
+            path="Body",
+            after=None,
+            properties={},
+        )
+
+        engine = DiffEngine()
+        old_snapshot = Snapshot(
+            snapshot_id="old",
+            document_name="OldDoc",
+            timestamp=datetime.datetime.now(),
+            nodes=[],
+        )
+        new_snapshot = Snapshot(
+            snapshot_id="new",
+            document_name="NewDoc",
+            timestamp=datetime.datetime.now(),
+            nodes=[new_node],
+        )
+        result = engine.compare(
+            old_snapshot,
+            new_snapshot,
+            excluded_types=[],
+            excluded_properties=[],
+        )
+
+        assert result.has_changes is True
+
+    def test_compare_detect_deleted_nodes(self):
+        """Test compare detects deleted nodes in snapshot."""
+        old_node = TreeNode(
+            id=1,
+            name="Body",
+            type_id="PartDesign::Body",
+            label="Body",
+            path="Body",
+            after=None,
+            properties={},
+        )
+
+        engine = DiffEngine()
+        old_snapshot = Snapshot(
+            snapshot_id="old",
+            document_name="OldDoc",
+            timestamp=datetime.datetime.now(),
+            nodes=[old_node],
+        )
+        new_snapshot = Snapshot(
+            snapshot_id="new",
+            document_name="NewDoc",
+            timestamp=datetime.datetime.now(),
+            nodes=[],
+        )
+        result = engine.compare(
+            old_snapshot,
+            new_snapshot,
+            excluded_types=[],
+            excluded_properties=[],
+        )
+
+        assert result.has_changes is True
+
+    def test_compare_with_modified_properties(self):
+        """Test compare detects modified properties in snapshot."""
+        from freecad.diff_wb.domain import Property
+
+        old_node = TreeNode(
+            id=1,
+            name="Body",
+            type_id="PartDesign::Body",
+            label="Body",
+            path="Body",
+            after=None,
+            properties={"Length": Property.create(PropertyType.FLOAT, 10.0)},
+        )
+        new_node = TreeNode(
+            id=1,
+            name="Body",
+            type_id="PartDesign::Body",
+            label="Body",
+            path="Body",
+            after=None,
+            properties={"Length": Property.create(PropertyType.FLOAT, 20.0)},
+        )
+
+        engine = DiffEngine()
+        old_snapshot = Snapshot(
+            snapshot_id="old",
+            document_name="OldDoc",
+            timestamp=datetime.datetime.now(),
+            nodes=[old_node],
+        )
+        new_snapshot = Snapshot(
+            snapshot_id="new",
+            document_name="NewDoc",
+            timestamp=datetime.datetime.now(),
+            nodes=[new_node],
+        )
+        result = engine.compare(
+            old_snapshot,
+            new_snapshot,
+            excluded_types=[],
+            excluded_properties=[],
+        )
+
+        assert result.has_changes is True
+
+    def test_compare_filters_excluded_types(self):
+        """Test compare filters excluded node types."""
+        old_node = TreeNode(
+            id=1,
+            name="Body",
+            type_id="PartDesign::Body",
+            label="Body",
+            path="Body",
+            after=None,
+            properties={},
+        )
+
+        engine = DiffEngine()
+        old_snapshot = Snapshot(
+            snapshot_id="old",
+            document_name="OldDoc",
+            timestamp=datetime.datetime.now(),
+            nodes=[old_node],
+        )
+        new_snapshot = Snapshot(
+            snapshot_id="new",
+            document_name="NewDoc",
+            timestamp=datetime.datetime.now(),
+            nodes=[],
+        )
+        result = engine.compare(
+            old_snapshot,
+            new_snapshot,
+            excluded_types=["PartDesign::Body"],
+            excluded_properties=[],
+        )
+
+        # With excluded type, should not report changes
+        assert result.has_changes is False
+
+    def test_compare_filters_excluded_properties(self):
+        """Test compare filters excluded property names."""
+        from freecad.diff_wb.domain import Property
+
+        old_node = TreeNode(
+            id=1,
+            name="Body",
+            type_id="PartDesign::Body",
+            label="Body",
+            path="Body",
+            after=None,
+            properties={
+                "Length": Property.create(PropertyType.FLOAT, 10.0),
+                "Label": Property.create(PropertyType.STRING, "Body"),
+            },
+        )
+        new_node = TreeNode(
+            id=1,
+            name="Body",
+            type_id="PartDesign::Body",
+            label="Body",
+            path="Body",
+            after=None,
+            properties={
+                "Length": Property.create(PropertyType.FLOAT, 20.0),
+                "Label": Property.create(PropertyType.STRING, "Body"),
+            },
+        )
+
+        engine = DiffEngine()
+        old_snapshot = Snapshot(
+            snapshot_id="old",
+            document_name="OldDoc",
+            timestamp=datetime.datetime.now(),
+            nodes=[old_node],
+        )
+        new_snapshot = Snapshot(
+            snapshot_id="new",
+            document_name="NewDoc",
+            timestamp=datetime.datetime.now(),
+            nodes=[new_node],
+        )
+        result = engine.compare(
+            old_snapshot,
+            new_snapshot,
+            excluded_types=[],
+            excluded_properties=["Length"],
+        )
+
+        # Only Label property differs (but it's the same value)
+        # Length should be excluded from comparison
+        assert result.has_changes is False

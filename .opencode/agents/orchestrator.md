@@ -27,8 +27,9 @@ Task files are located in `.opencode/tasks/x-task-name.md` and contain:
 
 You MUST maintain awareness of:
 1. **Current task file**: The active task being worked on
-2. **Current phase**: Which phase is currently being implemented
+2. **Current phase**: Which phase is currently being implemented.
 3. **Phase status**: Which checklist items are complete vs pending
+4. **Execution step**: which of the below steps is currently in progress
 4. **Overall completion**: All phases must be complete before final validation
 
 ## Exact Execution Procedure

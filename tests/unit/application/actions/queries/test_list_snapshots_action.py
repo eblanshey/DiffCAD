@@ -22,15 +22,15 @@ class TestListSnapshotsAction:
             snapshot_id="",  # Will be assigned by repository
             document_name="Document1",
             timestamp=datetime.datetime(2024, 1, 1, 10, 0),
-            root_nodes=[
+            nodes=[
                 TreeNode(
+                    id=1,
                     name="Object1",
                     type_id="Part::Feature",
                     label="Object1",
                     path="Object1",
-                    is_root=True,
+                    after=None,
                     properties={},
-                    children=[],
                 )
             ],
         )
@@ -38,7 +38,7 @@ class TestListSnapshotsAction:
             snapshot_id="",  # Will be assigned by repository
             document_name="Document2",
             timestamp=datetime.datetime(2024, 1, 2, 11, 0),
-            root_nodes=[],
+            nodes=[],
         )
         repo.add_snapshot(mock_snapshot1)
         repo.add_snapshot(mock_snapshot2)
@@ -73,26 +73,25 @@ class TestListSnapshotsAction:
             snapshot_id="",  # Will be assigned by repository
             document_name="TestDocument",
             timestamp=datetime.datetime(2024, 1, 1, 10, 0),
-            root_nodes=[
+            nodes=[
                 TreeNode(
+                    id=1,
                     name="Object1",
                     type_id="Part::Feature",
                     label="Object1",
                     path="Object1",
-                    is_root=True,
+                    after=None,
                     properties={},
-                    children=[
-                        TreeNode(
-                            name="Child1",
-                            type_id="Part::Feature",
-                            label="Child1",
-                            path="Object1/Child1",
-                            is_root=False,
-                            properties={},
-                            children=[],
-                        )
-                    ],
-                )
+                ),
+                TreeNode(
+                    id=2,
+                    name="Child1",
+                    type_id="Part::Feature",
+                    label="Child1",
+                    path="Object1/Child1",
+                    after="Object1",
+                    properties={},
+                ),
             ],
         )
         snapshot_id = repo.add_snapshot(mock_snapshot)
@@ -121,7 +120,7 @@ class TestListSnapshotsAction:
                 snapshot_id="",  # Will be assigned by repository
                 document_name="Doc1",
                 timestamp=datetime.datetime.now(),
-                root_nodes=[],
+                nodes=[],
             )
         )
         repo.add_snapshot(
@@ -129,7 +128,7 @@ class TestListSnapshotsAction:
                 snapshot_id="",  # Will be assigned by repository
                 document_name="Doc2",
                 timestamp=datetime.datetime.now(),
-                root_nodes=[],
+                nodes=[],
             )
         )
 

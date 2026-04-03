@@ -300,7 +300,7 @@ class TestSnapshotExtractor:
 
         assert isinstance(result, Snapshot)
         assert result.document_name == "EmptyDocument"
-        assert result.root_nodes == []
+        assert result.nodes == []
 
     def test_extract_tree_with_root_object(self):
         """Test extraction with a single root object."""
@@ -330,9 +330,9 @@ class TestSnapshotExtractor:
 
         assert isinstance(result, Snapshot)
         assert result.document_name == "TestDoc"
-        assert len(result.root_nodes) == 1
-        assert result.root_nodes[0].name == "Body"
-        assert result.root_nodes[0].type_id == "PartDesign::Body"
+        assert len(result.nodes) == 1
+        assert result.nodes[0].name == "Body"
+        assert result.nodes[0].type_id == "PartDesign::Body"
 
     def test_extract_tree_with_nested_children_via_group(self):
         """Test extraction with nested child objects via ViewProvider.claimChildren()."""
@@ -400,12 +400,14 @@ class TestSnapshotExtractor:
             mock_init_gui.return_value = mock_gui_doc
             result = extractor.extract_tree(fake_port)
 
-        assert len(result.root_nodes) == 1
-        parent = result.root_nodes[0]
-        assert parent.name == "Body"
-        assert len(parent.children) == 1
-        assert parent.children[0].name == "Sketch"
-        assert parent.children[0].path == "Body/Sketch"
+        # In flat structure, both nodes should be in the nodes list
+        assert len(result.nodes) == 2
+        names = {node.name for node in result.nodes}
+        assert "Body" in names
+        assert "Sketch" in names
+        # Find the Sketch node and verify its path
+        sketch_node = next(node for node in result.nodes if node.name == "Sketch")
+        assert sketch_node.path == "Body/Sketch"
 
     def test_extract_tree_handles_no_document(self):
         """Test that extract_tree handles no document gracefully."""
@@ -418,7 +420,7 @@ class TestSnapshotExtractor:
         # Should return a Snapshot with empty root_nodes when no document
         assert isinstance(result, Snapshot)
         assert result.document_name == "NoDocument"
-        assert result.root_nodes == []
+        assert result.nodes == []
 
     def test_extract_tree_property_extraction(self):
         """Test that properties are correctly extracted."""
@@ -447,8 +449,8 @@ class TestSnapshotExtractor:
             mock_init_gui.return_value = None
             result = extractor.extract_tree(fake_port)
 
-        assert len(result.root_nodes) == 1
-        node = result.root_nodes[0]
+        assert len(result.nodes) == 1
+        node = result.nodes[0]
         # Properties should be extracted (with non-empty groups)
         assert "Label" in node.properties
         assert "Length" in node.properties
@@ -482,8 +484,8 @@ class TestSnapshotExtractor:
             mock_init_gui.return_value = None
             result = extractor.extract_tree(fake_port)
 
-        assert len(result.root_nodes) == 1
-        node = result.root_nodes[0]
+        assert len(result.nodes) == 1
+        node = result.nodes[0]
         # Length property should have expression (with non-empty group)
         assert "Length" in node.properties
         length_prop = node.properties["Length"]
@@ -569,19 +571,15 @@ class TestSnapshotExtractor:
             mock_init_gui.return_value = mock_gui_doc
             result = extractor.extract_tree(fake_port)
 
-        assert len(result.root_nodes) == 1
-        part_node = result.root_nodes[0]
-        assert part_node.name == "Part"
+        # In flat structure, all nodes should be in the nodes list
+        assert len(result.nodes) == 3  # Part + Body + VarSet
+        names = {node.name for node in result.nodes}
+        assert "Part" in names
+        assert "Body" in names
+        assert "VarSet" in names
 
-        # Should have both Body and VarSet from claimChildren()
-        assert len(part_node.children) == 2
-
-        child_names = {child.name for child in part_node.children}
-        assert "Body" in child_names
-        assert "VarSet" in child_names
-
-        # Verify children paths
-        varset_node = next(c for c in part_node.children if c.name == "VarSet")
+        # Verify VarSet path
+        varset_node = next(node for node in result.nodes if node.name == "VarSet")
         assert varset_node.type_id == "App::VarSet"
         assert varset_node.path == "Part/VarSet"
 
@@ -664,27 +662,18 @@ class TestSnapshotExtractor:
             mock_init_gui.return_value = mock_gui_doc
             result = extractor.extract_tree(fake_port)
 
-        assert len(result.root_nodes) == 1
-        part_node = result.root_nodes[0]
-        assert part_node.name == "Part"
+        # In flat structure, all 3 nodes should be in the list
+        assert len(result.nodes) == 3  # Part + Body + Sketch
+        names = {node.name for node in result.nodes}
+        assert "Part" in names
+        assert "Body" in names
+        assert "Sketch" in names
 
-        # Part should have Body as child
-        assert len(part_node.children) == 1
-        body_node = part_node.children[0]
-        assert body_node.name == "Body"
+        # Verify paths
+        body_node = next(node for node in result.nodes if node.name == "Body")
         assert body_node.path == "Part/Body"
 
-        # Verify recursive exclusion: Sketch should NOT be in Part's direct children
-        # (it should only be in Body's children, not directly under Part)
-        part_child_names = {child.name for child in part_node.children}
-        assert "Sketch" not in part_child_names, (
-            "Sketch should not be in Part's direct children (recursive exclusion failed)"
-        )
-
-        # Body should have Sketch as child
-        assert len(body_node.children) == 1
-        sketch_node = body_node.children[0]
-        assert sketch_node.name == "Sketch"
+        sketch_node = next(node for node in result.nodes if node.name == "Sketch")
         assert sketch_node.path == "Part/Body/Sketch"
 
     def test_extract_tree_handles_origin_features(self):
@@ -765,15 +754,12 @@ class TestSnapshotExtractor:
             mock_init_gui.return_value = mock_gui_doc
             result = extractor.extract_tree(fake_port)
 
-        assert len(result.root_nodes) == 1
-        origin_node = result.root_nodes[0]
-        assert origin_node.name == "Origin"
-
-        # Origin should have X_Axis and XY_Plane as children
-        assert len(origin_node.children) == 2
-        child_names = {child.name for child in origin_node.children}
-        assert "X_Axis" in child_names
-        assert "XY_Plane" in child_names
+        # In flat structure, all 3 nodes should be in the list
+        assert len(result.nodes) == 3  # Origin + X_Axis + XY_Plane
+        names = {node.name for node in result.nodes}
+        assert "Origin" in names
+        assert "X_Axis" in names
+        assert "XY_Plane" in names
 
     def test_extract_tree_filters_hidden_properties_by_editor_mode(self):
         """Test that properties with ['Hidden'] editor mode are filtered out."""
@@ -818,8 +804,8 @@ class TestSnapshotExtractor:
             mock_init_gui.return_value = None
             result = extractor.extract_tree(fake_port)
 
-        assert len(result.root_nodes) == 1
-        node = result.root_nodes[0]
+        assert len(result.nodes) == 1
+        node = result.nodes[0]
 
         # Visible properties should be present
         assert "Label" in node.properties
@@ -874,8 +860,8 @@ class TestSnapshotExtractor:
             mock_init_gui.return_value = None
             result = extractor.extract_tree(fake_port)
 
-        assert len(result.root_nodes) == 1
-        node = result.root_nodes[0]
+        assert len(result.nodes) == 1
+        node = result.nodes[0]
 
         # All properties should be present (including those with empty groups)
         assert "Label" in node.properties
@@ -925,8 +911,8 @@ class TestSnapshotExtractor:
             mock_init_gui.return_value = None
             result = extractor.extract_tree(fake_port)
 
-        assert len(result.root_nodes) == 1
-        node = result.root_nodes[0]
+        assert len(result.nodes) == 1
+        node = result.nodes[0]
 
         # Visible: Label, Length, Shape (empty group is visible now)
         # Hidden: Visibility, Placement, _ElementMapVersion (hidden by editor mode)
@@ -974,8 +960,8 @@ class TestSnapshotExtractor:
             mock_init_gui.return_value = None
             result = extractor.extract_tree(fake_port)
 
-        assert len(result.root_nodes) == 1
-        node = result.root_nodes[0]
+        assert len(result.nodes) == 1
+        node = result.nodes[0]
 
         # All properties with non-empty groups should be present
         assert "Label" in node.properties
@@ -1051,11 +1037,11 @@ class TestSnapshotExtractor:
             mock_init_gui.return_value = mock_gui_doc
             result = extractor.extract_tree(fake_port)
 
-        assert len(result.root_nodes) == 1
-        parent = result.root_nodes[0]
-        assert parent.name == "Body"
-        assert len(parent.children) == 1
-        assert parent.children[0].name == "Sketch"
+        # In flat structure, both nodes should be in the list
+        assert len(result.nodes) == 2
+        names = {node.name for node in result.nodes}
+        assert "Body" in names
+        assert "Sketch" in names
 
     def test_extract_tree_handles_gui_unavailable(self):
         """Test exception when FreeCADGui is not available.
@@ -1143,8 +1129,8 @@ class TestSnapshotExtractor:
             result = extractor.extract_tree(fake_port)
 
         # Should still return the object even though claimChildren() failed
-        assert len(result.root_nodes) == 1
-        assert result.root_nodes[0].name == "Body"
+        assert len(result.nodes) == 1
+        assert result.nodes[0].name == "Body"
 
     def test_extract_tree_handles_circular_claims(self):
         """Test that circular claims (A claims B, B claims A) don't cause infinite loops.
@@ -1270,64 +1256,8 @@ class TestSnapshotExtractor:
             result = extractor.extract_tree(fake_port)
 
         # Only the valid object should be in the result
-        assert len(result.root_nodes) == 1
-        assert result.root_nodes[0].name == "Body"
-
-    def test_build_effective_children_map_order_independent(self):
-        """Test that _build_effective_children_map is order-independent.
-
-        This tests the order-dependent bug fix where processing children in
-        different orders would produce different results. For example, with:
-            claim_map = {"Part": ["Sketch", "Body"], "Body": ["Sketch"]}
-
-        Before the fix, if "Sketch" appeared before "Body" in the list, the
-        algorithm would incorrectly include "Sketch" because it was processed
-        before "Body" (so Body's descendants weren't in the exclusion set yet).
-
-        After the fix, the two-pass algorithm correctly identifies that Sketch
-        should be excluded because it's claimed by Body, regardless of order.
-        """
-        from freecad.diff_wb.domain.snapshots.gui_extractor import (
-            _build_effective_children_map,
-        )
-
-        # Test case from the bug report: Sketch appears BEFORE Body
-        # Bug: incorrectly includes Sketch because Body hasn't been processed yet
-        claim_map = {"Part": ["Sketch", "Body"], "Body": ["Sketch"]}
-        result = _build_effective_children_map(claim_map)
-
-        # Correct result: only Body should be Part's child
-        # (Sketch is excluded because it's claimed by Body)
-        assert result["Part"] == ["Body"], (
-            f"Expected ['Body'], got {result['Part']}. Sketch should be excluded because it's claimed by Body."
-        )
-
-        # Test with reversed order - should produce same result
-        claim_map_reversed = {"Part": ["Body", "Sketch"], "Body": ["Sketch"]}
-        result_reversed = _build_effective_children_map(claim_map_reversed)
-
-        # Same result regardless of order
-        assert result_reversed["Part"] == ["Body"]
-        assert result["Part"] == result_reversed["Part"], "Order should not affect the result"
-
-        # Test a more complex case: Part -> [A, B, C], B -> [D], C -> [D, E]
-        # A, B, C are all children of Part. D is a descendant of B, E is a
-        # descendant of C. All three (A, B, C) should remain as direct children
-        # because they themselves are not descendants of each other.
-        # The descendants (D, E) would be excluded from being direct children
-        # of Part, but B and C remain as direct children.
-        complex_map = {
-            "Part": ["A", "B", "C"],
-            "B": ["D"],
-            "C": ["D", "E"],
-        }
-        complex_result = _build_effective_children_map(complex_map)
-
-        # A, B, C should all remain as direct children (they're not descendants
-        # of each other). D and E are grandchildren, not direct children.
-        assert complex_result["Part"] == ["A", "B", "C"], (
-            f"Expected ['A', 'B', 'C'], got {complex_result['Part']}. A, B, C should remain as direct children."
-        )
+        assert len(result.nodes) == 1
+        assert result.nodes[0].name == "Body"
 
 
 class TestIsPropertyHidden:

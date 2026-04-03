@@ -78,8 +78,8 @@ class CompareSnapshotsAction:
         Log.info(f"Comparing snapshots: {old_id} vs {new_id}")
         try:
             diff_result = self._diff_engine.compare(
-                old_snapshot.root_nodes,
-                new_snapshot.root_nodes,
+                old_snapshot,
+                new_snapshot,
                 excluded_types=settings.excluded_types,
                 excluded_properties=settings.excluded_properties,
             )

@@ -37,7 +37,7 @@ You MUST think, read, search, and delegate explore agents to construct a well-fo
 
 **Work iteratively with the user to refine the plan.** Ask clarifying questions, present options, and incorporate user feedback throughout the planning process.
 
-**The final step is to write the agreed-upon plan to a task file after receiving explicit user confirmation.**
+**The final step is to write the agreed-upon plan to a task file after receiving explicit user confirmation. This means the user explicitly says "write the plan" or similar.**
 
 ---
 
@@ -84,8 +84,8 @@ You MUST think, read, search, and delegate explore agents to construct a well-fo
 - Show the complete plan to the user
 - Ask for feedback and refinements
 - Incorporate user suggestions
-- **Get explicit confirmation before writing the task file**
-- Once confirmed, write the plan to `.opencode/tasks/plan-name.md` (e.g., `.opencode/tasks/new-feature-plan.md`) following the template below
+- **Get explicit confirmation before writing the task file. Being asked to make a plan is NOT consent to write to the file.**
+- Once confirmed to actually *write*, write the plan to `.opencode/tasks/plan-name.md` (e.g., `.opencode/tasks/new-feature-plan.md`) following the template below
 
 ### Step 5: Document Decisions
 Include rationale and alternatives considered in the Decisions Made section.
@@ -225,4 +225,4 @@ After writing the plan file, inform the user that the plan is saved and they can
 - Present tradeoffs when multiple approaches exist.
 - The plan file should be comprehensive enough for implementation to proceed without further clarification.
 
-**IF YOU TRY TO WRITE A TASK FILE BEFORE GETTING THE USER'S APPROVAL OF THE PLAN, YOU WILL BE FLOGGED.**
+**IF YOU TRY TO WRITE A TASK FILE BEFORE GETTING THE USER'S EXPLICIT APPROVAL IN WRITING, YOU WILL BE FLOGGED.**

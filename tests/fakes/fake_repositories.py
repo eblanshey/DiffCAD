@@ -7,11 +7,11 @@ from freecad.diff_wb.domain.diff.engine import DiffEngine
 from freecad.diff_wb.domain.diff.models import DiffResult
 from freecad.diff_wb.domain.settings.models import Settings
 from freecad.diff_wb.domain.settings.repository import SettingsRepository
+from freecad.diff_wb.domain.snapshots import Snapshot
 from freecad.diff_wb.domain.snapshots.repository import (
     InMemorySnapshotRepository,
     SnapshotRepository,
 )
-from freecad.diff_wb.domain.tree.node import TreeNode
 
 
 class FakeSnapshotRepository(InMemorySnapshotRepository, SnapshotRepository):
@@ -76,20 +76,20 @@ class FakeDiffEngine(DiffEngine):
             node_diffs=[],
         )
         self._side_effect = side_effect
-        self._compare_calls: list[tuple[list[TreeNode], list[TreeNode], list[str], list[str]]] = []
+        self._compare_calls: list[tuple[Snapshot, Snapshot, list[str], list[str]]] = []
 
     def compare(
         self,
-        old_tree: list[TreeNode],
-        new_tree: list[TreeNode],
+        old_snapshot: Snapshot,
+        new_snapshot: Snapshot,
         excluded_types: list[str],
         excluded_properties: list[str],
     ) -> DiffResult:
         """Record the call and return the configured result.
 
         Args:
-            old_tree: List of root TreeNode objects from the older snapshot
-            new_tree: List of root TreeNode objects from the newer snapshot
+            old_snapshot: Snapshot from the older version
+            new_snapshot: Snapshot from the newer version
             excluded_types: List of type IDs to exclude from comparison
             excluded_properties: List of property names to exclude from comparison
 
@@ -100,7 +100,7 @@ class FakeDiffEngine(DiffEngine):
             Exception: If side_effect is set
         """
         # Record the call for verification
-        self._compare_calls.append((old_tree, new_tree, excluded_types, excluded_properties))
+        self._compare_calls.append((old_snapshot, new_snapshot, excluded_types, excluded_properties))
 
         if self._side_effect is not None:
             raise self._side_effect
@@ -108,7 +108,7 @@ class FakeDiffEngine(DiffEngine):
         return self._return_value
 
     @property
-    def compare_calls(self) -> list[tuple[list[TreeNode], list[TreeNode], list[str], list[str]]]:
+    def compare_calls(self) -> list[tuple[Snapshot, Snapshot, list[str], list[str]]]:
         """Get all recorded compare() calls."""
         return self._compare_calls.copy()
 

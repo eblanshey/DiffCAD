@@ -22,14 +22,15 @@ class TestCompareSnapshotsAction:
             snapshot_id="",
             document_name="OldDoc",
             timestamp=datetime.datetime.now(),
-            root_nodes=[
+            nodes=[
                 TreeNode(
+                    id=1,
                     name="Node1",
                     type_id="Part::Feature",
                     label="Node1",
-                    path="root/Node1",
+                    path="Node1",
+                    after=None,
                     properties={},
-                    children=[],
                 )
             ],
         )
@@ -37,14 +38,15 @@ class TestCompareSnapshotsAction:
             snapshot_id="",
             document_name="NewDoc",
             timestamp=datetime.datetime.now(),
-            root_nodes=[
+            nodes=[
                 TreeNode(
+                    id=1,
                     name="Node1",
                     type_id="Part::Feature",
                     label="Node1 Modified",
-                    path="root/Node1",
+                    path="Node1",
+                    after=None,
                     properties={},
-                    children=[],
                 )
             ],
         )
@@ -98,7 +100,7 @@ class TestCompareSnapshotsAction:
             snapshot_id="",
             document_name="OldDoc",
             timestamp=datetime.datetime.now(),
-            root_nodes=[],
+            nodes=[],
         )
         old_id = snapshot_repo.add_snapshot(old_snapshot)
 
@@ -127,14 +129,15 @@ class TestCompareSnapshotsAction:
             snapshot_id="",
             document_name="OldDoc",
             timestamp=datetime.datetime.now(),
-            root_nodes=[
+            nodes=[
                 TreeNode(
+                    id=1,
                     name="Node1",
                     type_id="Part::Feature",
                     label="Node1",
-                    path="root/Node1",
+                    path="Node1",
+                    after=None,
                     properties={"Property1": Property(type_=PropertyType.STRING, value="Value1")},
-                    children=[],
                 )
             ],
         )
@@ -142,14 +145,15 @@ class TestCompareSnapshotsAction:
             snapshot_id="",
             document_name="NewDoc",
             timestamp=datetime.datetime.now(),
-            root_nodes=[
+            nodes=[
                 TreeNode(
+                    id=1,
                     name="Node1",
                     type_id="Part::Feature",
                     label="Node1",
-                    path="root/Node1",
+                    path="Node1",
+                    after=None,
                     properties={"Property1": Property(type_=PropertyType.STRING, value="Value2")},
-                    children=[],
                 )
             ],
         )
@@ -177,13 +181,13 @@ class TestCompareSnapshotsAction:
 
         # Verify the call arguments
         call_args = diff_engine.compare_calls[0]
-        old_tree, new_tree, excluded_types, excluded_properties = call_args
+        old_snapshot, new_snapshot, excluded_types, excluded_properties = call_args
 
-        # Check that trees were passed (not snapshots)
-        assert isinstance(old_tree, list)
-        assert isinstance(new_tree, list)
-        assert len(old_tree) == 1
-        assert len(new_tree) == 1
+        # Check that Snapshot objects were passed
+        assert isinstance(old_snapshot, Snapshot)
+        assert isinstance(new_snapshot, Snapshot)
+        assert len(old_snapshot.nodes) == 1
+        assert len(new_snapshot.nodes) == 1
 
         # Check that exclusion settings were passed
         assert excluded_types == ["App::Origin"]
@@ -197,13 +201,13 @@ class TestCompareSnapshotsAction:
             snapshot_id="",
             document_name="OldDoc",
             timestamp=datetime.datetime.now(),
-            root_nodes=[],
+            nodes=[],
         )
         new_snapshot = Snapshot(
             snapshot_id="",
             document_name="NewDoc",
             timestamp=datetime.datetime.now(),
-            root_nodes=[],
+            nodes=[],
         )
         old_id = snapshot_repo.add_snapshot(old_snapshot)
         new_id = snapshot_repo.add_snapshot(new_snapshot)
@@ -242,13 +246,13 @@ class TestCompareSnapshotsAction:
             snapshot_id="",
             document_name="OldDoc",
             timestamp=datetime.datetime.now(),
-            root_nodes=[],
+            nodes=[],
         )
         new_snapshot = Snapshot(
             snapshot_id="",
             document_name="NewDoc",
             timestamp=datetime.datetime.now(),
-            root_nodes=[],
+            nodes=[],
         )
         old_id = snapshot_repo.add_snapshot(old_snapshot)
         new_id = snapshot_repo.add_snapshot(new_snapshot)
@@ -277,13 +281,13 @@ class TestCompareSnapshotsAction:
             snapshot_id="",
             document_name="OldDoc",
             timestamp=datetime.datetime.now(),
-            root_nodes=[],
+            nodes=[],
         )
         new_snapshot = Snapshot(
             snapshot_id="",
             document_name="NewDoc",
             timestamp=datetime.datetime.now(),
-            root_nodes=[],
+            nodes=[],
         )
         old_id = snapshot_repo.add_snapshot(old_snapshot)
         new_id = snapshot_repo.add_snapshot(new_snapshot)
@@ -316,7 +320,7 @@ class TestCompareSnapshotsAction:
             snapshot_id="",
             document_name="TestDoc",
             timestamp=datetime.datetime.now(),
-            root_nodes=[],
+            nodes=[],
         )
         snapshot_id = snapshot_repo.add_snapshot(snapshot)
 

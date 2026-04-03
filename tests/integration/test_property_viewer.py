@@ -70,7 +70,7 @@ class TestPropertyViewerPhase6:
             result = extractor.extract_tree(port)
 
             # Find a TechDraw dimension (has SavedGeometry)
-            for node in result.root_nodes:
+            for node in result.nodes:
                 if node.type_id.startswith("TechDraw::DrawViewDimension"):
                     # Check properties - SavedGeometry should NOT be in the list
                     prop_names = list(node.properties.keys())
@@ -86,7 +86,7 @@ class TestPropertyViewerPhase6:
             for obj in doc.Objects:
                 if hasattr(obj, "PropertiesList") and "SavedGeometry" in obj.PropertiesList:
                     # Check that our extracted properties don't include SavedGeometry
-                    for node in result.root_nodes:
+                    for node in result.nodes:
                         if node.name == obj.Name:
                             prop_names = list(node.properties.keys())
                             assert "SavedGeometry" not in prop_names, f"SavedGeometry should be hidden for {obj.Name}"
@@ -144,7 +144,7 @@ class TestPropertyViewerPhase6:
             result = extractor.extract_tree(port)
 
             # Check that properties have groups
-            for node in result.root_nodes:
+            for node in result.nodes:
                 for prop_name, prop in node.properties.items():
                     # Each property should have a group
                     assert hasattr(prop, "group"), f"Property {prop_name} should have group"
@@ -154,7 +154,7 @@ class TestPropertyViewerPhase6:
                         pytest.fail(f"Property {prop_name} has empty group - should map to Base")
 
             # Find a PartDesign::Pad to check its property groups
-            for node in result.root_nodes:
+            for node in result.nodes:
                 if node.type_id == "PartDesign::Pad":
                     # Should have properties like "Length" in "Side1" group
                     has_side1 = any(prop.group == "Side1" for prop in node.properties.values())
@@ -310,7 +310,7 @@ class TestPropertyViewerPhase6:
 
             # Get properties from first node with properties
             test_node = None
-            for node in result.root_nodes:
+            for node in result.nodes:
                 if node.properties:
                     test_node = node
                     break
@@ -400,11 +400,8 @@ class TestPropertyViewerPhase6:
 
             # Track which object types we've seen
             object_types = set()
-            for node in result.root_nodes:
+            for node in result.nodes:
                 object_types.add(node.type_id)
-                # Also check children
-                for child in node.children:
-                    object_types.add(child.type_id)
 
             # Document should have various object types
             assert len(object_types) > 0, "Should have extracted some object types"

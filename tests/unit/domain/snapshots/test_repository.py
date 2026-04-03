@@ -9,9 +9,9 @@ from freecad.diff_wb.domain import Property, PropertyType, Snapshot, TreeNode
 from freecad.diff_wb.domain.snapshots.repository import InMemorySnapshotRepository
 
 
-def _make_snapshot(name: str, root_nodes: list[TreeNode]) -> Snapshot:
+def _make_snapshot(name: str, nodes: list[TreeNode]) -> Snapshot:
     """Helper to create a Snapshot with current timestamp."""
-    return Snapshot(snapshot_id="", document_name=name, timestamp=datetime.now(), root_nodes=root_nodes)
+    return Snapshot(snapshot_id="", document_name=name, timestamp=datetime.now(), nodes=nodes)
 
 
 class TestInMemorySnapshotRepository:
@@ -25,18 +25,17 @@ class TestInMemorySnapshotRepository:
     def test_add_snapshot_returns_snapshot_id(self):
         """Test that add_snapshot returns a unique snapshot_id."""
         store = InMemorySnapshotRepository()
-        root_nodes = [
+        nodes = [
             TreeNode(
+                id=1,
                 name="TestObject",
                 type_id="PartDesign::Body",
                 label="Test Body",
                 path="TestObject",
-                is_root=True,
                 properties={},
-                children=[],
             )
         ]
-        snapshot = _make_snapshot("test_snapshot", root_nodes)
+        snapshot = _make_snapshot("test_snapshot", nodes)
         snapshot_id = store.add_snapshot(snapshot)
 
         assert snapshot_id is not None
@@ -45,26 +44,25 @@ class TestInMemorySnapshotRepository:
     def test_get_snapshot_returns_snapshot(self):
         """Test that get_snapshot returns the stored snapshot."""
         store = InMemorySnapshotRepository()
-        root_nodes = [
+        nodes = [
             TreeNode(
+                id=2,
                 name="TestObject",
                 type_id="PartDesign::Body",
                 label="Test Body",
                 path="TestObject",
-                is_root=True,
                 properties={"Label": Property(type_=PropertyType.STRING, value="Test Body")},
-                children=[],
             )
         ]
-        snapshot = _make_snapshot("test_snapshot", root_nodes)
+        snapshot = _make_snapshot("test_snapshot", nodes)
         snapshot_id = store.add_snapshot(snapshot)
 
         retrieved = store.get_snapshot(snapshot_id)
 
         assert retrieved is not None
         assert retrieved.document_name == "test_snapshot"
-        assert len(retrieved.root_nodes) == 1
-        assert retrieved.root_nodes[0].name == "TestObject"
+        assert len(retrieved.nodes) == 1
+        assert retrieved.nodes[0].name == "TestObject"
 
     def test_get_snapshot_returns_none_for_invalid_id(self):
         """Test that get_snapshot returns None for non-existent ID."""
@@ -75,18 +73,17 @@ class TestInMemorySnapshotRepository:
     def test_list_snapshots_returns_metadata(self):
         """Test that list_snapshots returns snapshot metadata."""
         store = InMemorySnapshotRepository()
-        root_nodes = [
+        nodes = [
             TreeNode(
+                id=3,
                 name="TestObject",
                 type_id="PartDesign::Body",
                 label="Test Body",
                 path="TestObject",
-                is_root=True,
                 properties={},
-                children=[],
             )
         ]
-        snapshot = _make_snapshot("test_snapshot", root_nodes)
+        snapshot = _make_snapshot("test_snapshot", nodes)
         snapshot_id = store.add_snapshot(snapshot)
 
         snapshots = store.list_snapshots()
@@ -99,18 +96,17 @@ class TestInMemorySnapshotRepository:
     def test_delete_snapshot_removes_snapshot(self):
         """Test that delete_snapshot removes the snapshot."""
         store = InMemorySnapshotRepository()
-        root_nodes = [
+        nodes = [
             TreeNode(
+                id=4,
                 name="TestObject",
                 type_id="PartDesign::Body",
                 label="Test Body",
                 path="TestObject",
-                is_root=True,
                 properties={},
-                children=[],
             )
         ]
-        snapshot = _make_snapshot("test_snapshot", root_nodes)
+        snapshot = _make_snapshot("test_snapshot", nodes)
         snapshot_id = store.add_snapshot(snapshot)
 
         store.delete_snapshot(snapshot_id)
@@ -121,18 +117,17 @@ class TestInMemorySnapshotRepository:
     def test_delete_snapshot_returns_true_on_success(self):
         """Test that delete_snapshot returns True on successful deletion."""
         store = InMemorySnapshotRepository()
-        root_nodes = [
+        nodes = [
             TreeNode(
+                id=5,
                 name="TestObject",
                 type_id="PartDesign::Body",
                 label="Test Body",
                 path="TestObject",
-                is_root=True,
                 properties={},
-                children=[],
             )
         ]
-        snapshot = _make_snapshot("test_snapshot", root_nodes)
+        snapshot = _make_snapshot("test_snapshot", nodes)
         snapshot_id = store.add_snapshot(snapshot)
 
         result = store.delete_snapshot(snapshot_id)
@@ -148,31 +143,29 @@ class TestInMemorySnapshotRepository:
     def test_duplicate_name_handling(self):
         """Test that duplicate snapshot names are allowed (different IDs)."""
         store = InMemorySnapshotRepository()
-        root_nodes1 = [
+        nodes1 = [
             TreeNode(
+                id=6,
                 name="Object1",
                 type_id="PartDesign::Body",
                 label="Object 1",
                 path="Object1",
-                is_root=True,
                 properties={},
-                children=[],
             )
         ]
-        root_nodes2 = [
+        nodes2 = [
             TreeNode(
+                id=7,
                 name="Object2",
                 type_id="PartDesign::Body",
                 label="Object 2",
                 path="Object2",
-                is_root=True,
                 properties={},
-                children=[],
             )
         ]
 
-        snapshot1 = _make_snapshot("same_name", root_nodes1)
-        snapshot2 = _make_snapshot("same_name", root_nodes2)
+        snapshot1 = _make_snapshot("same_name", nodes1)
+        snapshot2 = _make_snapshot("same_name", nodes2)
         id1 = store.add_snapshot(snapshot1)
         id2 = store.add_snapshot(snapshot2)
 
@@ -187,8 +180,8 @@ class TestInMemorySnapshotRepository:
         assert snap2 is not None
         assert snap1.document_name == "same_name"
         assert snap2.document_name == "same_name"
-        assert snap1.root_nodes[0].name == "Object1"
-        assert snap2.root_nodes[0].name == "Object2"
+        assert snap1.nodes[0].name == "Object1"
+        assert snap2.nodes[0].name == "Object2"
 
     def test_empty_store_behavior(self):
         """Test behavior of empty store operations."""
@@ -209,18 +202,17 @@ class TestInMemorySnapshotRepository:
 
         # Add multiple snapshots
         for i in range(3):
-            root_nodes = [
+            nodes = [
                 TreeNode(
+                    id=8,
                     name=f"Object{i}",
                     type_id="PartDesign::Body",
                     label=f"Object {i}",
                     path=f"Object{i}",
-                    is_root=True,
                     properties={},
-                    children=[],
                 )
             ]
-            snapshot = _make_snapshot(f"snapshot_{i}", root_nodes)
+            snapshot = _make_snapshot(f"snapshot_{i}", nodes)
             store.add_snapshot(snapshot)
 
         assert len(store.list_snapshots()) == 3
@@ -233,20 +225,19 @@ class TestInMemorySnapshotRepository:
     def test_snapshot_timestamp_is_set(self):
         """Test that snapshot timestamp is set correctly."""
         store = InMemorySnapshotRepository()
-        root_nodes = [
+        nodes = [
             TreeNode(
+                id=9,
                 name="TestObject",
                 type_id="PartDesign::Body",
                 label="Test Body",
                 path="TestObject",
-                is_root=True,
                 properties={},
-                children=[],
             )
         ]
 
         before = datetime.now()
-        snapshot = _make_snapshot("test_snapshot", root_nodes)
+        snapshot = _make_snapshot("test_snapshot", nodes)
         snapshot_id = store.add_snapshot(snapshot)
         after = datetime.now()
 
@@ -255,33 +246,36 @@ class TestInMemorySnapshotRepository:
         assert before <= retrieved.timestamp <= after
 
     def test_nested_children_preserved(self):
-        """Test that nested child nodes are preserved in storage."""
+        """Test that nested child nodes are preserved in storage (flat structure)."""
         store = InMemorySnapshotRepository()
+        # In flat structure, both parent and child are in the nodes list
         child_node = TreeNode(
+            id=10,
             name="Child",
             type_id="PartDesign::Feature",
             label="Child Feature",
             path="Parent/Child",
-            is_root=False,
+            after="Parent",
             properties={"Length": Property(type_=PropertyType.FLOAT, value=10.0)},
-            children=[],
         )
         parent_node = TreeNode(
+            id=11,
             name="Parent",
             type_id="PartDesign::Body",
             label="Parent Body",
             path="Parent",
-            is_root=True,
+            after=None,
             properties={},
-            children=[child_node],
         )
-        root_nodes = [parent_node]
+        nodes = [parent_node, child_node]
 
-        snapshot = _make_snapshot("nested_test", root_nodes)
+        snapshot = _make_snapshot("nested_test", nodes)
         snapshot_id = store.add_snapshot(snapshot)
         retrieved = store.get_snapshot(snapshot_id)
 
         assert retrieved is not None
-        assert len(retrieved.root_nodes) == 1
-        assert len(retrieved.root_nodes[0].children) == 1
-        assert retrieved.root_nodes[0].children[0].name == "Child"
+        # Both parent and child should be in the flat nodes list
+        assert len(retrieved.nodes) == 2
+        names = {node.name for node in retrieved.nodes}
+        assert "Parent" in names
+        assert "Child" in names

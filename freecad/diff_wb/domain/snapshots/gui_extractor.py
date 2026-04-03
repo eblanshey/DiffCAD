@@ -180,75 +180,6 @@ def _get_claimed_children(vp: Any) -> list[str]:
         return []
 
 
-def _get_all_descendants(name: str, claim_map: dict[str, list[str]], _visited: set[str] | None = None) -> set[str]:
-    """Get all descendants of an object recursively.
-
-    Args:
-        name: The object name
-        claim_map: The claim map {parent: [children]}
-        _visited: Internal set to track visited nodes (for cycle detection)
-
-    Returns:
-        Set of all descendant names
-    """
-    if _visited is None:
-        _visited = set()
-    # Prevent infinite loops from circular claims (A claims B, B claims A)
-    if name in _visited:
-        return set()
-    _visited.add(name)
-
-    desc: set[str] = set()
-    for child in claim_map.get(name, []):
-        desc.add(child)
-        desc.update(_get_all_descendants(child, claim_map, _visited))
-    return desc
-
-
-def _build_effective_children_map(claim_map: dict[str, list[str]]) -> dict[str, list[str]]:
-    """Build effective children map with recursive exclusion.
-
-    This implements the FreeCAD tree algorithm: if parent A claims child B,
-    and B claims children C1, C2, then C1/C2 are EXCLUDED from A's direct
-    children (they appear nested under B).
-
-    The algorithm works in two passes to avoid order-dependency:
-    - Pass 1: Collect all descendants from all children (regardless of order)
-    - Pass 2: Add children that aren't in the collected exclusions
-
-    Example:
-        claim_map = {"Part": ["Body"], "Body": ["Pad", "Sketch"]}
-        effective_children = {"Part": ["Body"]}  # Sketch excluded because it's
-                                                  # claimed by Body
-
-    Args:
-        claim_map: The direct claim map {parent: [claimed_children]}
-
-    Returns:
-        Effective children map with recursive exclusion applied
-    """
-    effective_map: dict[str, list[str]] = {}
-    for parent_name in claim_map:
-        # Get the initially claimed children (direct claims from claimChildren)
-        initially_claimed: list[str] = claim_map[parent_name]
-
-        # PASS 1: Collect all descendants from ALL children first (order-independent)
-        # This ensures we know the full exclusion set regardless of child order
-        all_descendants: set[str] = set()
-        for child_name in initially_claimed:
-            all_descendants.update(_get_all_descendants(child_name, claim_map))
-
-        # PASS 2: Add children that aren't in the collected exclusions
-        # This is order-independent because we use the full exclusion set
-        effective_children: list[str] = []
-        for child_name in initially_claimed:
-            if child_name not in all_descendants:
-                effective_children.append(child_name)
-
-        effective_map[parent_name] = effective_children
-    return effective_map
-
-
 def _init_gui_and_get_doc(doc: Any) -> Any:
     """Initialize FreeCAD GUI and get the GUI document.
 
@@ -294,48 +225,6 @@ def _init_gui_and_get_doc(doc: Any) -> Any:
             raise GuiNotAvailableError(f"Failed to get GUI document: {e}") from e
 
     return gui_doc
-
-
-def _build_hierarchy_map(doc: DocumentLike, gui_doc: Any) -> tuple[dict[str, str], dict[str, list[str]]]:
-    """Build parent and children maps using ViewProvider.claimChildren().
-
-    This uses FreeCAD's GUI-level claimChildren() API to match the visual
-    tree structure shown in FreeCAD's tree view. It implements recursive
-    exclusion: if parent A claims child B, and B claims C, then C is
-    excluded from A's direct children.
-
-    Args:
-        doc: The FreeCAD document
-        gui_doc: The GUI document (from _init_gui_and_get_doc)
-
-    Returns:
-        Tuple of (parent_map, effective_children_map) where:
-        - parent_map: {child_name: parent_name}
-        - effective_children_map: {parent_name: [child_name, ...]} with recursive exclusion
-    """
-    # Build direct claim map from claimChildren()
-    claim_map: dict[str, list[str]] = {}
-
-    if gui_doc is not None:
-        for obj in doc.Objects:
-            if not hasattr(obj, "Name"):
-                continue
-            vp = _get_view_provider(obj, gui_doc)
-            if vp is not None:
-                children = _get_claimed_children(vp)
-                if children:
-                    claim_map[obj.Name] = children
-
-    # Apply recursive exclusion to get effective children
-    effective_children_map = _build_effective_children_map(claim_map)
-
-    # Build parent_map from effective_children_map
-    parent_map: dict[str, str] = {}
-    for parent_name, children in effective_children_map.items():
-        for child_name in children:
-            parent_map[child_name] = parent_name
-
-    return parent_map, effective_children_map
 
 
 def _get_expression_for_property(obj: object, prop_name: str) -> str | None:
@@ -533,33 +422,34 @@ def _build_tree_node(
     doc: DocumentLike,
     parent_path: str,
     children_map: dict[str, list[str]],
-    is_root: bool = True,
-) -> TreeNode | None:
+    after: str | None,
+    all_nodes: list[TreeNode],
+) -> None:
     """Build a TreeNode from a FreeCAD object.
 
     Uses FreeCAD's GUI-level claimChildren() API to match the visual tree
-    structure shown in FreeCAD's tree view. This implements recursive exclusion:
-    if parent A claims child B, and B claims C, then C is excluded from A's
-    direct children (they appear nested under B).
+    structure shown in FreeCAD's tree view. claimChildren() returns only
+    direct children, so no recursive exclusion is needed.
 
     Args:
         obj: The FreeCAD object to convert
         port: The FreeCadPort instance for object resolution
         doc: The FreeCAD document
         parent_path: The path of the parent node (for building full path)
-        children_map: Pre-built effective children map from _build_hierarchy_map().
+        children_map: Pre-built children map from _build_parent_map().
                      Must be provided - built once in extract_tree() for efficiency.
-        is_root: Whether this is a root-level object
-
-    Returns:
-        A TreeNode for the object with all properties and children, or None if invalid.
+        after: The name of the preceding sibling, or None if first child/root
+        all_nodes: List to collect all nodes (modified in place)
     """
     # Get basic attributes
     name = getattr(obj, "Name", None)
     # Skip objects without Name attribute - they are invalid
     if name is None:
         Log.warning("Skipping object without Name attribute")
-        return None
+        return
+
+    # Get the unique ID from the FreeCAD object
+    node_id: int = getattr(obj, "ID", 0)
 
     type_id = getattr(obj, "TypeId", "")
     label = getattr(obj, "Label", name)
@@ -574,25 +464,165 @@ def _build_tree_node(
     except Exception as e:
         Log.exception(f"[EXTRACTOR] {name}: error extracting properties: {e}")
 
-    # Build children TreeNodes from the pre-built children map
-    children: list[TreeNode] = []
-    child_names = children_map.get(name, [])
-    for child_name in child_names:
-        child_obj = port.get_object(doc, child_name)
-        if child_obj is not None:
-            child_node = _build_tree_node(child_obj, port, doc, path, children_map, is_root=False)
-            if child_node is not None:
-                children.append(child_node)
-
-    return TreeNode(
+    # Create the node with flat structure (no children)
+    node = TreeNode(
+        id=node_id,
         name=name,
         type_id=type_id,
         label=label,
         path=path,
-        is_root=is_root,
+        after=after,
         properties=properties,
-        children=children,
     )
+    all_nodes.append(node)
+
+    # Build children TreeNodes from the pre-built children map
+    child_names = children_map.get(name, [])
+    for i, child_name in enumerate(child_names):
+        child_obj = port.get_object(doc, child_name)
+        if child_obj is not None:
+            # Calculate 'after' for this child (first child has after=None)
+            child_after = child_names[i - 1] if i > 0 else None
+            _build_tree_node(child_obj, port, doc, path, children_map, child_after, all_nodes)
+
+
+def _build_parent_to_child_map(doc: DocumentLike, gui_doc: Any) -> dict[str, list[str]]:
+    """Build the map from document objects using ViewProvider.claimChildren().
+
+    Args:
+        doc: The FreeCAD document
+        gui_doc: The GUI document for ViewProvider access
+
+    Returns:
+        Dictionary mapping parent name to list of claimed child names
+    """
+    parent_to_child_map: dict[str, list[str]] = {}
+
+    if gui_doc is not None:
+        for obj in doc.Objects:
+            if not hasattr(obj, "Name"):
+                continue
+            vp = _get_view_provider(obj, gui_doc)
+            if vp is not None:
+                children = _get_claimed_children(vp)
+                if children:
+                    parent_to_child_map[obj.Name] = children
+
+    return parent_to_child_map
+
+
+def _build_flat_node_list(
+    doc: DocumentLike,
+    child_to_parent_map: dict[str, str],
+    parent_to_child_map: dict[str, list[str]],
+    name_to_obj_map: dict[str, object],
+) -> list[TreeNode]:
+    """Build the flat node list using BFS.
+
+    Args:
+        doc: The FreeCAD document
+        child_to_parent_map: Map of child name to parent name
+        parent_to_child_map: Map of parent name to list of child names from claimChildren() (O(1) lookup)
+        name_to_obj_map: Map of object name to object
+
+    Returns:
+        List of TreeNode objects in BFS order
+    """
+    nodes: list[TreeNode] = []
+    queue: list[tuple[object, str, str | None]] = []
+    visited: set[str] = set()
+
+    # Find roots (objects not in parent_map) and add to queue
+    root_names: list[str] = [name for name in name_to_obj_map if name not in child_to_parent_map]
+
+    # Add roots to queue with their "after" value
+    for i, name in enumerate(root_names):
+        obj = name_to_obj_map.get(name)
+        if obj:
+            after = root_names[i - 1] if i > 0 else None
+            queue.append((obj, name, after))
+
+    # Process queue (BFS)
+    while queue:
+        obj, path, after = queue.pop(0)
+        obj_name: str | None = getattr(obj, "Name", None)
+        # Skip objects without Name attribute - they are invalid
+        if obj_name is None or obj_name in visited:
+            continue
+        visited.add(obj_name)
+
+        # Extract properties
+        properties = _extract_visible_properties(obj)
+
+        # Create node
+        node = TreeNode(
+            id=getattr(obj, "ID", 0),
+            name=obj_name,
+            type_id=getattr(obj, "TypeId", ""),
+            label=getattr(obj, "Label", obj_name),
+            path=path,
+            after=after,
+            properties=properties,
+        )
+        nodes.append(node)
+
+        # Get children using O(1) lookup from parent_to_child_map
+        children_names = parent_to_child_map.get(obj_name, [])
+        for i, child_name in enumerate(children_names):
+            if child_name not in visited:
+                child_obj = name_to_obj_map.get(child_name)
+                if child_obj:
+                    child_path = f"{path}/{child_name}"
+                    child_after = children_names[i - 1] if i > 0 else None
+                    queue.append((child_obj, child_path, child_after))
+
+    return nodes
+
+
+def _extract_tree_single_pass(
+    port: FreeCadPort,
+    doc: DocumentLike,
+    gui_doc: Any,
+    document_name: str,
+) -> Snapshot:
+    """Extract tree using single-pass BFS algorithm.
+
+    This replaces the multi-pass approach with a single BFS pass that builds
+    the flat node list directly. FreeCAD's claimChildren() returns only
+    direct children, so no recursive exclusion is needed.
+
+    Args:
+        port: The FreeCadPort instance
+        doc: The FreeCAD document
+        gui_doc: The GUI document for ViewProvider access (can be None)
+        document_name: Name of the document
+
+    Returns:
+        Snapshot containing the flat node list
+    """
+    from .models import Snapshot
+
+    # Step 1: Build parent_to_child_map (parent -> direct children from claimChildren())
+    parent_to_child_map = _build_parent_to_child_map(doc, gui_doc)
+
+    # Step 2: Build child_to_parent_map from parent_to_child_map
+    child_to_parent_map: dict[str, str] = {}
+    for parent_name, children in parent_to_child_map.items():
+        for child_name in children:
+            if child_name not in child_to_parent_map:
+                child_to_parent_map[child_name] = parent_name
+
+    # Step 3: Build name to object map for quick lookup
+    name_to_obj: dict[str, object] = {}
+    for obj in doc.Objects:
+        name = getattr(obj, "Name", None)
+        if name:
+            name_to_obj[name] = obj
+
+    # Step 4: Single BFS pass to build flat node list
+    nodes = _build_flat_node_list(doc, child_to_parent_map, parent_to_child_map, name_to_obj)
+
+    return Snapshot(snapshot_id=str(uuid.uuid4()), document_name=document_name, timestamp=datetime.now(), nodes=nodes)
 
 
 class SnapshotExtractor:
@@ -625,9 +655,7 @@ class SnapshotExtractor:
 
         if port is None:
             Log.info("No port provided, returning empty snapshot")
-            return Snapshot(
-                snapshot_id=str(uuid.uuid4()), document_name="NoPort", timestamp=datetime.now(), root_nodes=[]
-            )
+            return Snapshot(snapshot_id=str(uuid.uuid4()), document_name="NoPort", timestamp=datetime.now(), nodes=[])
 
         doc = port.get_active_document()
 
@@ -635,36 +663,17 @@ class SnapshotExtractor:
             # No document open, return empty snapshot
             Log.info("No document open, returning empty snapshot")
             return Snapshot(
-                snapshot_id=str(uuid.uuid4()), document_name="NoDocument", timestamp=datetime.now(), root_nodes=[]
+                snapshot_id=str(uuid.uuid4()), document_name="NoDocument", timestamp=datetime.now(), nodes=[]
             )
 
         document_name = getattr(doc, "Name", "Unnamed")
-        root_nodes: list[TreeNode] = []
 
         try:
             # Initialize FreeCAD GUI and get GUI document for claimChildren()
             gui_doc = _init_gui_and_get_doc(doc)
 
-            # Get all top-level objects from the document
-            objects = getattr(doc, "Objects", [])
-
-            # Build hierarchy map using claimChildren() - used for both root filtering and child building
-            parent_map, children_map = _build_hierarchy_map(doc, gui_doc)
-
-            for obj in objects:
-                if not hasattr(obj, "Name"):
-                    # Skip invalid objects
-                    Log.warning("Skipping object without Name attribute")
-                    continue
-
-                name = obj.Name
-                # Skip objects that have parents - they will be included as children
-                if name in parent_map:
-                    continue
-
-                node = _build_tree_node(obj, port, doc, "", children_map, is_root=True)
-                if node is not None:
-                    root_nodes.append(node)
+            # Use single-pass BFS algorithm for better performance
+            return _extract_tree_single_pass(port, doc, gui_doc, document_name)
 
         except Exception as e:
             Log.exception(f"Error extracting document tree: {e}")
@@ -672,6 +681,4 @@ class SnapshotExtractor:
         # Use current time for timestamp
         timestamp = datetime.now()
 
-        return Snapshot(
-            snapshot_id=str(uuid.uuid4()), document_name=document_name, timestamp=timestamp, root_nodes=root_nodes
-        )
+        return Snapshot(snapshot_id=str(uuid.uuid4()), document_name=document_name, timestamp=timestamp, nodes=[])

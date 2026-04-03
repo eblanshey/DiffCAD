@@ -30,76 +30,55 @@ class SnapshotMetadata:
 class Snapshot:
     """A snapshot of a FreeCAD document at a point in time.
 
-    A snapshot captures the complete state of a document as a tree structure.
-    It includes metadata about when the snapshot was taken and provides
-    methods for comparing against other snapshots.
+    A snapshot captures the complete state of a document as a flat list
+    of nodes. Each node contains its path (for move detection) and 'after'
+    field (for sibling ordering). Root nodes have paths equal to their name
+    (e.g., "Body"), while child nodes have paths with "/" separator
+    (e.g., "Body/Pad").
 
     Attributes:
         snapshot_id: Unique identifier for this snapshot (UUID)
         document_name: Name of the document
         timestamp: Timestamp when the snapshot was taken
-        root_nodes: List of root-level tree nodes (top-level objects)
+        nodes: Flat list of all tree nodes in the document
     """
 
     snapshot_id: str
     document_name: str
     timestamp: datetime
-    root_nodes: list[TreeNode] = field(default_factory=list)
+    nodes: list[TreeNode] = field(default_factory=list)
 
     @property
     def node_count(self) -> int:
-        """Return total count of all nodes in the tree.
+        """Return total count of all nodes in the snapshot.
 
         Returns:
-            Total number of nodes including all descendants
+            Total number of nodes in the flat list
         """
-        return sum(self._count_nodes(node) for node in self.root_nodes)
+        return len(self.nodes)
 
     def __str__(self) -> str:
-        return f"Snapshot({self.document_name}, {len(self.root_nodes)} objects, {self.node_count} total nodes)"
-
-    def _count_nodes(self, node: TreeNode) -> int:
-        """Helper to count all nodes recursively."""
-        count = 1
-        for child in node.children:
-            count += self._count_nodes(child)
-        return count
+        return f"Snapshot({self.document_name}, {len(self.nodes)} objects, {self.node_count} total nodes)"
 
     def get_all_nodes(self) -> list[TreeNode]:
-        """Get all nodes in the tree (flattened)."""
-        all_nodes = []
-        for root in self.root_nodes:
-            all_nodes.extend(self._collect_nodes(root))
-        return all_nodes
+        """Get all nodes in the snapshot as a flat list.
 
-    def _collect_nodes(self, node: TreeNode) -> list[TreeNode]:
-        """Recursively collect all nodes."""
-        nodes = [node]
-        for child in node.children:
-            nodes.extend(self._collect_nodes(child))
-        return nodes
+        Returns:
+            Flat list of all TreeNode objects
+        """
+        return list(self.nodes)
 
     def find_node_by_path(self, path: str) -> TreeNode | None:
         """Find a node by its path.
 
         Args:
-            path: The path to the node (e.g., "Body/Pad")
+            path: The path to the node (e.g., "Body/Pad"). Root nodes
+                have path equal to their name (e.g., "Body").
 
         Returns:
             The node if found, None otherwise
         """
-        for root in self.root_nodes:
-            node = self._find_node_recursive(root, path)
-            if node:
+        for node in self.nodes:
+            if node.path == path:
                 return node
-        return None
-
-    def _find_node_recursive(self, node: TreeNode, target_path: str) -> TreeNode | None:
-        """Recursively search for a node by path."""
-        if node.path == target_path:
-            return node
-        for child in node.children:
-            found = self._find_node_recursive(child, target_path)
-            if found:
-                return found
         return None

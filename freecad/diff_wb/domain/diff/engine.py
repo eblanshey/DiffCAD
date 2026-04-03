@@ -8,8 +8,6 @@
 # configuration at runtime.
 """Diff computation engine."""
 
-import datetime
-import uuid
 from typing import Protocol
 
 from ...config import EXCLUDED_PROPERTIES, EXCLUDED_TYPES
@@ -85,8 +83,7 @@ class DiffEngine:
     def _filter_snapshot(self, snapshot: Snapshot, excluded_types: list[str]) -> Snapshot:
         """Filter out nodes of excluded types from a snapshot.
 
-        This recursively removes nodes whose type_id matches any in the
-        excluded_types list, along with their children.
+        This removes nodes whose type_id matches any in the excluded_types list.
 
         Args:
             snapshot: The snapshot to filter
@@ -98,43 +95,19 @@ class DiffEngine:
         if not excluded_types:
             return snapshot
 
-        def filter_node(node: TreeNode) -> TreeNode | None:
-            """Recursively filter a node and its children."""
+        # Filter flat list of nodes
+        filtered_nodes: list[TreeNode] = []
+        for node in snapshot.nodes:
             # Check if this node's type should be excluded
-            if node.type_id in excluded_types:
-                return None
+            if node.type_id not in excluded_types:
+                filtered_nodes.append(node)
 
-            # Recursively filter children
-            filtered_children: list[TreeNode] = []
-            for child in node.children:
-                filtered_child = filter_node(child)
-                if filtered_child is not None:
-                    filtered_children.append(filtered_child)
-
-            # Create a new node with filtered children
-            # Note: We need to reconstruct the path since children may have changed
-            return TreeNode(
-                name=node.name,
-                type_id=node.type_id,
-                label=node.label,
-                path=node.path,
-                properties=node.properties,
-                children=filtered_children,
-            )
-
-        # Filter all root nodes
-        filtered_roots: list[TreeNode] = []
-        for root in snapshot.root_nodes:
-            filtered_root = filter_node(root)
-            if filtered_root is not None:
-                filtered_roots.append(filtered_root)
-
-        # Return a new snapshot with filtered roots (preserve original ID)
+        # Return a new snapshot with filtered nodes (preserve original ID)
         return Snapshot(
             snapshot_id=snapshot.snapshot_id,
             document_name=snapshot.document_name,
             timestamp=snapshot.timestamp,
-            root_nodes=filtered_roots,
+            nodes=filtered_nodes,
         )
 
     def compute_diff(self, old: Snapshot, new: Snapshot) -> DiffResult:
@@ -164,7 +137,7 @@ class DiffEngine:
 
         # Step 3: Compare trees using TreeComparator
         tree_diff_result = self._tree_comparator.compare_snapshots(
-            filtered_old.root_nodes, filtered_new.root_nodes, excluded_properties
+            filtered_old.nodes, filtered_new.nodes, excluded_properties
         )
 
         # Step 4: Build NodeDiff objects for excluded type nodes (as deleted/added)
@@ -180,48 +153,32 @@ class DiffEngine:
 
     def compare(
         self,
-        old_tree: list[TreeNode],
-        new_tree: list[TreeNode],
+        old_snapshot: Snapshot,
+        new_snapshot: Snapshot,
         excluded_types: list[str],
         excluded_properties: list[str],
     ) -> DiffResult:
-        """Compare two tree structures directly.
+        """Compare two snapshot structures directly.
 
-        This method allows comparing tree nodes directly without wrapping them
-        in Snapshot objects. It applies filtering based on excluded types and
-        properties, then computes the diff.
+        This method allows comparing Snapshot objects directly. It applies
+        filtering based on excluded types and properties, then computes the diff.
 
         Args:
-            old_tree: List of root TreeNode objects from the older snapshot
-            new_tree: List of root TreeNode objects from the newer snapshot
+            old_snapshot: Snapshot from the older version
+            new_snapshot: Snapshot from the newer version
             excluded_types: List of type IDs to exclude from comparison
             excluded_properties: List of property names to exclude from comparison
 
         Returns:
-            DiffResult containing all differences between the trees
+            DiffResult containing all differences between the snapshots
         """
-        # Create temporary snapshots for the trees
-        now = datetime.datetime.now()
-        old_snapshot = Snapshot(
-            snapshot_id=str(uuid.uuid4()),
-            document_name="Comparison",
-            timestamp=now,
-            root_nodes=old_tree,
-        )
-        new_snapshot = Snapshot(
-            snapshot_id=str(uuid.uuid4()),
-            document_name="Comparison",
-            timestamp=now,
-            root_nodes=new_tree,
-        )
-
         # Filter snapshots based on excluded types
         filtered_old = self._filter_snapshot(old_snapshot, excluded_types)
         filtered_new = self._filter_snapshot(new_snapshot, excluded_types)
 
         # Compare trees using TreeComparator
         tree_diff_result = self._tree_comparator.compare_snapshots(
-            filtered_old.root_nodes, filtered_new.root_nodes, excluded_properties
+            filtered_old.nodes, filtered_new.nodes, excluded_properties
         )
 
         # Construct DiffResult

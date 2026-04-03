@@ -101,7 +101,7 @@ def _get_comparable_attrs(obj: Any) -> dict[str, Any]:
         # Skip methods and callables
         try:
             attr_val = getattr(obj, attr_name)
-        except Exception:
+        except AttributeError:
             continue
         if callable(attr_val) and not isinstance(attr_val, type):
             continue
@@ -113,7 +113,7 @@ def _get_comparable_attrs(obj: Any) -> dict[str, Any]:
     return attrs
 
 
-def _attribute_values_equal(
+def _attribute_values_equal(  # noqa: C901
     old_val: Any, new_val: Any, float_tolerance: float, prop_name: str = "", attr_name: str = ""
 ) -> bool:
     """Compare two attribute values for equality.
@@ -170,10 +170,11 @@ def _attribute_values_equal(
         if len(old_val) != len(new_val):
             if prop_name and attr_name:
                 Log.debug(
-                    f"[DIFF] Property '{prop_name}' attribute '{attr_name}' length changed: {len(old_val)} -> {len(new_val)}"
+                    f"[DIFF] Property '{prop_name}' attribute '{attr_name}' "
+                    f"length changed: {len(old_val)} -> {len(new_val)}"
                 )
             return False
-        for i, (old_item, new_item) in enumerate(zip(old_val, new_val)):
+        for i, (old_item, new_item) in enumerate(zip(old_val, new_val, strict=True)):
             if not _attribute_values_equal(old_item, new_item, float_tolerance, prop_name, f"{attr_name}[{i}]"):
                 return False
         return True
@@ -185,7 +186,7 @@ def _attribute_values_equal(
         if prop_name and attr_name:
             Log.debug(f"[DIFF] Property '{prop_name}' attribute '{attr_name}' changed: {old_val!r} -> {new_val!r}")
         return False
-    except Exception:
+    except TypeError:
         # Some objects don't support direct comparison
         return False
 
@@ -464,11 +465,17 @@ class NodeDiff:
     property-level changes (properties modified/added/deleted).
 
     Attributes:
-        path: The path to this node
+        path: The path to this node (for backward compatibility, same as new_path)
         type_id: The TypeID of the node
         state: The overall state of this node - auto-calculated or forced
         property_diffs: List of property-level differences
         children: List of child node diffs
+        old_path: Path in old snapshot (None for added nodes). Used for move detection.
+        new_path: Path in new snapshot (None for deleted nodes). Used for move detection.
+        old_after: The 'after' field in old snapshot (None for added/root nodes).
+            Used for reorder detection.
+        new_after: The 'after' field in new snapshot (None for deleted/root nodes).
+            Used for reorder detection.
         _force_state: Internal override for state calculation. Only used by
             factory functions (`create_added_node_diff`, `create_deleted_node_diff`)
             to indicate node-level changes (ADDED/DELETED). When None, state is
@@ -481,6 +488,10 @@ class NodeDiff:
     state: DiffState = field(init=False)
     property_diffs: list[PropertyDiff] = field(default_factory=list)
     children: list[NodeDiff] = field(default_factory=list)
+    old_path: str | None = field(default=None)
+    new_path: str | None = field(default=None)
+    old_after: str | None = field(default=None)
+    new_after: str | None = field(default=None)
     _force_state: DiffState | None = field(default=None, repr=False, compare=False)
 
     def __post_init__(self) -> None:
@@ -659,11 +670,12 @@ class DiffResult:
     @property
     def has_changes(self) -> bool:
         """Check if there are any changes in this diff."""
+        summary = self.summary
         return (
-            self.summary.total_property_changes > 0
-            or self.summary.added_nodes > 0
-            or self.summary.deleted_nodes > 0
-            or self.summary.modified_nodes > 0
+            summary.total_property_changes > 0
+            or summary.added_nodes > 0
+            or summary.deleted_nodes > 0
+            or summary.modified_nodes > 0
         )
 
     def get_all_changed_paths(self) -> list[str]:

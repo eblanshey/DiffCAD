@@ -57,15 +57,15 @@ class TestCompareSnapshotsAction:
             snapshot_id="",
             document_name="TestDoc",
             timestamp=__import__("datetime").datetime.now(),
-            root_nodes=[
+            nodes=[
                 TreeNode(
+                    id=1,
                     name="Part",
                     type_id="Part::Feature",
                     label="OldPart",
                     path="Part",
-                    is_root=True,
+                    after=None,
                     properties={"Label": Property(type_=PropertyType.STRING, value="OldPart")},
-                    children=[],
                 )
             ],
         )
@@ -76,15 +76,15 @@ class TestCompareSnapshotsAction:
             snapshot_id="",
             document_name="TestDoc",
             timestamp=__import__("datetime").datetime.now(),
-            root_nodes=[
+            nodes=[
                 TreeNode(
+                    id=1,
                     name="Part",
                     type_id="Part::Feature",
                     label="NewPart",
                     path="Part",
-                    is_root=True,
+                    after=None,
                     properties={"Label": Property(type_=PropertyType.STRING, value="NewPart")},
-                    children=[],
                 )
             ],
         )
@@ -130,7 +130,7 @@ class TestCompareSnapshotsAction:
             snapshot_id="",
             document_name="TestDoc",
             timestamp=__import__("datetime").datetime.now(),
-            root_nodes=[],
+            nodes=[],
         )
         snapshot_repo.add_snapshot(new_snapshot)
 
@@ -160,7 +160,7 @@ class TestCompareSnapshotsAction:
             snapshot_id="",
             document_name="TestDoc",
             timestamp=__import__("datetime").datetime.now(),
-            root_nodes=[],
+            nodes=[],
         )
         old_id = snapshot_repo.add_snapshot(old_snapshot)
 
@@ -190,7 +190,7 @@ class TestCompareSnapshotsAction:
             snapshot_id="",
             document_name="TestDoc",
             timestamp=__import__("datetime").datetime.now(),
-            root_nodes=[],
+            nodes=[],
         )
         old_id = snapshot_repo.add_snapshot(old_snapshot)
 
@@ -198,7 +198,7 @@ class TestCompareSnapshotsAction:
             snapshot_id="",
             document_name="TestDoc",
             timestamp=__import__("datetime").datetime.now(),
-            root_nodes=[],
+            nodes=[],
         )
         new_id = snapshot_repo.add_snapshot(new_snapshot)
 
@@ -235,15 +235,15 @@ class TestCompareSnapshotsAction:
             snapshot_id="",
             document_name="TestDoc",
             timestamp=__import__("datetime").datetime.now(),
-            root_nodes=[
+            nodes=[
                 TreeNode(
+                    id=1,
                     name="Origin",
                     type_id="App::Origin",  # Should be excluded
                     label="Origin",
                     path="Origin",
-                    is_root=True,
+                    after=None,
                     properties={},
-                    children=[],
                 )
             ],
         )
@@ -253,15 +253,15 @@ class TestCompareSnapshotsAction:
             snapshot_id="",
             document_name="TestDoc",
             timestamp=__import__("datetime").datetime.now(),
-            root_nodes=[
+            nodes=[
                 TreeNode(
+                    id=1,
                     name="Origin",
                     type_id="App::Origin",  # Should be excluded
                     label="Origin",
                     path="Origin",
-                    is_root=True,
+                    after=None,
                     properties={},
-                    children=[],
                 )
             ],
         )
@@ -295,15 +295,15 @@ class TestCompareSnapshotsAction:
             snapshot_id="",
             document_name="TestDoc",
             timestamp=__import__("datetime").datetime.now(),
-            root_nodes=[
+            nodes=[
                 TreeNode(
+                    id=1,
                     name="ExistingPart",
                     type_id="Part::Feature",
                     label="ExistingPart",
                     path="ExistingPart",
-                    is_root=True,
+                    after=None,
                     properties={},
-                    children=[],
                 )
             ],
         )
@@ -314,24 +314,24 @@ class TestCompareSnapshotsAction:
             snapshot_id="",
             document_name="TestDoc",
             timestamp=__import__("datetime").datetime.now(),
-            root_nodes=[
+            nodes=[
                 TreeNode(
+                    id=1,
                     name="ExistingPart",
                     type_id="Part::Feature",
                     label="ExistingPart",
                     path="ExistingPart",
-                    is_root=True,
+                    after=None,
                     properties={},
-                    children=[],
                 ),
                 TreeNode(
+                    id=2,
                     name="NewPart",
                     type_id="Part::Feature",
                     label="NewPart",
                     path="NewPart",
-                    is_root=True,
+                    after="ExistingPart",
                     properties={},
-                    children=[],
                 ),
             ],
         )
@@ -366,24 +366,24 @@ class TestCompareSnapshotsAction:
             snapshot_id="",
             document_name="TestDoc",
             timestamp=__import__("datetime").datetime.now(),
-            root_nodes=[
+            nodes=[
                 TreeNode(
+                    id=1,
                     name="ExistingPart",
                     type_id="Part::Feature",
                     label="ExistingPart",
                     path="ExistingPart",
-                    is_root=True,
+                    after=None,
                     properties={},
-                    children=[],
                 ),
                 TreeNode(
+                    id=2,
                     name="DeletedPart",
                     type_id="Part::Feature",
                     label="DeletedPart",
                     path="DeletedPart",
-                    is_root=True,
+                    after="ExistingPart",
                     properties={},
-                    children=[],
                 ),
             ],
         )
@@ -394,15 +394,15 @@ class TestCompareSnapshotsAction:
             snapshot_id="",
             document_name="TestDoc",
             timestamp=__import__("datetime").datetime.now(),
-            root_nodes=[
+            nodes=[
                 TreeNode(
+                    id=1,
                     name="ExistingPart",
                     type_id="Part::Feature",
                     label="ExistingPart",
                     path="ExistingPart",
-                    is_root=True,
+                    after=None,
                     properties={},
-                    children=[],
                 ),
             ],
         )
@@ -439,36 +439,36 @@ class TestCompareSnapshotsAction:
             snapshot_id="",
             document_name="TestDoc",
             timestamp=__import__("datetime").datetime.now(),
-            root_nodes=[
+            nodes=[
                 # This node will be unchanged
                 TreeNode(
+                    id=1,
                     name="UnchangedPart",
                     type_id="Part::Feature",
                     label="UnchangedPart",
                     path="UnchangedPart",
-                    is_root=True,
+                    after=None,
                     properties={"Label": Property(type_=PropertyType.STRING, value="UnchangedPart")},
-                    children=[],
                 ),
                 # This node will be modified (Label changed)
                 TreeNode(
+                    id=2,
                     name="ModifiedPart",
                     type_id="Part::Feature",
                     label="ModifiedPart",
                     path="ModifiedPart",
-                    is_root=True,
+                    after="UnchangedPart",
                     properties={"Label": Property(type_=PropertyType.STRING, value="ModifiedPart")},
-                    children=[],
                 ),
                 # This node will be deleted
                 TreeNode(
+                    id=3,
                     name="DeletedPart",
                     type_id="Part::Feature",
                     label="DeletedPart",
                     path="DeletedPart",
-                    is_root=True,
+                    after="ModifiedPart",
                     properties={},
-                    children=[],
                 ),
             ],
         )
@@ -479,36 +479,36 @@ class TestCompareSnapshotsAction:
             snapshot_id="",
             document_name="TestDoc",
             timestamp=__import__("datetime").datetime.now(),
-            root_nodes=[
+            nodes=[
                 # Unchanged
                 TreeNode(
+                    id=1,
                     name="UnchangedPart",
                     type_id="Part::Feature",
                     label="UnchangedPart",
                     path="UnchangedPart",
-                    is_root=True,
+                    after=None,
                     properties={"Label": Property(type_=PropertyType.STRING, value="UnchangedPart")},
-                    children=[],
                 ),
                 # Modified - Label changed
                 TreeNode(
+                    id=2,
                     name="ModifiedPart",
                     type_id="Part::Feature",
                     label="NewLabel",
                     path="ModifiedPart",
-                    is_root=True,
+                    after="UnchangedPart",
                     properties={"Label": Property(type_=PropertyType.STRING, value="NewLabel")},
-                    children=[],
                 ),
                 # Added - new node
                 TreeNode(
+                    id=4,
                     name="AddedPart",
                     type_id="Part::Feature",
                     label="AddedPart",
                     path="AddedPart",
-                    is_root=True,
+                    after="ModifiedPart",
                     properties={},
-                    children=[],
                 ),
             ],
         )
@@ -552,80 +552,78 @@ class TestCompareSnapshotsAction:
 
         from freecad.diff_wb.domain.tree.property import Property, PropertyType
 
-        # Old snapshot with child nodes
+        # Old snapshot with child nodes (flat structure)
         old_snapshot = Snapshot(
             snapshot_id="",
             document_name="TestDoc",
             timestamp=__import__("datetime").datetime.now(),
-            root_nodes=[
+            nodes=[
                 TreeNode(
+                    id=1,
                     name="Body",
                     type_id="PartDesign::Body",
                     label="Body",
                     path="Body",
-                    is_root=True,
+                    after=None,
                     properties={"Label": Property(type_=PropertyType.STRING, value="Body")},
-                    children=[
-                        TreeNode(
-                            name="Pad",
-                            type_id="PartDesign::Pad",
-                            label="Pad",
-                            path="Body/Pad",
-                            is_root=False,
-                            properties={"Label": Property(type_=PropertyType.STRING, value="Pad")},
-                            children=[],
-                        ),
-                        TreeNode(
-                            name="Pocket",
-                            type_id="PartDesign::Pocket",
-                            label="Pocket",
-                            path="Body/Pocket",
-                            is_root=False,
-                            properties={"Label": Property(type_=PropertyType.STRING, value="Pocket")},
-                            children=[],
-                        ),
-                    ],
+                ),
+                TreeNode(
+                    id=2,
+                    name="Pad",
+                    type_id="PartDesign::Pad",
+                    label="Pad",
+                    path="Body/Pad",
+                    after=None,
+                    properties={"Label": Property(type_=PropertyType.STRING, value="Pad")},
+                ),
+                TreeNode(
+                    id=3,
+                    name="Pocket",
+                    type_id="PartDesign::Pocket",
+                    label="Pocket",
+                    path="Body/Pocket",
+                    after="Pad",
+                    properties={"Label": Property(type_=PropertyType.STRING, value="Pocket")},
                 ),
             ],
         )
         old_id = snapshot_repo.add_snapshot(old_snapshot)
 
-        # New snapshot with changes in children
+        # New snapshot with changes in children (flat structure)
         new_snapshot = Snapshot(
             snapshot_id="",
             document_name="TestDoc",
             timestamp=__import__("datetime").datetime.now(),
-            root_nodes=[
+            nodes=[
                 TreeNode(
+                    id=1,
                     name="Body",
                     type_id="PartDesign::Body",
                     label="Body",
                     path="Body",
-                    is_root=True,
+                    after=None,
                     properties={"Label": Property(type_=PropertyType.STRING, value="Body")},
-                    children=[
-                        # Pad modified - Label changed
-                        TreeNode(
-                            name="Pad",
-                            type_id="PartDesign::Pad",
-                            label="NewPad",
-                            path="Body/Pad",
-                            is_root=False,
-                            properties={"Label": Property(type_=PropertyType.STRING, value="NewPad")},
-                            children=[],
-                        ),
-                        # Pocket deleted (not present in new snapshot)
-                        # Added: Fillet child
-                        TreeNode(
-                            name="Fillet",
-                            type_id="PartDesign::Fillet",
-                            label="Fillet",
-                            path="Body/Fillet",
-                            is_root=False,
-                            properties={"Label": Property(type_=PropertyType.STRING, value="Fillet")},
-                            children=[],
-                        ),
-                    ],
+                ),
+                # Pad modified - Label changed
+                TreeNode(
+                    id=2,
+                    name="Pad",
+                    type_id="PartDesign::Pad",
+                    label="NewPad",
+                    path="Body/Pad",
+                    after=None,
+                    properties={"Label": Property(type_=PropertyType.STRING, value="NewPad")},
+                ),
+                # Pocket deleted (not present in new snapshot)
+                # Added: Fillet child
+                TreeNode(
+                    id=4,
+                    name="Fillet",
+                    type_id="PartDesign::Fillet",
+                    label="Fillet",
+                    path="Body/Fillet",
+                    after="Pad",
+                    properties={"Label": Property(type_=PropertyType.STRING, value="Fillet")},
                 ),
             ],
         )
@@ -680,19 +678,19 @@ class TestCompareSnapshotsAction:
             snapshot_id="",
             document_name="TestDoc",
             timestamp=__import__("datetime").datetime.now(),
-            root_nodes=[
+            nodes=[
                 TreeNode(
+                    id=1,
                     name="Part",
                     type_id="Part::Feature",
                     label="Part",
                     path="Part",
-                    is_root=True,
+                    after=None,
                     properties={
                         "Label": Property(type_=PropertyType.STRING, value="OldLabel"),
                         "Length": Property(type_=PropertyType.FLOAT, value=10.0),
                         "Width": Property(type_=PropertyType.FLOAT, value=5.0),
                     },
-                    children=[],
                 ),
             ],
         )
@@ -703,19 +701,19 @@ class TestCompareSnapshotsAction:
             snapshot_id="",
             document_name="TestDoc",
             timestamp=__import__("datetime").datetime.now(),
-            root_nodes=[
+            nodes=[
                 TreeNode(
+                    id=1,
                     name="Part",
                     type_id="Part::Feature",
                     label="Part",
                     path="Part",
-                    is_root=True,
+                    after=None,
                     properties={
                         "Label": Property(type_=PropertyType.STRING, value="NewLabel"),
                         "Length": Property(type_=PropertyType.FLOAT, value=20.0),
                         "Width": Property(type_=PropertyType.FLOAT, value=5.0),  # Unchanged
                     },
-                    children=[],
                 ),
             ],
         )
