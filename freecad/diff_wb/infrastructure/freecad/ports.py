@@ -13,7 +13,7 @@ and application layers testable without FreeCAD dependencies.
 
 from __future__ import annotations
 
-from ...domain.ports import (
+from ...domain.freecad_ports import (
     AppPort,
     DocumentLike,
     FreeCadContext,

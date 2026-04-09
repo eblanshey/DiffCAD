@@ -19,7 +19,7 @@ import pytest
 
 
 if TYPE_CHECKING:
-    from freecad.diff_wb.domain.ports import FreeCadContext
+    from freecad.diff_wb.domain.freecad_ports import FreeCadContext
 
 
 def pytest_configure(config: object) -> None:
@@ -112,7 +112,7 @@ def freecad_context(freecad_app: Any) -> FreeCadContext:
     Returns:
         FreeCadContext instance.
     """
-    from freecad.diff_wb.domain.ports import FreeCadContext
+    from freecad.diff_wb.domain.freecad_ports import FreeCadContext
 
     return FreeCadContext(app=freecad_app)
 

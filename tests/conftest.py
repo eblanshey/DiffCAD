@@ -13,7 +13,7 @@ from tests.fakes import FakeLogger, FakeSettingsRepository
 
 
 if TYPE_CHECKING:
-    from freecad.diff_wb.domain.ports import AppLike, FreeCadContext
+    from freecad.diff_wb.domain.freecad_ports import AppLike, FreeCadContext
 
 
 @pytest.fixture
@@ -94,7 +94,7 @@ def freecad_context(mock_freecad_app: AppLike, mock_freecad_gui: object | None) 
     Returns:
         FreeCadContext instance with mocked components.
     """
-    from freecad.diff_wb.domain.ports import FreeCadContext
+    from freecad.diff_wb.domain.freecad_ports import FreeCadContext
 
     return FreeCadContext(app=mock_freecad_app, gui=mock_freecad_gui)
 

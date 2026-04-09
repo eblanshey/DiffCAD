@@ -19,7 +19,7 @@ from typing import TYPE_CHECKING
 
 
 if TYPE_CHECKING:
-    from freecad.diff_wb.domain.ports import AppLike, FreeCadContext
+    from freecad.diff_wb.domain.freecad_ports import AppLike, FreeCadContext
 
 
 class TestForDebugger:

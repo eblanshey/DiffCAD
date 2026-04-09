@@ -20,7 +20,7 @@ import pytest
 
 
 if TYPE_CHECKING:
-    from freecad.diff_wb.domain.ports import AppLike
+    from freecad.diff_wb.domain.freecad_ports import AppLike
 
 
 class TestPropertyViewerPhase6:

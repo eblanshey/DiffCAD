@@ -2,7 +2,7 @@
 
 import datetime
 
-from ....domain.ports import FreeCadPort
+from ....domain.freecad_ports import FreeCadPort
 from ....domain.snapshots.gui_extractor import SnapshotExtractor
 from ....domain.snapshots.repository import SnapshotRepository
 from ....utils import Log

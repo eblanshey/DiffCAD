@@ -11,7 +11,7 @@ from tests.fakes import FakeSnapshotView
 
 
 if TYPE_CHECKING:
-    from freecad.diff_wb.domain.ports import AppLike, FreeCadContext
+    from freecad.diff_wb.domain.freecad_ports import AppLike, FreeCadContext
     from freecad.diff_wb.entrypoints.workbench import DiffWorkbench
 
 

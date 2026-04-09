@@ -12,7 +12,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
 from ...utils import Log
-from ..ports import DocumentLike, FreeCadPort
+from ..freecad_ports import DocumentLike, FreeCadPort
 from ..tree import Property, TreeNode
 
 
