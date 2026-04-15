@@ -27,11 +27,14 @@ from PySide6.QtWidgets import (
 
 from ...application.actions.result_models import SnapshotSummary
 from ...domain.diff.models import DiffState
+from ...domain.git.models import GitRepository
 from ..presenters.presentation_models import NodePresentation, PropertyPresentation
 from ..translation_strings import (
     DIFF_SUMMARY_ADDED_LABEL,
     DIFF_SUMMARY_DELETED_LABEL,
     DIFF_SUMMARY_MODIFIED_LABEL,
+    REPOSITORY_INFO_TEMPLATE,
+    REPOSITORY_NO_REPO_MESSAGE,
 )
 
 
@@ -263,8 +266,13 @@ class DiffPanelView(QWidget):
         self._delegate._parent = self.snapshot_list
         snapshot_placeholder = QLabel("Snapshots")
         snapshot_placeholder.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        # Repository info label (shown above snapshot list)
+        self._repository_label = QLabel("")
+        self._repository_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self._repository_label.setStyleSheet("font-size: 11px; color: gray; font-style: italic;")
         snapshot_layout = QVBoxLayout()
         snapshot_layout.addWidget(snapshot_placeholder)
+        snapshot_layout.addWidget(self._repository_label)
         snapshot_layout.addWidget(self.snapshot_list)
         snapshot_container = QWidget()
         snapshot_container.setLayout(snapshot_layout)
@@ -550,6 +558,26 @@ class DiffPanelView(QWidget):
 
             # Expand groups by default so properties are visible
             group_item.setExpanded(True)
+
+    def show_repository(self, repo: GitRepository | None) -> None:
+        """Display git repository info above snapshot list.
+
+        Args:
+            repo: GitRepository object if detected, or None if no repository found.
+                  If None, shows "No git repository detected".
+        """
+        if repo is None:
+            text = QCoreApplication.translate("Common", REPOSITORY_NO_REPO_MESSAGE)
+            self._repository_label.setText(text)
+            self._repository_label.setStyleSheet("font-size: 11px; color: gray; font-style: italic;")
+        else:
+            name = repo.name
+            path = repo.absolute_path
+            template = QCoreApplication.translate("Common", REPOSITORY_INFO_TEMPLATE)
+            # Replace Qt-style placeholders (%1, %2, etc.) with actual values
+            text = template.replace("%1", name).replace("%2", path)
+            self._repository_label.setText(text)
+            self._repository_label.setStyleSheet("font-size: 11px; font-weight: bold;")
 
     def _create_group_header_item(self, group_name: str) -> QTreeWidgetItem:
         """Create a non-selectable group header item with gray background.

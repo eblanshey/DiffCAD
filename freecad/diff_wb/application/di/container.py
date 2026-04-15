@@ -9,16 +9,21 @@ from typing import Any
 
 from ...domain.diff.engine import DiffEngine
 from ...domain.freecad_ports import AppPort, FreeCadContext, FreeCadPort
+from ...domain.git.git_service import GitService
+from ...domain.git.ports import GitPort
 from ...domain.snapshots.gui_extractor import SnapshotExtractor
 from ...domain.snapshots.repository import InMemorySnapshotRepository
 from ...infrastructure.freecad.ports import get_app_port, get_port
 from ...infrastructure.freecad.settings_repo import FreeCADSettingsRepository
+from ...infrastructure.git.git_port_adapter import GitPortAdapter
+from ...ui.presenters.application_state import ApplicationState
 from ...ui.presenters.diff_presenter import DiffPresenter
 from ...ui.presenters.snapshot_presenter import SnapshotPresenter
 from ...ui.protocols.diff_view import DiffView
 from ...ui.protocols.snapshot_view import SnapshotView
 from ..actions.commands.compare_snapshots import CompareSnapshotsAction
 from ..actions.commands.take_snapshot import TakeSnapshotAction
+from ..actions.find_active_git_repository import FindActiveGitRepositoryAction
 from ..actions.queries.list_snapshots import ListSnapshotsAction
 
 
@@ -72,6 +77,12 @@ class ApplicationContainer:
     # Presenters (UI layer)
     snapshot_presenter: SnapshotPresenter
     diff_presenter: DiffPresenter | None
+
+    # Git repository detection components
+    git_port: GitPort
+    git_service: GitService
+    find_active_git_repository_action: FindActiveGitRepositoryAction
+    application_state: ApplicationState
 
     def log(self, message: str) -> None:
         """Log a message to the FreeCAD console.
@@ -131,6 +142,10 @@ def create_application_container(
     extractor = SnapshotExtractor()
     diff_engine = DiffEngine(settings_repo=settings_repo)
 
+    # Create git detection components
+    git_port = GitPortAdapter()
+    git_service = GitService(git_port=git_port)
+
     # Create actions (application layer - pure orchestration)
     take_snapshot_action = TakeSnapshotAction(
         freecad_port=freecad_port,
@@ -146,12 +161,20 @@ def create_application_container(
 
     list_snapshots_action = ListSnapshotsAction(snapshot_repo=snapshot_repo)
 
+    find_active_git_repository_action = FindActiveGitRepositoryAction(
+        freecad_port=freecad_port,
+        git_service=git_service,
+    )
+
     # Create presenters (UI layer - interface adapters)
     snapshot_presenter = SnapshotPresenter(
         view=snapshot_view or NullSnapshotView(),
         list_snapshots_action=list_snapshots_action,
     )
     diff_presenter = DiffPresenter(view=diff_view) if diff_view else None
+
+    # Create application state (UI state holder)
+    application_state = ApplicationState(git_repository=None)
 
     return ApplicationContainer(
         _freecad_port=freecad_port,
@@ -161,4 +184,8 @@ def create_application_container(
         list_snapshots_action=list_snapshots_action,
         snapshot_presenter=snapshot_presenter,
         diff_presenter=diff_presenter,
+        git_port=git_port,
+        git_service=git_service,
+        find_active_git_repository_action=find_active_git_repository_action,
+        application_state=application_state,
     )

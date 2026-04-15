@@ -174,7 +174,7 @@ def initialized_workbench(project_root: Path) -> Any:
 
     # Check if full GUI is available (Gui.Workbench must exist)
     # Note: Gui.Workbench is only available when FreeCAD runs with a real display
-    # Xvfb doesn't provide it - this is a FreeCAD limitation
+    # Xvfb/offscreen mode doesn't provide it - this is a FreeCAD limitation
     if not hasattr(Gui, "Workbench"):
         pytest.skip("Gui.Workbench requires real display (not available in offscreen/Xvfb mode)")
 

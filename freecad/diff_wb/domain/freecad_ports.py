@@ -27,6 +27,7 @@ class ConsoleLike(Protocol):
 class DocumentLike(Protocol):
     """Minimal Protocol for FreeCAD document operations."""
 
+    FileName: str  # Path to the document file (empty string if unsaved)
     Objects: list[object]
 
     def getObject(self, name: str) -> object | None: ...

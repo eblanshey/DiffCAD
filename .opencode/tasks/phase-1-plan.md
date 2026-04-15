@@ -49,16 +49,16 @@ freecad/diff_wb/
 - `application/actions/__init__.py` - Update exports for flat structure
 
 ## FreeCAD Dependency
-- [ ] No FreeCAD required for domain/infrastructure code (pure Python)
-- [ ] FreeCAD required for integration (getting open documents, UI display)
+- [x] No FreeCAD required for domain/infrastructure code (pure Python)
+- [x] FreeCAD required for integration (getting open documents, UI display)
 
 ## Implementation Plan
 
 ### Phase 1.1: Domain Layer - GitRepository Model
 
-- [ ] Write tests for `GitRepository` model creation and properties
-- [ ] Create `domain/git/__init__.py` with `__all__`
-- [ ] Create `domain/git/models.py` with `GitRepository` dataclass:
+- [x] Write tests for `GitRepository` model creation and properties
+- [x] Create `domain/git/__init__.py` with `__all__`
+- [x] Create `domain/git/models.py` with `GitRepository` dataclass:
   ```python
   @dataclass(frozen=True)
   class GitRepository:
@@ -68,8 +68,8 @@ freecad/diff_wb/
 
 ### Phase 1.2: Domain Layer - GitPort Protocol
 
-- [ ] Write tests for `GitPort` protocol (using fake implementation)
-- [ ] Create `domain/git/ports.py` with `GitPort` Protocol:
+- [x] Write tests for `GitPort` protocol (using fake implementation)
+- [x] Create `domain/git/ports.py` with `GitPort` Protocol:
   ```python
   class GitPort(Protocol):
       def find_top_level_path(path: str) -> str | None:
@@ -85,8 +85,8 @@ freecad/diff_wb/
 
 ### Phase 1.3: Domain Layer - GitService
 
-- [ ] Write tests for `GitService.get_repository()` with fakes
-- [ ] Create `domain/git/git_service.py` with `GitService` class:
+- [x] Write tests for `GitService.get_repository()` with fakes
+- [x] Create `domain/git/git_service.py` with `GitService` class:
   ```python
   class GitService:
       def __init__(self, git_port: GitPort) -> None:
@@ -100,7 +100,7 @@ freecad/diff_wb/
           Returns:
               GitRepository if path is in a git repo, None otherwise
           """
-          git_root = self._git_port.find_top_level_path(path)
+          git_root = self._git_port.find_top_level_git_path(path)
           if git_root is None:
               return None
           return GitRepository(...)
@@ -108,9 +108,9 @@ freecad/diff_wb/
 
 ### Phase 1.4: Infrastructure Layer - GitPort Adapter
 
-- [ ] Write tests for `GitPortAdapter` using fixture git repos
-- [ ] Create `infrastructure/git/__init__.py`
-- [ ] Create `infrastructure/git/git_port_adapter.py`:
+- [x] Write tests for `GitPortAdapter` using fixture git repos
+- [x] Create `infrastructure/git/__init__.py`
+- [x] Create `infrastructure/git/git_port_adapter.py`:
   ```python
   import subprocess
   
@@ -138,8 +138,8 @@ freecad/diff_wb/
 
 ### Phase 1.5: Application Layer - Result Model
 
-- [ ] Write tests for `Result` class
-- [ ] Modify `application/actions/result_models.py`:
+- [x] Write tests for `Result` class
+- [x] Modify `application/actions/result_models.py`:
   - Add generic `Result` dataclass with static factory methods:
     ```python
     @dataclass
@@ -168,8 +168,8 @@ freecad/diff_wb/
 
 ### Phase 1.6: Application Layer - FindActiveGitRepository Action (Flat Structure)
 
-- [ ] Write tests for `FindActiveGitRepositoryAction` with fakes
-- [ ] Create `application/actions/find_active_git_repository.py`:
+- [x] Write tests for `FindActiveGitRepositoryAction` with fakes
+- [x] Create `application/actions/find_active_git_repository.py`:
   ```python
   class FindActiveGitRepositoryAction:
       """Find git repository from open FreeCAD documents."""
@@ -208,13 +208,13 @@ freecad/diff_wb/
               return Result.failure("No git repository found for open documents")
           
           return Result.success(repo)
-  ```
-- [ ] Update `application/actions/__init__.py` to export the new action directly (flat structure, no commands/queries subdirs)
+   ```
+- [x] Update `application/actions/__init__.py` to export the new action directly (flat structure, no commands/queries subdirs)
 
 ### Phase 1.7: UI Layer - ApplicationState
 
-- [ ] Write tests for `ApplicationState`
-- [ ] Create `ui/presenters/application_state.py`:
+- [x] Write tests for `ApplicationState`
+- [x] Create `ui/presenters/application_state.py`:
   ```python
   @dataclass
   class ApplicationState:
@@ -232,8 +232,8 @@ freecad/diff_wb/
 
 ### Phase 1.8: Container Wiring
 
-- [ ] Write tests for container wiring
-- [ ] Update `application/di/container.py`:
+- [x] Write tests for container wiring
+- [x] Update `application/di/container.py`:
   ```python
   @dataclass
   class ApplicationContainer:
@@ -244,8 +244,8 @@ freecad/diff_wb/
       git_service: GitService                    # Domain service
       find_active_git_repository_action: FindActiveGitRepositoryAction
       application_state: ApplicationState         # UI state holder
-  ```
-- [ ] Update `create_application_container()` to wire the new components:
+   ```
+- [x] Update `create_application_container()` to wire the new components:
   1. Create `GitPortAdapter` instance
   2. Create `GitService` with `GitPortAdapter`
   3. Create `FindActiveGitRepositoryAction` with `FreeCadPort` and `GitService`
@@ -284,13 +284,13 @@ DiffPanelView (QWidget)
 
 #### Detailed Implementation Steps
 
-- [ ] **Add translation string** in `ui/translation_strings.py`:
+- [x] **Add translation string** in `ui/translation_strings.py`:
   ```python
-  REPOSITORY_INFO_TEMPLATE = "%1 (%2)"  # name, path
-  REPOSITORY_NO_REPO_MESSAGE = "No git repository detected"
-  ```
+   REPOSITORY_INFO_TEMPLATE = "%1 (%2)"  # name, path
+   REPOSITORY_NO_REPO_MESSAGE = "No git repository detected"
+   ```
 
-- [ ] **Add repository info label** to `DiffPanelView` in `ui/views/diff_panel_view.py`:
+- [x] **Add repository info label** to `DiffPanelView` in `ui/views/diff_panel_view.py`:
   - In `_setup_ui()`, modify snapshot_container layout to add a header label
   - Add `self._repository_label = QLabel("")` above the snapshot_list
   - Style it appropriately (smaller font, maybe italic or gray)
@@ -311,7 +311,7 @@ DiffPanelView (QWidget)
             self._repository_label.setStyleSheet("font-weight: bold;")
     ```
 
-- [ ] **Create GitRepositoryPresenter** in `ui/presenters/git_repository_presenter.py`:
+- [x] **Create GitRepositoryPresenter** in `ui/presenters/git_repository_presenter.py`:
   ```python
   class GitRepositoryPresenter:
       """Handles git repository detection and UI display."""
@@ -337,16 +337,16 @@ DiffPanelView (QWidget)
           else:
               self._application_state.git_repository = None
               self._view.show_repository(None)
-              Log.warning(f"Git detection failed: {result.message}")
-  ```
+             Log.warning(f"Git detection failed: {result.message}")
+   ```
 
-- [ ] **Wire presenter to workbench** in `entrypoints/workbench.py`:
+- [x] **Wire presenter to workbench** in `entrypoints/workbench.py`:
   - In `_create_diff_panel()`, after creating the panel and wiring other presenters:
     1. Create `GitRepositoryPresenter` with `DiffPanelView`, `FindActiveGitRepositoryAction`, and `ApplicationState`
     2. Call `git_repository_presenter.on_workbench_activated()` to detect and display repo
 
-- [ ] **Manual testing**: User will verify the complete flow manually during implementation
-- [ ] **Limited integration test** in `tests/integration/`: 
+- [x] **Manual testing**: User will verify the complete flow manually during implementation
+- [x] **Limited integration test** in `tests/integration/`: 
   - Create `test_find_active_git_repository.py`
   - Uses FreeCAD to open `tests/freecad/BasicFile.FCStd`
   - Verifies `FindActiveGitRepositoryAction.execute()` returns a valid `GitRepository`

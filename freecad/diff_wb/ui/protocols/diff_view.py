@@ -21,6 +21,7 @@ Translation Strategy for Summary:
 
 from typing import Protocol
 
+from ...domain.git.models import GitRepository
 from ..presenters.presentation_models import NodePresentation, PropertyPresentation
 
 
@@ -77,4 +78,13 @@ class DiffView(Protocol):
                        Each row shows: Property Name | Old Value → New Value
                        Color coding: green=added, red=deleted, blue=modified
                        Expression changes appear as separate rows after their value row.
+        """
+
+    def show_repository(self, repo: GitRepository | None) -> None:
+        """Display git repository info above snapshot list.
+
+        Args:
+            repo: GitRepository object if detected, or None if no repository found.
+                  The view should display repository name and path when available,
+                  or a "no repository" message when None.
         """

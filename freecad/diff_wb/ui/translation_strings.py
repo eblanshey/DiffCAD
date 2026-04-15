@@ -99,6 +99,29 @@ No placeholders. This is a static message.
 """
 
 # ============================================================================
+# GIT REPOSITORY STRINGS
+# ============================================================================
+# Context: "Common"
+# These strings are used for displaying git repository information in the UI.
+
+REPOSITORY_INFO_TEMPLATE = "%1 (%2)"
+"""Template for displaying git repository info.
+
+Placeholders:
+    %1 - Repository name (str)
+    %2 - Repository absolute path (str)
+
+Example:
+    "my_project (/home/user/documents)"
+"""
+
+REPOSITORY_NO_REPO_MESSAGE = "No git repository detected"
+"""Message shown when no git repository is detected for the active document.
+
+No placeholders. This is a static message.
+"""
+
+# ============================================================================
 # EXPORTS
 # ============================================================================
 
@@ -114,4 +137,7 @@ __all__ = [
     # Common
     "ERROR_UNKNOWN",
     "ERROR_NO_DOCUMENT",
+    # Git Repository
+    "REPOSITORY_INFO_TEMPLATE",
+    "REPOSITORY_NO_REPO_MESSAGE",
 ]

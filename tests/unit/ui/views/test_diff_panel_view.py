@@ -3,6 +3,7 @@
 These tests verify that the DiffPanelView correctly populates the snapshot list
 with SnapshotSummary data, including proper sorting, formatting, and ID storage.
 Additional tests cover the snapshot selection mechanism with role-based coloring.
+Tests for show_repository() verify the git repository display functionality.
 """
 
 from __future__ import annotations
@@ -475,3 +476,71 @@ class TestDiffPanelViewShowSummary:
         assert panel._added_label.text() == "Added: 5"
         assert panel._deleted_label.text() == "Deleted: 0"
         assert panel._modified_label.text() == "Modified: 2"
+
+
+class TestDiffPanelViewShowRepository:
+    """Tests for DiffPanelView.show_repository() method."""
+
+    def test_show_repository_with_none_shows_no_repo_message(self, panel) -> None:  # type: ignore[no-untyped-def]
+        """show_repository(None) displays the 'no repository' message with italic gray style."""
+        # When: Call show_repository with None
+        panel.show_repository(None)
+
+        # Then: Label shows no repo message with italic gray styling
+        text = panel._repository_label.text()
+        assert "no git repository" in text.lower() or "detected" in text.lower()
+        stylesheet = panel._repository_label.styleSheet()
+        assert "italic" in stylesheet
+        assert "gray" in stylesheet
+
+    def test_show_repository_with_valid_repo_shows_info(self, panel) -> None:  # type: ignore[no-untyped-def]
+        """show_repository() displays repository name and path with bold styling."""
+        # Given: A valid GitRepository
+        from freecad.diff_wb.domain.git.models import GitRepository
+
+        repo = GitRepository(name="test_project", absolute_path="/home/user/test_project")
+
+        # When: Call show_repository with a valid repository
+        panel.show_repository(repo)
+
+        # Then: Label shows formatted repository info
+        text = panel._repository_label.text()
+        assert "test_project" in text
+        assert "/home/user/test_project" in text
+        stylesheet = panel._repository_label.styleSheet()
+        assert "bold" in stylesheet
+
+    def test_show_repository_overwrites_previous_display(self, panel) -> None:  # type: ignore[no-untyped-def]
+        """show_repository() overwrites previous repository display."""
+        # Given: Previous repository displayed
+        from freecad.diff_wb.domain.git.models import GitRepository
+
+        repo1 = GitRepository(name="old_project", absolute_path="/home/old")
+        panel.show_repository(repo1)
+        assert "old_project" in panel._repository_label.text()
+
+        # When: Call show_repository with a different repository
+        repo2 = GitRepository(name="new_project", absolute_path="/home/new")
+        panel.show_repository(repo2)
+
+        # Then: New repository info replaces old one
+        text = panel._repository_label.text()
+        assert "new_project" in text
+        assert "/home/new" in text
+        assert "old_project" not in text
+
+    def test_show_repository_none_after_repo_resets_style(self, panel) -> None:  # type: ignore[no-untyped-def]
+        """show_repository(None) after showing a repo resets to italic gray style."""
+        # Given: Repository previously displayed
+        from freecad.diff_wb.domain.git.models import GitRepository
+
+        repo = GitRepository(name="test_project", absolute_path="/home/test")
+        panel.show_repository(repo)
+
+        # When: Call show_repository with None
+        panel.show_repository(None)
+
+        # Then: Style is reset to italic gray
+        stylesheet = panel._repository_label.styleSheet()
+        assert "italic" in stylesheet
+        assert "gray" in stylesheet

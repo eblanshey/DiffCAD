@@ -8,6 +8,7 @@ and activate the workbench.
 """
 
 import os
+import traceback
 
 from ..resources import ICONPATH
 from ..utils import Log, set_logger
@@ -143,6 +144,16 @@ if Gui is not None:
                     lambda item, col: _container.diff_presenter.on_node_selected(item.data(0, Qt.ItemDataRole.UserRole))
                 )
 
+                # Create and initialize git repository presenter
+                from ..ui.presenters.git_repository_presenter import GitRepositoryPresenter
+
+                git_repository_presenter = GitRepositoryPresenter(
+                    view=panel,
+                    find_git_repo_action=_container.find_active_git_repository_action,
+                    application_state=_container.application_state,
+                )
+                git_repository_presenter.on_workbench_activated()
+
                 # Add as subwindow (QMdiSubWindow created automatically)
                 # Do NOT call setParent - let FreeCAD handle it
                 self._subwindow = mdi_area.addSubWindow(panel)
@@ -165,8 +176,8 @@ if Gui is not None:
                 # Connect destroyed signal to reset reference when window is closed
                 # QMdiSubWindow inherits from QWidget which inherits from QObject
                 self._subwindow.destroyed.connect(self._on_subwindow_closed)
-            except Exception:
-                Log.exception("ERROR creating diff panel")
+            except Exception as e:
+                Log.exception(f"ERROR creating diff panel: {e} traceback: {traceback.format_exc()}")
 
         def _on_subwindow_closed(self) -> None:
             """Called when the diff panel subwindow is closed."""
