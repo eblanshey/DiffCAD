@@ -8,6 +8,7 @@ from freecad.diff_wb.application.actions.create_document_snapshot_commit import 
 from freecad.diff_wb.application.actions.create_document_snapshot_working import (
     CreateDocumentSnapshotForWorkingTreeAction,
 )
+from freecad.diff_wb.application.actions.get_dirty_documents import GetDirtyDocumentsAction
 from freecad.diff_wb.application.actions.get_open_eligible_documents import GetOpenEligibleDocumentsAction
 from freecad.diff_wb.application.actions.stage_documents import StageDocumentsAction
 from freecad.diff_wb.domain.diff.models import DiffHierarchy, DiffResult, DiffState, NodeDiff, PropertyDiff
@@ -36,6 +37,7 @@ def _create_test_presenter() -> tuple[FakeDiffView, DiffPresenter]:
     create_commit_snapshot_action = MagicMock(spec=CreateDocumentSnapshotForCommitAction)
     create_diff_action = MagicMock(spec=CreateDiffAction)
     stage_documents_action = MagicMock(spec=StageDocumentsAction)
+    get_dirty_documents_action = MagicMock(spec=GetDirtyDocumentsAction)
 
     presenter = DiffPresenter(
         view=view,
@@ -45,6 +47,7 @@ def _create_test_presenter() -> tuple[FakeDiffView, DiffPresenter]:
         create_commit_snapshot_action=create_commit_snapshot_action,
         create_diff_action=create_diff_action,
         stage_documents_action=stage_documents_action,
+        get_dirty_documents_action=get_dirty_documents_action,
     )
     return view, presenter
 
@@ -1050,6 +1053,40 @@ class TestDiffPresenterWorkingTreeOrchestration:
         show_trees_call = next((c for c in calls if c["method"] == "show_diff_trees"), None)
         assert show_trees_call is not None
         assert len(show_trees_call["diff_trees"]) == 2
+
+
+class TestDiffPresenterPresentDiffsDirtyPaths:
+    """Tests for DiffPresenter.present_diffs() with dirty_paths parameter."""
+
+    def test_present_diffs_sets_stage_button_enabled_from_dirty_paths(self) -> None:
+        """Stage button enabled is set to True when document is in dirty_paths."""
+        fake_view, presenter = _create_test_presenter()
+
+        hierarchy = DiffHierarchy()
+        hierarchy.add_node(NodeDiff(path="Part", type_id="Part::Feature"))
+
+        diff_result = DiffResult(
+            old_snapshot=Snapshot(snapshot_id="s1", document_name="v1", timestamp=datetime.datetime.now()),
+            new_snapshot=Snapshot(
+                snapshot_id="s2",
+                document_name="v2",
+                timestamp=datetime.datetime.now(),
+                git_path="dirty.FCStd",
+            ),
+            hierarchy=hierarchy,
+        )
+
+        # Act - pass dirty_paths including this document
+        presenter.present_diffs([diff_result], dirty_paths={"dirty.FCStd"})
+
+        # Assert
+        calls = fake_view.get_calls()
+        show_trees_call = next((c for c in calls if c["method"] == "show_diff_trees"), None)
+        assert show_trees_call is not None
+        presentations = show_trees_call["diff_trees"]
+        assert len(presentations) == 1
+        # Stage button should be enabled because document has git-tracked changes
+        assert presentations[0].stage_button_enabled is True
 
 
 class TestDiffPresenterAddButton:

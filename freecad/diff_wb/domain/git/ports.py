@@ -10,6 +10,9 @@ from typing import Protocol
 from freecad.diff_wb.domain.git.models import GitCommit
 
 
+__all__ = ["GitPort"]
+
+
 class GitPort(Protocol):
     """Protocol defining the interface for git repository operations.
 
@@ -75,5 +78,21 @@ class GitPort(Protocol):
 
         Returns:
             True if staging succeeded, False otherwise.
+        """
+        ...
+
+    def get_dirty_paths(self, git_root: str) -> list[str]:
+        """Get list of dirty file paths (modified or untracked).
+
+        This method runs `git status --porcelain` and filters for files that are
+        modified in the working tree or untracked. These are the only files that
+        can be staged via `git add`.
+
+        Args:
+            git_root: Absolute path to git repository root.
+
+        Returns:
+            List of relative paths (from git root) that are modified or untracked.
+            Empty list if repo is clean or not a git repo.
         """
         ...

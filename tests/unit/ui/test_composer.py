@@ -38,6 +38,7 @@ class TestComposeAndRegisterUiReturnsView:
         mock_container.create_commit_snapshot_action = MagicMock()
         mock_container.create_diff_action = MagicMock()
         mock_container.stage_documents_action = MagicMock()
+        mock_container.get_dirty_documents_action = MagicMock()
         mock_container.find_active_git_repository_action = MagicMock()
         mock_container.get_commits_action = MagicMock()
 
@@ -66,6 +67,7 @@ class TestComposeCreatesUiState:
         mock_container.create_commit_snapshot_action = MagicMock()
         mock_container.create_diff_action = MagicMock()
         mock_container.stage_documents_action = MagicMock()
+        mock_container.get_dirty_documents_action = MagicMock()
         mock_container.find_active_git_repository_action = MagicMock()
         mock_container.get_commits_action = MagicMock()
 
@@ -94,6 +96,7 @@ class TestComposerRegistersSnapshotPresenter:
         mock_container.create_commit_snapshot_action = MagicMock()
         mock_container.create_diff_action = MagicMock()
         mock_container.stage_documents_action = MagicMock()
+        mock_container.get_dirty_documents_action = MagicMock()
         mock_container.find_active_git_repository_action = MagicMock()
         mock_container.get_commits_action = MagicMock()
         return mock_container
@@ -142,6 +145,7 @@ class TestComposerRegistersDiffPresenter:
         mock_container.create_commit_snapshot_action = MagicMock()
         mock_container.create_diff_action = MagicMock()
         mock_container.stage_documents_action = MagicMock()
+        mock_container.get_dirty_documents_action = MagicMock()
         mock_container.find_active_git_repository_action = MagicMock()
         mock_container.get_commits_action = MagicMock()
         return mock_container
@@ -190,6 +194,7 @@ class TestComposerRegistersDiffPresenter:
             assert "create_commit_snapshot_action" in call_args.kwargs
             assert "create_diff_action" in call_args.kwargs
             assert "stage_documents_action" in call_args.kwargs
+            assert "get_dirty_documents_action" in call_args.kwargs
 
 
 class TestComposerConnectsTreeWidgetCallback:
@@ -204,6 +209,7 @@ class TestComposerConnectsTreeWidgetCallback:
         mock_container.create_commit_snapshot_action = MagicMock()
         mock_container.create_diff_action = MagicMock()
         mock_container.stage_documents_action = MagicMock()
+        mock_container.get_dirty_documents_action = MagicMock()
         mock_container.find_active_git_repository_action = MagicMock()
         mock_container.get_commits_action = MagicMock()
         return mock_container
@@ -264,6 +270,7 @@ class TestComposerInitializesGitRepositoryPresenter:
         mock_container.create_commit_snapshot_action = MagicMock()
         mock_container.create_diff_action = MagicMock()
         mock_container.stage_documents_action = MagicMock()
+        mock_container.get_dirty_documents_action = MagicMock()
         mock_container.find_active_git_repository_action = MagicMock()
         mock_container.get_commits_action = MagicMock()
         return mock_container
@@ -342,6 +349,7 @@ class TestComposerWiresAllDependencies:
         mock_container.create_commit_snapshot_action = MagicMock()
         mock_container.create_diff_action = MagicMock()
         mock_container.stage_documents_action = MagicMock()
+        mock_container.get_dirty_documents_action = MagicMock()
         mock_container.find_active_git_repository_action = MagicMock()
         mock_container.get_commits_action = MagicMock()
         return mock_container
@@ -378,6 +386,10 @@ class TestComposerWiresAllDependencies:
             )
             assert MockDiffPresenter.call_args.kwargs["create_diff_action"] == mock_container.create_diff_action
             assert MockDiffPresenter.call_args.kwargs["stage_documents_action"] == mock_container.stage_documents_action
+            assert (
+                MockDiffPresenter.call_args.kwargs["get_dirty_documents_action"]
+                == mock_container.get_dirty_documents_action
+            )
 
             # GitRepositoryPresenter gets its actions
             assert (

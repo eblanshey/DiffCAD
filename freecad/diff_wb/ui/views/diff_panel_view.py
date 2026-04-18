@@ -202,6 +202,7 @@ class DiffPanelView(QWidget):
         self._on_refresh_callback: Callable[[], None] | None = None
         self._on_add_button_callback: Callable[[str], None] | None = None
         self._on_node_selection_callback: Callable[[str, str], None] | None = None
+        self._current_selection: HistorySelection | None = None
         # Create the delegate for property value double-click editing (for copying)
         self._property_value_delegate = _PropertyValueDelegate(self)
         self._setup_ui()
@@ -477,12 +478,14 @@ class DiffPanelView(QWidget):
             self._on_node_selection_callback(git_path, node_path)
 
     def _on_item_clicked(self, item: QListWidgetItem) -> None:
-        """Handle item click by triggering callback with HistorySelection."""
+        """Handle item click by tracking selection and triggering callback."""
         if self._on_history_selection_callback is None:
             return
 
         item_data = item.data(Qt.ItemDataRole.UserRole)
         if isinstance(item_data, HistorySelection):
+            # Track selection state for button visibility
+            self._current_selection = item_data
             self._on_history_selection_callback(item_data)
 
     def _format_timestamp(self, iso_string: str) -> str:
@@ -578,23 +581,10 @@ class DiffPanelView(QWidget):
             # Prepare warning text for tooltip (newline-separated)
             warning_tooltip = "\n".join(diff.warnings) if diff.warnings else ""
 
-            # Check if document has changes
-            has_changes = any(node.has_changes for node in diff.nodes)
-
             # Create root item
             root_item = QTreeWidgetItem([top_level_text])
             # Store git_path in root item's UserRole for later retrieval when children are clicked
             root_item.setData(0, Qt.ItemDataRole.UserRole, diff.git_path)
-
-            # Create "+ Stage" button
-            add_button = QPushButton("+ Stage")
-            add_button.setEnabled(has_changes)
-            add_button.setFixedWidth(60)
-            # Use default argument gp=diff.git_path to capture loop variable correctly.
-            # Without this, all lambdas would reference the same 'diff' variable from the
-            # enclosing scope, which would have its final value after the loop completes.
-            # The default argument captures the current value of diff.git_path at iteration time.
-            add_button.clicked.connect(lambda checked, gp=diff.git_path: self._on_add_button_clicked(gp))
 
             # Create container widget with layout
             container = QWidget()
@@ -612,7 +602,24 @@ class DiffPanelView(QWidget):
                 layout.addWidget(warning_icon_label)
 
             layout.addStretch()
-            layout.addWidget(add_button)
+
+            # Only create "+ Stage" button when Working Tree is selected
+            show_stage_button = (
+                self._current_selection is not None and self._current_selection.item_kind == "WORKING_TREE"
+            )
+
+            if show_stage_button:
+                # Create "+ Stage" button
+                add_button = QPushButton("+ Stage")
+                # Use pre-computed stage_button_enabled from presenter
+                add_button.setEnabled(diff.stage_button_enabled)
+                add_button.setFixedWidth(40)
+                # Use default argument gp=diff.git_path to capture loop variable correctly.
+                # Without this, all lambdas would reference the same 'diff' variable from the
+                # enclosing scope, which would have its final value after the loop completes.
+                # The default argument captures the current value of diff.git_path at iteration time.
+                add_button.clicked.connect(lambda checked, gp=diff.git_path: self._on_add_button_clicked(gp))
+                layout.addWidget(add_button)
 
             # Set the widget on the tree item
             self.tree_widget.addTopLevelItem(root_item)

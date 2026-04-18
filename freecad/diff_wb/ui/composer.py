@@ -58,6 +58,7 @@ def compose_and_register_ui(container: ApplicationContainer) -> DiffPanelView:
         create_commit_snapshot_action=container.create_commit_snapshot_action,
         create_diff_action=container.create_diff_action,
         stage_documents_action=container.stage_documents_action,
+        get_dirty_documents_action=container.get_dirty_documents_action,
     )
     ui_registry.register_diff_presenter(diff_presenter)
 

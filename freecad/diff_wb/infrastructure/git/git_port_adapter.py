@@ -166,6 +166,111 @@ class GitPortAdapter(GitPort):
         # Check if path is a subdirectory/file within git_root
         return normalized_path.startswith(normalized_git_root + os.sep)
 
+    def get_dirty_paths(self, git_root: str) -> list[str]:
+        """Get dirty paths using git status --porcelain.
+
+        Filters for modified (M) and untracked (??) files only, as these are
+        the only ones that can be staged via `git add`.
+
+        Args:
+            git_root: Absolute path to git repository root.
+
+        Returns:
+            List of relative paths (from git root) that are modified or untracked.
+            Empty list if repo is clean or not a git repo.
+        """
+        try:
+            result = subprocess.run(
+                ["git", "status", "--porcelain"],
+                cwd=git_root,
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
+
+            if result.returncode != 0:
+                return []
+
+            dirty_paths = []
+            # Don't use .strip() on the whole output - it removes leading spaces
+            # from lines like " M file.txt" which are valid porcelain format.
+            # Instead, strip each line individually when checking if empty.
+            for line in result.stdout.split("\n"):
+                line = line.rstrip()  # Only strip trailing whitespace
+                if not line:
+                    continue
+
+                parsed = self._parse_git_status_line(line)
+                if parsed and self._is_dirty_status(parsed["status"], parsed["rel_path"]):
+                    dirty_paths.append(parsed["rel_path"])
+
+            return dirty_paths
+
+        except subprocess.TimeoutExpired:
+            Log.warning("Git status command timed out")
+            return []
+        except FileNotFoundError:
+            Log.warning("Git command not found - may not be installed")
+            return []
+
+    def _parse_git_status_line(self, line: str) -> dict[str, str] | None:
+        """Parse a git status porcelain line into status and path components.
+
+        Git porcelain format: "<index_status><wt_status> <path>"
+        - Position 0: Index/staging area status
+        - Position 1: Working tree status (what determines if file can be staged)
+        - Position 2: Space separator
+        - Position 3+: File path relative to git root
+
+        Examples:
+            " M file.txt" → index=space, wt=M → modified but NOT yet staged
+            "M  file.txt" → index=M, wt=space → already staged (NOT dirty)
+            "MM file.txt" → index=M, wt=M → modified after staging (dirty)
+            "?? file.txt" → index=?, wt=? → untracked
+
+        Args:
+            line: A single line from git status --porcelain output.
+
+        Returns:
+            Dictionary with 'status' and 'rel_path' keys, or None if parsing fails.
+            The 'status' field contains the working tree status character.
+        """
+        if len(line) < 4:
+            return None
+
+        # Extract working tree status (position 1) and path (position 3+)
+        wt_status = line[1]
+        rel_path = line[3:]
+
+        # Only process lines with valid status characters
+        valid_statuses = ("M", "?", "A", "D", "R", "U", "T", "C", " ")
+        if wt_status not in valid_statuses:
+            return None
+
+        return {"status": wt_status, "rel_path": rel_path}
+
+    def _is_dirty_status(self, status: str, rel_path: str) -> bool:
+        """Check if a git status code represents a dirty (staggable) file.
+
+        A file is considered dirty if it has changes in the working tree that
+        can be staged via `git add`. This includes:
+        - Modified files (M): Changes not yet staged
+        - Untracked files (?): New files not in git
+
+        Files that are already staged (A without M), deleted (D), or have other
+        statuses are NOT considered dirty.
+
+        Args:
+            status: The git status character (working tree position).
+            rel_path: The relative file path (used to ensure non-empty).
+
+        Returns:
+            True if the file is dirty and can be staged, False otherwise.
+        """
+        # Only M (modified) and ? (untracked) are dirty
+        # Staged-only (A), deleted (D), and others are NOT dirty
+        return (status == "M" or status == "?") and bool(rel_path)
+
     def stage_files(self, git_root: str, paths: list[str]) -> bool:
         """Stage files using git add.
 

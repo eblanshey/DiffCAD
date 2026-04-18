@@ -92,8 +92,15 @@ class GitRepositoryPresenter:
 
         if result.is_success:
             commits = result.data
+            # Clear diff displays before reloading commits to prevent stale data
+            # from previous selections remaining visible
+            self._view.show_diff_trees([])
+            self._view.show_properties([])
             self._view.show_commits(commits)
         else:
+            # Clear diff displays even on failure
+            self._view.show_diff_trees([])
+            self._view.show_properties([])
             # Show empty list on failure
             self._view.show_commits([])
             Log.warning(f"Failed to load commits: {result.message}")

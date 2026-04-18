@@ -5,6 +5,7 @@ from typing import Any
 from ...application.actions.create_diff import CreateDiffAction
 from ...application.actions.create_document_snapshot_commit import CreateDocumentSnapshotForCommitAction
 from ...application.actions.create_document_snapshot_working import CreateDocumentSnapshotForWorkingTreeAction
+from ...application.actions.get_dirty_documents import GetDirtyDocumentsAction
 from ...application.actions.get_open_eligible_documents import GetOpenEligibleDocumentsAction
 from ...application.actions.stage_documents import StageDocumentsAction
 from ...domain.diff.engine import DiffResult
@@ -36,6 +37,7 @@ class DiffPresenter:
         create_commit_snapshot_action: CreateDocumentSnapshotForCommitAction,
         create_diff_action: CreateDiffAction,
         stage_documents_action: StageDocumentsAction,
+        get_dirty_documents_action: GetDirtyDocumentsAction,
     ) -> None:
         """Initialize with required dependencies.
 
@@ -47,6 +49,7 @@ class DiffPresenter:
             create_commit_snapshot_action: Action to create commit snapshots (stub)
             create_diff_action: Action to compute diffs between snapshots
             stage_documents_action: Action to stage documents to git
+            get_dirty_documents_action: Action to get dirty document paths
         """
         self._view = view
         self._ui_state = ui_state
@@ -55,6 +58,7 @@ class DiffPresenter:
         self._create_commit_snapshot = create_commit_snapshot_action
         self._create_diff = create_diff_action
         self._stage_documents = stage_documents_action
+        self._get_dirty_documents = get_dirty_documents_action
         self._diff_results_by_path: dict[str, DiffResult] = {}
 
         # Wire up the callback for history selection
@@ -105,7 +109,8 @@ class DiffPresenter:
         For each eligible document:
         1. Create working tree snapshot
         2. Create diff against None (old snapshot)
-        3. Collect results, logging warnings for failures
+        3. Get dirty documents (ONE call for all eligible docs)
+        4. Collect results, logging warnings for failures
         """
         repo = self._ui_state.git_repository
         if repo is None:
@@ -137,6 +142,10 @@ class DiffPresenter:
             else:
                 Log.warning(f"Failed to compute diff: {diff_result.message}")
 
+        # Get dirty documents (ONE call for all eligible docs - efficient!)
+        dirty_result = self._get_dirty_documents.execute(repo, eligible_docs)
+        dirty_paths = set(dirty_result.data) if dirty_result.is_success else set()
+
         # Store diff results keyed by git_path for later use by add button
         self._diff_results_by_path.clear()
         for result in all_diff_results:
@@ -145,7 +154,7 @@ class DiffPresenter:
                 self._diff_results_by_path[git_path] = result
 
         if all_diff_results:
-            self.present_diffs(all_diff_results)
+            self.present_diffs(all_diff_results, dirty_paths)
         else:
             Log.warning("No diff results to display")
 
@@ -190,8 +199,15 @@ class DiffPresenter:
         # This will refresh the view to show no changes
         self._on_working_tree_selected()
 
-    def present_diffs(self, diff_results: list[DiffResult]) -> None:
-        """Transform multiple DiffResults into presentation models and display."""
+    def present_diffs(self, diff_results: list[DiffResult], dirty_paths: set[str] | None = None) -> None:
+        """Transform multiple DiffResults into presentation models and display.
+
+        Args:
+            diff_results: List of DiffResult objects to present.
+            dirty_paths: Set of git paths that have git-tracked changes.
+        """
+        dirty_paths = dirty_paths or set()
+
         if not diff_results:
             self._view.show_diff_trees([])
             return
@@ -202,7 +218,23 @@ class DiffPresenter:
             git_path = diff_result.new_snapshot.git_path or diff_result.new_snapshot.document_name
             warnings = list(diff_result.warnings)
 
-            presentations.append(DiffTreePresentation(nodes=nodes, git_path=git_path, warnings=warnings))
+            # Compute has_changes from nodes
+            has_changes = any(node.has_changes for node in nodes)
+
+            # Check if this document's git path has git-tracked changes
+            is_git_dirty = git_path in dirty_paths
+
+            # Stage button is enabled if there are diff changes OR git-tracked changes
+            stage_button_enabled = has_changes or is_git_dirty
+
+            presentations.append(
+                DiffTreePresentation(
+                    nodes=nodes,
+                    git_path=git_path,
+                    warnings=warnings,
+                    stage_button_enabled=stage_button_enabled,
+                )
+            )
 
         self._view.show_diff_trees(presentations)
 

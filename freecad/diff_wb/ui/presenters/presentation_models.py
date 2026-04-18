@@ -68,8 +68,10 @@ class DiffTreePresentation:
         nodes: Transformed list of root NodePresentation objects
         git_path: Git path of the document
         warnings: List of warning strings from DiffResult.warnings
+        stage_button_enabled: True if the stage button should be enabled
     """
 
     nodes: list[NodePresentation]
     git_path: str
     warnings: list[str]
+    stage_button_enabled: bool = False

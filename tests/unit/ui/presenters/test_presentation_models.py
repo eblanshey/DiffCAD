@@ -524,6 +524,25 @@ class TestDiffTreePresentation:
         assert diff_tree.warnings == []
         assert isinstance(diff_tree.warnings, list)
 
+    def test_diff_tree_presentation_stage_button_enabled_field(self) -> None:
+        """Verify stage_button_enabled field is present and can be set."""
+        diff_tree = DiffTreePresentation(
+            nodes=[],
+            git_path="path/to/document.FCStd",
+            warnings=[],
+            stage_button_enabled=True,
+        )
+        assert diff_tree.stage_button_enabled is True
+
+    def test_diff_tree_presentation_stage_button_enabled_defaults_to_false(self) -> None:
+        """Verify stage_button_enabled defaults to False when not provided."""
+        diff_tree = DiffTreePresentation(
+            nodes=[],
+            git_path="path/to/document.FCStd",
+            warnings=[],
+        )
+        assert diff_tree.stage_button_enabled is False
+
     def test_diff_tree_presentation_nodes_empty_list(self) -> None:
         """Verify nodes can be an empty list for documents with no changes."""
         # Arrange & Act
