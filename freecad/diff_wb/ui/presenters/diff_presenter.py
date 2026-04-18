@@ -6,6 +6,7 @@ from ...application.actions.create_diff import CreateDiffAction
 from ...application.actions.create_document_snapshot_commit import CreateDocumentSnapshotForCommitAction
 from ...application.actions.create_document_snapshot_working import CreateDocumentSnapshotForWorkingTreeAction
 from ...application.actions.get_open_eligible_documents import GetOpenEligibleDocumentsAction
+from ...application.actions.stage_documents import StageDocumentsAction
 from ...domain.diff.engine import DiffResult
 from ...domain.diff.models import DiffState, NodeDiff, PropertyDiff
 from ...domain.tree import Property
@@ -34,6 +35,7 @@ class DiffPresenter:
         create_working_snapshot_action: CreateDocumentSnapshotForWorkingTreeAction,
         create_commit_snapshot_action: CreateDocumentSnapshotForCommitAction,
         create_diff_action: CreateDiffAction,
+        stage_documents_action: StageDocumentsAction,
     ) -> None:
         """Initialize with required dependencies.
 
@@ -44,6 +46,7 @@ class DiffPresenter:
             create_working_snapshot_action: Action to create working tree snapshots
             create_commit_snapshot_action: Action to create commit snapshots (stub)
             create_diff_action: Action to compute diffs between snapshots
+            stage_documents_action: Action to stage documents to git
         """
         self._view = view
         self._ui_state = ui_state
@@ -51,6 +54,8 @@ class DiffPresenter:
         self._create_working_tree_snapshot = create_working_snapshot_action
         self._create_commit_snapshot = create_commit_snapshot_action
         self._create_diff = create_diff_action
+        self._stage_documents = stage_documents_action
+        self._diff_results_by_path: dict[str, DiffResult] = {}
 
         # Wire up the callback for history selection
         self._view.set_history_selection_callback(self.on_history_item_selected)
@@ -132,6 +137,13 @@ class DiffPresenter:
             else:
                 Log.warning(f"Failed to compute diff: {diff_result.message}")
 
+        # Store diff results keyed by git_path for later use by add button
+        self._diff_results_by_path.clear()
+        for result in all_diff_results:
+            git_path = result.new_snapshot.git_path
+            if git_path:
+                self._diff_results_by_path[git_path] = result
+
         if all_diff_results:
             self.present_diffs(all_diff_results)
         else:
@@ -144,6 +156,39 @@ class DiffPresenter:
     def _on_commit_selected(self, commit_hash: str | None) -> None:
         """Handle commit item selection. STUB: For now, does nothing."""
         pass
+
+    def on_add_button_clicked(self, git_path: str) -> None:
+        """Handle '+ Stage' button click for staging.
+
+        Args:
+            git_path: The git_path of the document to stage.
+        """
+        repo = self._ui_state.git_repository
+        if repo is None:
+            Log.warning("No git repository detected")
+            return
+
+        # Look up the DiffResult for this git_path
+        diff_result = self._diff_results_by_path.get(git_path)
+        if not diff_result:
+            Log.warning(f"No diff result found for {git_path}")
+            return
+
+        # Get the working tree snapshot (new_snapshot) from the diff
+        # Since we're in working tree view, old_snapshot may be None
+        working_snapshot = diff_result.new_snapshot
+
+        # Stage the document
+        result = self._stage_documents.execute(repo, [working_snapshot])
+        if not result.is_success:
+            Log.warning(f"Failed to stage document: {result.message}")
+            return
+
+        Log.info(f"Successfully staged {git_path}")
+
+        # Recalculate diff (Working Tree -> Commit None means same snapshot)
+        # This will refresh the view to show no changes
+        self._on_working_tree_selected()
 
     def present_diffs(self, diff_results: list[DiffResult]) -> None:
         """Transform multiple DiffResults into presentation models and display."""

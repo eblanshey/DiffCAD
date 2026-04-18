@@ -27,6 +27,7 @@ from ..actions.find_active_git_repository import FindActiveGitRepositoryAction
 from ..actions.get_commits import GetCommitsAction
 from ..actions.get_open_eligible_documents import GetOpenEligibleDocumentsAction
 from ..actions.queries.list_snapshots import ListSnapshotsAction
+from ..actions.stage_documents import StageDocumentsAction
 
 
 __all__ = [
@@ -60,6 +61,7 @@ class ApplicationContainer:
     create_working_snapshot_action: CreateDocumentSnapshotForWorkingTreeAction
     create_commit_snapshot_action: CreateDocumentSnapshotForCommitAction
     create_diff_action: CreateDiffAction
+    stage_documents_action: StageDocumentsAction
 
     # Git components (domain layer)
     git_port: GitPort
@@ -156,6 +158,7 @@ def create_application_container(ctx: FreeCadContext) -> ApplicationContainer:
     )
     create_commit_snapshot_action = CreateDocumentSnapshotForCommitAction(git_service=git_service)
     create_diff_action = CreateDiffAction(diff_engine=diff_engine)
+    stage_documents_action = StageDocumentsAction(git_service=git_service)
 
     return ApplicationContainer(
         _freecad_port=freecad_port,
@@ -167,6 +170,7 @@ def create_application_container(ctx: FreeCadContext) -> ApplicationContainer:
         create_working_snapshot_action=create_working_snapshot_action,
         create_commit_snapshot_action=create_commit_snapshot_action,
         create_diff_action=create_diff_action,
+        stage_documents_action=stage_documents_action,
         git_port=git_port,
         git_service=git_service,
         find_active_git_repository_action=find_active_git_repository_action,

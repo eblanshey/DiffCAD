@@ -117,3 +117,11 @@ class DiffView(Protocol):
             diffs: List of DiffTreePresentation objects, each representing
                   a diff tree for one document with its metadata.
         """
+
+    def set_add_button_callback(self, callback: Callable[[str], None]) -> None:
+        """Set the callback for when the '+ Stage' button is clicked.
+
+        Args:
+            callback: A callable that receives the git_path (str) of the
+                      document whose '+ Stage' button was clicked.
+        """

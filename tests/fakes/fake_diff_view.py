@@ -22,6 +22,7 @@ class FakeDiffView:
         self._last_call: dict[str, Any] | None = None
         self._refresh_callback: Callable[[], None] | None = None
         self._history_selection_callback: Callable[[Any], None] | None = None
+        self._add_button_callback: Callable[[str], None] | None = None
 
     def show_loading(self) -> None:
         """Capture loading call instead of showing UI."""
@@ -73,6 +74,27 @@ class FakeDiffView:
         """
         self._record_call("set_history_selection_callback", callback=callback)
         self._history_selection_callback = callback
+
+    def set_add_button_callback(self, callback: Callable[[str], None]) -> None:
+        """Capture add button callback registration instead of connecting to button.
+
+        Args:
+            callback: A callable that takes a git_path string to invoke when add button is clicked.
+        """
+        self._record_call("set_add_button_callback", callback=callback)
+        self._add_button_callback = callback
+
+    def trigger_add_button_callback(self, git_path: str) -> None:
+        """Trigger the registered add button callback if one exists.
+
+        This is useful for testing that the callback was properly registered
+        and can be invoked with a git_path argument.
+
+        Args:
+            git_path: The git_path to pass to the callback.
+        """
+        if self._add_button_callback is not None:
+            self._add_button_callback(git_path)
 
     def _record_call(self, method: str, **kwargs: Any) -> dict[str, Any]:
         """Record a method call for later verification."""

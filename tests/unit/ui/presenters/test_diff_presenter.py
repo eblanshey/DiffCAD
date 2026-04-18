@@ -9,6 +9,7 @@ from freecad.diff_wb.application.actions.create_document_snapshot_working import
     CreateDocumentSnapshotForWorkingTreeAction,
 )
 from freecad.diff_wb.application.actions.get_open_eligible_documents import GetOpenEligibleDocumentsAction
+from freecad.diff_wb.application.actions.stage_documents import StageDocumentsAction
 from freecad.diff_wb.domain.diff.models import DiffHierarchy, DiffResult, DiffState, NodeDiff, PropertyDiff
 from freecad.diff_wb.domain.git.models import GitRepository
 from freecad.diff_wb.domain.snapshots import Snapshot
@@ -34,6 +35,7 @@ def _create_test_presenter() -> tuple[FakeDiffView, DiffPresenter]:
     create_working_snapshot_action = MagicMock(spec=CreateDocumentSnapshotForWorkingTreeAction)
     create_commit_snapshot_action = MagicMock(spec=CreateDocumentSnapshotForCommitAction)
     create_diff_action = MagicMock(spec=CreateDiffAction)
+    stage_documents_action = MagicMock(spec=StageDocumentsAction)
 
     presenter = DiffPresenter(
         view=view,
@@ -42,6 +44,7 @@ def _create_test_presenter() -> tuple[FakeDiffView, DiffPresenter]:
         create_working_snapshot_action=create_working_snapshot_action,
         create_commit_snapshot_action=create_commit_snapshot_action,
         create_diff_action=create_diff_action,
+        stage_documents_action=stage_documents_action,
     )
     return view, presenter
 
@@ -1047,3 +1050,113 @@ class TestDiffPresenterWorkingTreeOrchestration:
         show_trees_call = next((c for c in calls if c["method"] == "show_diff_trees"), None)
         assert show_trees_call is not None
         assert len(show_trees_call["diff_trees"]) == 2
+
+
+class TestDiffPresenterAddButton:
+    """Tests for DiffPresenter.on_add_button_clicked() method."""
+
+    def test_on_add_button_clicked_stages_document_successfully(self) -> None:
+        """Stages document successfully when git repository and diff result exist."""
+        fake_view, presenter = _create_test_presenter()
+
+        # Setup mock repo
+        mock_repo = GitRepository(name="test-repo", absolute_path="/test/path")
+        presenter._ui_state.git_repository = mock_repo  # type: ignore
+
+        # Setup mock working snapshot
+        mock_working_snapshot = Snapshot(
+            snapshot_id="ws1",
+            document_name="doc.FCStd",
+            timestamp=datetime.datetime.now(),
+            git_path="doc.FCStd",
+        )
+
+        # Setup mock diff result
+        mock_diff_result = DiffResult(
+            old_snapshot=None,  # type: ignore
+            new_snapshot=mock_working_snapshot,
+            hierarchy=DiffHierarchy(),
+        )
+        # Store in _diff_results_by_path as _on_working_tree_selected would
+        presenter._diff_results_by_path = {"doc.FCStd": mock_diff_result}  # type: ignore
+
+        # Setup mock stage action
+        mock_stage_result = MagicMock()
+        mock_stage_result.is_success = True
+        mock_stage_result.message = ""
+        presenter._stage_documents.execute.return_value = mock_stage_result  # type: ignore
+
+        # Act
+        presenter.on_add_button_clicked("doc.FCStd")
+
+        # Assert - stage was called with correct arguments
+        presenter._stage_documents.execute.assert_called_once_with(mock_repo, [mock_working_snapshot])
+
+    def test_on_add_button_clicked_no_git_repository_returns_early(self) -> None:
+        """Returns early without staging when no git repository is available."""
+        fake_view, presenter = _create_test_presenter()
+
+        # No git repository set (ui_state.git_repository is None by default)
+
+        # Act
+        presenter.on_add_button_clicked("doc.FCStd")
+
+        # Assert - stage was never called
+        presenter._stage_documents.execute.assert_not_called()
+
+    def test_on_add_button_clicked_missing_diff_result_logs_warning(self) -> None:
+        """Logs warning when diff result not found for the given git_path."""
+        fake_view, presenter = _create_test_presenter()
+
+        # Setup mock repo
+        mock_repo = GitRepository(name="test-repo", absolute_path="/test/path")
+        presenter._ui_state.git_repository = mock_repo  # type: ignore
+
+        # No diff results stored (empty _diff_results_by_path)
+        presenter._diff_results_by_path = {}  # type: ignore
+
+        # Act
+        presenter.on_add_button_clicked("missing.FCStd")
+
+        # Assert - stage was never called
+        presenter._stage_documents.execute.assert_not_called()
+
+    def test_on_add_button_clicked_refreshes_view_after_staging(self) -> None:
+        """Refreshes view by calling _on_working_tree_selected after successful staging."""
+        fake_view, presenter = _create_test_presenter()
+
+        # Setup mock repo
+        mock_repo = GitRepository(name="test-repo", absolute_path="/test/path")
+        presenter._ui_state.git_repository = mock_repo  # type: ignore
+
+        # Setup mock working snapshot
+        mock_working_snapshot = Snapshot(
+            snapshot_id="ws1",
+            document_name="doc.FCStd",
+            timestamp=datetime.datetime.now(),
+            git_path="doc.FCStd",
+        )
+
+        # Setup mock diff result
+        mock_diff_result = DiffResult(
+            old_snapshot=None,  # type: ignore
+            new_snapshot=mock_working_snapshot,
+            hierarchy=DiffHierarchy(),
+        )
+        presenter._diff_results_by_path = {"doc.FCStd": mock_diff_result}  # type: ignore
+
+        # Setup mock stage action
+        mock_stage_result = MagicMock()
+        mock_stage_result.is_success = True
+        mock_stage_result.message = ""
+        presenter._stage_documents.execute.return_value = mock_stage_result  # type: ignore
+
+        # Mock _on_working_tree_selected to verify it's called
+        with MagicMock() as mock_refresh:
+            presenter._on_working_tree_selected = mock_refresh  # type: ignore
+
+            # Act
+            presenter.on_add_button_clicked("doc.FCStd")
+
+            # Assert - refresh was called after staging
+            mock_refresh.assert_called_once()

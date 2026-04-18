@@ -65,3 +65,15 @@ class GitPort(Protocol):
             False otherwise (including empty paths).
         """
         ...
+
+    def stage_files(self, git_root: str, paths: list[str]) -> bool:
+        """Stage files in the git repository.
+
+        Args:
+            git_root: Absolute path to git repository root.
+            paths: List of relative paths (from git root) to stage.
+
+        Returns:
+            True if staging succeeded, False otherwise.
+        """
+        ...

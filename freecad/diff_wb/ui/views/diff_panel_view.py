@@ -198,6 +198,7 @@ class DiffPanelView(QWidget):
         QWidget.__init__(self, parent)
         self._on_history_selection_callback: Callable[[HistorySelection], None] | None = None
         self._on_refresh_callback: Callable[[], None] | None = None
+        self._on_add_button_callback: Callable[[str], None] | None = None
         # Create the delegate for property value double-click editing (for copying)
         self._property_value_delegate = _PropertyValueDelegate(self)
         self._setup_ui()
@@ -431,6 +432,15 @@ class DiffPanelView(QWidget):
         # Connect to item clicked signal for immediate response
         self.history_list.itemClicked.connect(self._on_item_clicked)
 
+    def set_add_button_callback(self, callback: Callable[[str], None]) -> None:
+        """Set the callback for when the '+ Stage' button is clicked.
+
+        Args:
+            callback: A callable that receives the git_path (str) of the
+                      document whose '+ Stage' button was clicked.
+        """
+        self._on_add_button_callback = callback
+
     def _on_item_clicked(self, item: QListWidgetItem) -> None:
         """Handle item click by triggering callback with HistorySelection."""
         if self._on_history_selection_callback is None:
@@ -534,23 +544,58 @@ class DiffPanelView(QWidget):
                 # Join warnings with emoji and add warning indicator
                 warning_text = " ⚠️ ".join(diff.warnings)
                 top_level_text = f"{top_level_text} ⚠️"
-                root_item = QTreeWidgetItem([top_level_text])
-                root_item.setToolTip(0, warning_text)
             else:
-                root_item = QTreeWidgetItem([top_level_text])
+                warning_text = ""
+
+            # Check if document has changes
+            has_changes = any(node.has_changes for node in diff.nodes)
+
+            # Create root item
+            root_item = QTreeWidgetItem([top_level_text])
+            if warning_text:
+                root_item.setToolTip(0, warning_text)
+
+            # Create "+ Stage" button
+            add_button = QPushButton("+ Stage")
+            add_button.setEnabled(has_changes)
+            add_button.setFixedWidth(60)
+            # Use default argument gp=diff.git_path to capture loop variable correctly.
+            # Without this, all lambdas would reference the same 'diff' variable from the
+            # enclosing scope, which would have its final value after the loop completes.
+            # The default argument captures the current value of diff.git_path at iteration time.
+            add_button.clicked.connect(lambda checked, gp=diff.git_path: self._on_add_button_clicked(gp))
+
+            # Create container widget with layout
+            container = QWidget()
+            layout = QHBoxLayout(container)
+            layout.setContentsMargins(4, 2, 4, 2)
+            layout.addWidget(QLabel(top_level_text))
+            layout.addStretch()
+            layout.addWidget(add_button)
+
+            # Set the widget on the tree item
+            self.tree_widget.addTopLevelItem(root_item)
+            self.tree_widget.setItemWidget(root_item, 0, container)
 
             # Add child nodes from hierarchy
             for node in diff.nodes:
                 item = self._create_tree_item(node)
                 root_item.addChild(item)
 
-            self.tree_widget.addTopLevelItem(root_item)
-
             # Expand only nodes that have children with changes
             self._expand_nodes_with_changes(root_item)
 
         # Ensure tree widget is visible
         self.tree_widget.show()
+
+    def _on_add_button_clicked(self, git_path: str) -> None:
+        """Handle '+ Stage' button click by invoking the callback.
+
+        Args:
+            git_path: The git_path of the document whose button was clicked.
+        """
+        if self._on_add_button_callback:
+            self._on_add_button_callback(git_path)
 
     def _expand_nodes_with_changes(self, item: QTreeWidgetItem) -> None:
         """Recursively expand nodes that have descendants with changes.

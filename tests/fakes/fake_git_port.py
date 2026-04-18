@@ -22,12 +22,18 @@ class FakeGitPort:
         _commits: Dictionary mapping repo paths to lists of GitCommit objects.
     """
 
-    def __init__(self) -> None:
-        """Initialize the fake git port with empty mappings."""
+    def __init__(self, fail_stage: bool = False) -> None:
+        """Initialize the fake git port with empty mappings.
+
+        Args:
+            fail_stage: If True, stage_files will return False (for testing failure cases).
+        """
         # Maps paths to their git root paths
         self._git_roots: dict[str, str] = {}
         # Maps git root paths to lists of commits
         self._commits: dict[str, list[GitCommit]] = {}
+        # Flag to simulate staging failures
+        self._fail_stage = fail_stage
 
     def add_git_repo(self, root_path: str) -> None:
         """Add a simulated git repository root.
@@ -177,3 +183,18 @@ class FakeGitPort:
 
         # Check if path is a subdirectory/file within git_root
         return normalized_path.startswith(normalized_git_root + os.sep)
+
+    def stage_files(self, git_root: str, paths: list[str]) -> bool:
+        """Fake implementation of stage_files for testing.
+
+        This fake implementation returns True by default, or False if configured
+        to fail (via fail_stage parameter in __init__).
+
+        Args:
+            git_root: Absolute path to git repository root.
+            paths: List of relative paths to stage.
+
+        Returns:
+            True if not configured to fail, False otherwise.
+        """
+        return not self._fail_stage

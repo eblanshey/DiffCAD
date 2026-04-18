@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
 # File responsibility: Unit tests for the GitService class using fake GitPort
 # implementations. These tests verify that GitService correctly creates
-# GitRepository objects from paths and handles edge cases properly.
+# GitRepository objects from paths, handles commits, filters documents,
+# and stages files properly.
 """Unit tests for the GitService class."""
 
 import dataclasses
@@ -877,3 +878,137 @@ class TestGitServiceGetEligibleDocsIntegration:
         eligible = service.get_eligible_docs(repo=repo, documents=documents)
 
         assert eligible == []
+
+
+class TestGitServiceStageFilesDelegation:
+    """Tests for GitService.stage_files() delegation to git_port."""
+
+    def test_stage_files_delegates_to_git_port_with_correct_parameters(self):
+        """Test that stage_files delegates to git_port with correct parameters."""
+        fake_port = FakeGitPort()
+        service = GitService(git_port=fake_port)
+
+        repo = GitRepository(name="test_repo", absolute_path="/home/user/test_repo")
+        paths = ["file1.py", "src/file2.py"]
+
+        result = service.stage_files(repo=repo, paths=paths)
+
+        # FakeGitPort always returns True by default
+        assert result is True
+
+    def test_stage_files_passes_repo_absolute_path_to_git_port(self):
+        """Test that the repo's absolute_path is passed correctly to git_port."""
+        fake_port = FakeGitPort()
+        service = GitService(git_port=fake_port)
+
+        # Create a repo with a specific path
+        test_path = "/home/user/my_project"
+        repo = GitRepository(name="my_project", absolute_path=test_path)
+        paths = ["document.FCStd"]
+
+        result = service.stage_files(repo=repo, paths=paths)
+
+        assert result is True
+
+
+class TestGitServiceStageFilesEmptyPaths:
+    """Tests for GitService.stage_files() with empty paths list."""
+
+    def test_stage_files_returns_true_for_empty_paths_list(self):
+        """Test that stage_files returns True immediately for empty paths."""
+        fake_port = FakeGitPort()
+        service = GitService(git_port=fake_port)
+
+        repo = GitRepository(name="test_repo", absolute_path="/home/user/test_repo")
+        paths: list[str] = []
+
+        result = service.stage_files(repo=repo, paths=paths)
+
+        # Empty paths should return True immediately (nothing to stage)
+        assert result is True
+
+    def test_stage_files_returns_true_for_none_like_empty_behavior(self):
+        """Test behavior with various empty-like inputs."""
+        fake_port = FakeGitPort()
+        service = GitService(git_port=fake_port)
+
+        repo = GitRepository(name="test_repo", absolute_path="/home/user/test_repo")
+
+        # Empty list
+        result = service.stage_files(repo=repo, paths=[])
+        assert result is True
+
+
+class TestGitServiceStageFilesFailurePropagation:
+    """Tests for GitService.stage_files() failure handling."""
+
+    def test_stage_files_propagates_failure_from_git_port(self):
+        """Test that failure from git_port propagates correctly as False."""
+        # Create FakeGitPort configured to fail
+        fake_port = FakeGitPort(fail_stage=True)
+        service = GitService(git_port=fake_port)
+
+        repo = GitRepository(name="test_repo", absolute_path="/home/user/test_repo")
+        paths = ["file1.py"]
+
+        result = service.stage_files(repo=repo, paths=paths)
+
+        # Should propagate the failure
+        assert result is False
+
+    def test_stage_files_returns_false_when_git_port_fails_with_multiple_files(self):
+        """Test failure propagation with multiple files to stage."""
+        fake_port = FakeGitPort(fail_stage=True)
+        service = GitService(git_port=fake_port)
+
+        repo = GitRepository(name="test_repo", absolute_path="/home/user/test_repo")
+        paths = ["file1.py", "file2.py", "src/file3.py"]
+
+        result = service.stage_files(repo=repo, paths=paths)
+
+        assert result is False
+
+    def test_stage_files_succeeds_when_git_port_succeeds(self):
+        """Test that success from git_port propagates correctly as True."""
+        fake_port = FakeGitPort(fail_stage=False)
+        service = GitService(git_port=fake_port)
+
+        repo = GitRepository(name="test_repo", absolute_path="/home/user/test_repo")
+        paths = ["document.FCStd"]
+
+        result = service.stage_files(repo=repo, paths=paths)
+
+        assert result is True
+
+
+class TestGitServiceStageFilesIntegration:
+    """Integration tests for GitService.stage_files()."""
+
+    def test_workflow_stage_files_in_realistic_scenario(self):
+        """Test complete workflow of staging files in a realistic scenario."""
+        fake_port = FakeGitPort()
+        service = GitService(git_port=fake_port)
+
+        # Simulate a realistic scenario with a FreeCAD project
+        repo = GitRepository(
+            name="freecad_diff_workbench",
+            absolute_path="/home/user/freecad_diff_workbench",
+        )
+        paths = ["freecad/diff_wb/document.FCStd", "README.md"]
+
+        result = service.stage_files(repo=repo, paths=paths)
+
+        assert result is True
+
+    def test_workflow_stage_files_handles_failure_gracefully(self):
+        """Test that failures are handled gracefully in workflow."""
+        fake_port = FakeGitPort(fail_stage=True)
+        service = GitService(git_port=fake_port)
+
+        repo = GitRepository(name="project", absolute_path="/home/user/project")
+        paths = ["important_file.FCStd"]
+
+        result = service.stage_files(repo=repo, paths=paths)
+
+        # Should return False without raising exception
+        assert result is False

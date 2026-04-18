@@ -348,3 +348,129 @@ objects:
             assert node.path == "Body/Pad"
             # Should NOT have a parent field
             assert not hasattr(node, "parent")
+
+
+class TestSnapshotYamlSerializerOverwrite:
+    """Tests for YAML overwrite behavior when persisting snapshots."""
+
+    def test_to_yaml_overwrites_existing_file(self):
+        """Test: to_yaml overwrites existing file rather than appending or creating new file."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            yaml_path = Path(tmpdir) / "snapshot.yaml"
+
+            # Create initial YAML content with old data
+            old_data = {
+                "v": 1,
+                "timestamp": "2024-01-01T00:00:00+00:00",
+                "uid": "old-uuid-123",
+                "objects": [],
+            }
+            yaml_path.write_text(yaml.dump(old_data))
+
+            # Verify old content exists
+            old_content = yaml.safe_load(yaml_path.read_text())
+            assert old_content["uid"] == "old-uuid-123"
+
+            # Serialize new snapshot to the same path
+            new_snapshot = Snapshot(
+                snapshot_id="new-uuid-456",
+                document_name="TestDoc",
+                timestamp=datetime(2024, 6, 15, tzinfo=UTC),
+                nodes=[],
+                git_path="",
+            )
+            SnapshotYamlSerializer.to_yaml(new_snapshot, yaml_path)
+
+            # Read the file and verify it was overwritten (not appended)
+            new_content = yaml.safe_load(yaml_path.read_text())
+            assert new_content["uid"] == "new-uuid-456"
+            # Old data should be completely gone
+            assert new_content["timestamp"] == "2024-06-15T00:00:00+00:00"
+
+    def test_multiple_serializations_update_file_size(self):
+        """Test: Multiple serializations update file size appropriately (overwrite, not append)."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            yaml_path = Path(tmpdir) / "snapshot.yaml"
+
+            # First serialization - small snapshot
+            snapshot1 = Snapshot(
+                snapshot_id="small-uuid",
+                document_name="SmallDoc",
+                timestamp=datetime(2024, 1, 1, tzinfo=UTC),
+                nodes=[],
+                git_path="",
+            )
+            SnapshotYamlSerializer.to_yaml(snapshot1, yaml_path)
+            first_size = yaml_path.stat().st_size
+
+            # Second serialization - larger snapshot with more nodes
+            nodes = [
+                TreeNode(id=i, name=f"Node{i}", type_id="Type", label=f"L{i}", path=f"P{i}", after=None)
+                for i in range(10)
+            ]
+            snapshot2 = Snapshot(
+                snapshot_id="large-uuid",
+                document_name="LargeDoc",
+                timestamp=datetime(2024, 12, 31, tzinfo=UTC),
+                nodes=nodes,
+                git_path="",
+            )
+            SnapshotYamlSerializer.to_yaml(snapshot2, yaml_path)
+            second_size = yaml_path.stat().st_size
+
+            # Third serialization - back to small snapshot
+            SnapshotYamlSerializer.to_yaml(snapshot1, yaml_path)
+            third_size = yaml_path.stat().st_size
+
+            # File sizes should change based on content, not grow monotonically
+            # (which would indicate appending behavior)
+            assert second_size > first_size, "Larger snapshot should produce larger file"
+            assert third_size == first_size, "Same snapshot should produce same file size (overwrite)"
+
+    def test_to_yaml_replaces_all_content_on_overwrite(self):
+        """Test: All content is replaced when overwriting, including nested structures."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            yaml_path = Path(tmpdir) / "snapshot.yaml"
+
+            # Create YAML with complex nested properties
+            complex_yaml = """v: 1
+timestamp: 2024-01-01T00:00:00+00:00
+uid: complex-old
+objects:
+- id: 999
+  name: OldObject
+  type_id: OldType
+  label: OldLabel
+  path: Old/Path
+  after: null
+  properties:
+    OldProp:
+      type_: STRING
+      value: old_value
+      expression: old_expr
+      group: OldGroup
+"""
+            yaml_path.write_text(complex_yaml)
+
+            # Create simple snapshot with no properties
+            simple_snapshot = Snapshot(
+                snapshot_id="simple-uuid",
+                document_name="SimpleDoc",
+                timestamp=datetime(2024, 6, 1, tzinfo=UTC),
+                nodes=[
+                    TreeNode(id=1, name="SimpleNode", type_id="SimpleType", label="Simple", path="Simple", after=None),
+                ],
+                git_path="",
+            )
+            SnapshotYamlSerializer.to_yaml(simple_snapshot, yaml_path)
+
+            # Read and verify all old content is gone
+            new_data = yaml.safe_load(yaml_path.read_text())
+
+            # Old data should be completely replaced
+            assert new_data["uid"] == "simple-uuid"
+            assert len(new_data["objects"]) == 1
+            assert new_data["objects"][0]["name"] == "SimpleNode"
+            # Old object should be completely gone
+            assert new_data["objects"][0]["id"] != 999
+            assert "OldProp" not in new_data["objects"][0].get("properties", {})

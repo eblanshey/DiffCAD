@@ -165,3 +165,39 @@ class GitPortAdapter(GitPort):
 
         # Check if path is a subdirectory/file within git_root
         return normalized_path.startswith(normalized_git_root + os.sep)
+
+    def stage_files(self, git_root: str, paths: list[str]) -> bool:
+        """Stage files using git add.
+
+        Args:
+            git_root: Absolute path to git repository root.
+            paths: List of relative paths to stage.
+
+        Returns:
+            True if git add succeeded for all files, False otherwise.
+        """
+        if not paths:
+            return True
+
+        try:
+            # Use git add with -v for verbose output
+            result = subprocess.run(
+                ["git", "add", "-v"] + paths,
+                cwd=git_root,
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
+            if result.returncode == 0:
+                for line in result.stdout.strip().split("\n"):
+                    if line:
+                        Log.debug(f"Staged: {line}")
+                return True
+            Log.warning(f"Git add failed: {result.stderr.strip()}")
+            return False
+        except subprocess.TimeoutExpired:
+            Log.warning("Git add command timed out")
+            return False
+        except FileNotFoundError:
+            Log.warning("Git command not found")
+            return False

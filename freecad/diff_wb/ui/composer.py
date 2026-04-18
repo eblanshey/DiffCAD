@@ -59,6 +59,7 @@ def compose_and_register_ui(container: ApplicationContainer) -> DiffPanelView:
         create_working_snapshot_action=container.create_working_snapshot_action,
         create_commit_snapshot_action=container.create_commit_snapshot_action,
         create_diff_action=container.create_diff_action,
+        stage_documents_action=container.stage_documents_action,
     )
     ui_registry.register_diff_presenter(diff_presenter)
 
@@ -66,6 +67,9 @@ def compose_and_register_ui(container: ApplicationContainer) -> DiffPanelView:
     view.tree_widget.itemClicked.connect(
         lambda item, col: diff_presenter.on_node_selected(item.data(0, Qt.ItemDataRole.UserRole))
     )
+
+    # Connect add button callback
+    view.set_add_button_callback(diff_presenter.on_add_button_clicked)
 
     # Lifecycle presenter - creates git detection + refresh behavior
     # Does NOT need to be registered - it sets up ui_state

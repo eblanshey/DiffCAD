@@ -80,3 +80,15 @@ class GitService:
             if doc_path and self._git_port.is_path_in_repository(repo.absolute_path, doc_path):
                 eligible.append(doc)
         return eligible
+
+    def stage_files(self, repo: GitRepository, paths: list[str]) -> bool:
+        """Stage files in the git repository.
+
+        Args:
+            repo: GitRepository to stage files in.
+            paths: List of relative paths (from git root) to stage.
+
+        Returns:
+            True if staging succeeded, False otherwise.
+        """
+        return self._git_port.stage_files(repo.absolute_path, paths)
