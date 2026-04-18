@@ -25,6 +25,38 @@ The Diff Workbench uses a **layered architecture** with Domain-Driven Design (DD
 
 ---
 
+## Frontend/Backend Analogy
+
+Understanding the layer structure becomes intuitive when viewed through the familiar lens of frontend and backend development:
+
+### Backend (Domain + Application Layers)
+
+The **Domain** and **Application** layers together form the backend of this workbench:
+
+| Backend Concept          | Diff Workbench Implementation |
+|--------------------------|-------------------------------|
+| **Business Logic**       | Domain layer - pure Python entities, services, and algorithms |
+| **API Endpoints**        | Application layer - stateless actions that execute and return results |
+| **Database**             | Infrastructure layer - adapters for FreeCAD API and persistence |
+| **Inversion of Control** | ApplicationContainer - wires dependencies, provides action access |
+
+The Application layer acts as a stateless API. When a command executes (e.g., "take snapshot"), the action performs the operation and returns a result. No state is stored between calls.
+
+### Frontend (UI Layer)
+
+The **UI layer** mirrors a frontend JavaScript application:
+
+| Frontend Concept | Diff Workbench Implementation |
+|------------------|-------------------------------|
+| **State Store** | UIState - holds GitRepository, lives alongside presenters |
+| **Components** | Presenters - transform domain data into view calls |
+| **Views/Rendered Output** | Qt widgets - actual FreeCAD UI panels |
+| **Component State** | Ephemeral presenter state (loading flags, etc.) |
+
+The UI layer holds frontend-only state (UIState) and transforms backend results into user-visible content.
+
+---
+
 ## Layer Definitions
 
 ### Entry Points (`entrypoints/`)
@@ -95,45 +127,54 @@ domain/
 
 ### 2. Application Layer (`application/`)
 
-**Responsibility**: Use cases, orchestration, and business logic. Coordinates domain objects to perform workbench operations.
+**Responsibility**: Stateless API endpoints (actions/queries) that coordinate domain objects to perform workbench operations. Like a backend API, it executes operations and returns results without storing state between calls.
 
 **Characteristics**:
-- Contains application services and actions (use cases)
-- Orchestrates flow between domain services
-- Handles transaction boundaries
+- Contains stateless actions (use cases)
+- Each action receives dependencies via constructor, executes, returns result
+- No state stored in the container between operations
 - Depends on domain layer only
 
 **Structure** (`freecad/diff_wb/application/`):
 ```
 application/
 ├── __init__.py
-├── actions/                       # Use cases / commands
+├── actions/                       # Use cases / commands (stateless)
 │   ├── commands/
-│   │   ├── take_snapshot.py      # TakeSnapshot use case
-│   │   └── compare_snapshots.py  # CompareSnapshots use case
+│   │   ├── take_snapshot.py      # TakeSnapshot action
+│   │   └── compare_snapshots.py  # CompareSnapshots action
 │   ├── queries/
 │   │   └── list_snapshots.py     # ListSnapshots query
 │   └── __init__.py
 ├── di/                            # Dependency injection
-│   ├── container.py              # ApplicationContainer
+│   ├── container.py              # ApplicationContainer (stateless factory)
 │   └── ports_factory.py          # Port creation
-├── presenters/                    # Application presenters
-│   └── presentation_models.py    # Result dataclasses
-└── ui/                            # UI components (moved from ui/)
-    ├── views/                     # Qt view implementations
-    ├── widgets/                   # Qt custom widgets
-    └── utils/                     # UI utilities
+└── presenters/                    # Application presenters
+    └── presentation_models.py    # Result dataclasses
 ```
+
+**Container as Stateless API Factory**:
+
+The `ApplicationContainer` acts as a factory for backend API endpoints. It wires dependencies once at startup and provides action access:
+
+```python
+# Container provides action access (like API router)
+container = get_container()
+result = container.take_snapshot_action.execute()  # Stateless call
+```
+
+The container does NOT hold state. Each action is stateless and reusable.
 
 ### 3. UI Layer (`ui/`)
 
-**Responsibility**: User interface widgets and presenters. Thin Qt views that wire user interactions to application controllers, with presenters transforming domain data into view calls.
+**Responsibility**: User interface components (presenters, views, UIState). Like a frontend application, it transforms backend API results into user-visible content and holds frontend-only state.
 
 **Characteristics**:
-- Contains only Qt widgets and UI files
-- No workbench logic - delegates to application layer
-- Presenters transform application results into view protocol calls
-- Depends on application layer for behavior
+- Contains presenters, view protocols, and Qt widgets
+- Holds UIState (frontend-only state like GitRepository)
+- Presenters transform application action results into view protocol calls
+- Views are Qt widgets that render the UI
+- Depends on application layer for behavior (executes actions)
 
 **Structure** (`freecad/diff_wb/ui/`):
 ```
@@ -141,8 +182,10 @@ ui/
 ├── __init__.py
 ├── presenters/                    # Presenters (transform data for views)
 │   ├── __init__.py
+│   ├── state.py                  # UIState - frontend state store
 │   ├── diff_presenter.py         # DiffPresenter - transforms DiffResult
-│   └── snapshot_presenter.py     # SnapshotPresenter - formats results
+│   ├── snapshot_presenter.py     # SnapshotPresenter - formats results
+│   └── git_repository_presenter.py # GitRepositoryPresenter
 ├── protocols/                     # View interfaces (ports)
 │   ├── diff_view.py              # DiffView protocol
 │   └── snapshot_view.py          # SnapshotView protocol
@@ -150,15 +193,27 @@ ui/
     └── diff_panel.py             # Qt widget (two-column diff view)
 ```
 
-**Structure** (`freecad/diff_wb/application/ui/`):
+**Frontend/Backend Flow**:
+
 ```
-application/ui/
-├── views/                         # Additional Qt views
-├── widgets/                       # Additional Qt widgets
-└── utils/                         # UI utilities
+UI Layer (Frontend)                 Application Layer (Backend API)
+─────────────────                   ─────────────────────────────
+Presenter                           Action (stateless)
+    │ execute()                         │
+    └──────────────────────────────────►│
+                                         │ use
+                                         ▼
+                                    Domain Layer
+                                         │
+                                    returns result
+                                         │
+UIState ◄── transform ──────────────────┘
+    │
+    ▼
+View Protocol ──► Qt Widget (rendered output)
 ```
 
-**Flow**: Application Action → Presenter → View Protocol → Qt Widget
+**UIState**: Holds frontend-only state (e.g., detected GitRepository). Created by the UI composer at startup, lives alongside presenters. Not accessible to domain or application layers.
 
 ### 4. Infrastructure Layer (`infrastructure/`)
 
@@ -194,20 +249,25 @@ infrastructure/
 │                    Entry Points                              │
 │              (workbench.py, commands.py)                     │
 └───────────────────────┬─────────────────────────────────────┘
-                        │ uses
-                        ▼
+                         │ uses
+                         ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                         UI Layer                             │
-│                    (Qt widgets, views, presenters)           │
+│  FRONTEND (UI Layer)                                        │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │ UIState (frontend state store)                      │    │
+│  │ Presenters (transform data)                         │    │
+│  │ Views (Qt widgets)                                  │    │
+│  └─────────────────────────────────────────────────────┘    │
 └───────────────────────┬─────────────────────────────────────┘
-                        │ uses
-                        ▼
+                         │ executes actions
+                         ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                    Application Layer                         │
-│       (actions)                                              │
+│  BACKEND API (Application Layer)                             │
+│  ApplicationContainer (stateless factory)                    │
+│  Actions (stateless use cases)                               │
 └───────────────────────┬─────────────────────────────────────┘
-                        │ uses
-                        ▼
+                         │ uses
+                         ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                      Domain Layer                            │
 │   (models, services, repository interfaces - workbench logic) │
@@ -218,8 +278,8 @@ infrastructure/
 │   domain/settings/   ← Settings workbench concepts          │
 │   domain/logging/    ← Logging interface                    │
 └───────────────────────┬─────────────────────────────────────┘
-                        │ depends on interfaces (ports)
-                        ▼
+                         │ depends on interfaces (ports)
+                         ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                   Infrastructure Layer                       │
 │    (adapters, implementations - external systems)            │
@@ -229,7 +289,7 @@ infrastructure/
 └─────────────────────────────────────────────────────────────┘
 ```
 
-**Key Rule**: Arrows point in the direction of dependencies. Inner layers have NO knowledge of outer layers.
+**Key Rule**: Arrows point in the direction of dependencies. Inner layers have NO knowledge of outer layers. UIState lives in the frontend (UI layer) only.
 
 ---
 
@@ -354,15 +414,17 @@ The Diff Workbench uses a hand-made IoC (Inversion of Control) container to wire
                          │
                          ▼
 ┌─────────────────────────────────────────────────────────────────────┐
-│ CONTAINER (application/di/container.py)                            │
-│   → Creates ports, wires actions/presenters                        │
+│ BACKEND API FACTORY (application/di/container.py)                  │
+│   → Stateless factory - creates actions and ports                  │
 │   → set_container()/get_container() for global access              │
+│   → Does NOT hold UIState (that lives in UI layer)                 │
 └────────────────────────┬────────────────────────────────────────────┘
                          │ injects into
                          ▼
 ┌─────────────────────────────────────────────────────────────────────┐
-│ APPLICATION LAYER (actions, queries)                               │
+│ APPLICATION LAYER (actions, queries) - BACKEND API                 │
 │   → Receives ports via constructor                                 │
+│   → Stateless - execute() returns result, no state stored          │
 │   → NEVER imports CTX, container, or port factories                │
 └────────────────────────┬────────────────────────────────────────────┘
                          │ uses
@@ -397,17 +459,27 @@ register_commands(container)
 
 ### Container Responsibilities
 
-The container (`application/di/container.py`) creates ports, wires actions/presenters, and provides `set_container()`/`get_container()` for global access. Logging goes through `utils.Log` (centralized), not container helpers.
+The container (`application/di/container.py`) is a stateless factory that creates ports and wires actions. It provides `set_container()`/`get_container()` for global access. Logging goes through `utils.Log` (centralized), not container helpers.
+
+**What the container does NOT do:**
+- Does NOT hold UIState (that belongs to the UI layer)
+- Does NOT store state between action executions
+- Does NOT create presenters directly (that happens in the UI composer)
+
+**What the container does:**
+- Creates infrastructure ports (FreeCAD API adapters)
+- Wires actions with their dependencies
+- Provides action access to entry points
 
 ### Layer Access Rules
 
-| Layer | Container | CTX | Port Factories | Logging |
-|-------|-----------|-----|----------------|---------|
-| **Domain** | ❌ | ❌ | ❌ | ✅ Log.*() |
-| **Application** | ❌ | ❌ | ❌ | ✅ Log.*() |
-| **UI** | ❌ | ❌ | ❌ | ✅ Log.*() |
-| **Infrastructure** | ✅ | ✅ | ✅ | ✅ Log.*() |
-| **Entry Points** | get_container() | ❌ | ❌ | ✅ Log.*() |
+| Layer | Container | CTX | Port Factories | Logging | UIState |
+|-------|-----------|-----|----------------|---------|---------|
+| **Domain** | ❌ | ❌ | ❌ | ✅ Log.*() | ❌ |
+| **Application** | ❌ | ❌ | ❌ | ✅ Log.*() | ❌ |
+| **UI** | ❌ | ❌ | ❌ | ✅ Log.*() | ✅ (created here) |
+| **Infrastructure** | ✅ | ✅ | ✅ | ✅ Log.*() | ❌ |
+| **Entry Points** | get_container() | ❌ | ❌ | ✅ Log.*() | ❌ |
 
 ### Consolidated Ports
 
@@ -537,7 +609,9 @@ Eventually, settings will be persisted via FreeCAD's Parameter system, readable/
 | **Domain** | Core workbench logic and concepts |
 | **Port** | Interface defined in domain layer (e.g., `SnapshotRepository`) |
 | **Adapter** | Implementation of a port in infrastructure layer (e.g., `InMemorySnapshotRepository`) |
-| **Use Case** | Application-level operation (e.g., "Compare Snapshots") |
+| **Use Case / Action** | Stateless application-level operation (e.g., "TakeSnapshot") that executes and returns a result |
 | **Entity** | Domain object with identity (e.g., `Snapshot`, `TreeNode`) |
 | **Value Object** | Immutable object defined by its attributes (e.g., `Property`, `Vector`) |
 | **Composition Root** | Location where dependencies are wired together (entrypoints) |
+| **UIState** | Frontend-only state store held in the UI layer (e.g., GitRepository), analogous to Redux/Pinia store |
+| **Presenter** | UI component that transforms domain/application data into view calls, analogous to React component |

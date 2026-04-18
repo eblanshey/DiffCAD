@@ -4,10 +4,6 @@ These tests verify that the DI container correctly wires all application
 layer dependencies together, including git repository detection components.
 """
 
-from typing import Any
-
-import pytest
-
 from freecad.diff_wb.application.actions.get_commits import GetCommitsAction
 from freecad.diff_wb.application.di.container import (
     ApplicationContainer,
@@ -15,10 +11,7 @@ from freecad.diff_wb.application.di.container import (
 )
 from freecad.diff_wb.domain.freecad_ports import FreeCadContext
 from freecad.diff_wb.domain.git.git_service import GitService
-from freecad.diff_wb.domain.snapshots.repository import InMemorySnapshotRepository
 from freecad.diff_wb.infrastructure.git.git_port_adapter import GitPortAdapter
-from freecad.diff_wb.ui.presenters.application_state import ApplicationState
-from tests.fakes import FakeDiffView, FakeSnapshotView
 
 
 class TestApplicationContainer:
@@ -28,52 +21,22 @@ class TestApplicationContainer:
         """All actions are instantiated by the container."""
         # Setup
         ctx = FreeCadContext(app=None)  # type: ignore
-        snapshot_repo = InMemorySnapshotRepository()
 
         # Execute
-        container = create_application_container(ctx, snapshot_repo)
+        container = create_application_container(ctx)
 
         # Verify
         assert container.take_snapshot_action is not None
         assert container.compare_snapshots_action is not None
         assert container.list_snapshots_action is not None
 
-    def test_container_creates_all_presenters(self) -> None:
-        """All presenters are instantiated by the container."""
-        # Setup
-        ctx = FreeCadContext(app=None)  # type: ignore
-        snapshot_repo = InMemorySnapshotRepository()
-
-        # Execute
-        container = create_application_container(ctx, snapshot_repo)
-
-        # Verify
-        assert container.snapshot_presenter is not None
-        # diff_presenter is None when no diff_view is provided
-        assert container.diff_presenter is None
-
-    def test_container_with_diff_view_creates_diff_presenter(self) -> None:
-        """Diff presenter is created when diff_view is provided."""
-        # Setup
-        ctx = FreeCadContext(app=None)  # type: ignore
-        snapshot_repo = InMemorySnapshotRepository()
-
-        fake_diff_view = FakeDiffView()
-
-        # Execute
-        container = create_application_container(ctx, snapshot_repo, fake_diff_view)
-
-        # Verify
-        assert container.diff_presenter is not None
-
     def test_container_wires_dependencies_correctly(self) -> None:
         """Actions have correct dependencies injected."""
         # Setup
         ctx = FreeCadContext(app=None)  # type: ignore
-        snapshot_repo = InMemorySnapshotRepository()
 
         # Execute
-        container = create_application_container(ctx, snapshot_repo)
+        container = create_application_container(ctx)
 
         # Verify TakeSnapshotAction dependencies
         take_action = container.take_snapshot_action
@@ -92,110 +55,16 @@ class TestApplicationContainer:
         list_action = container.list_snapshots_action
         assert hasattr(list_action, "_snapshot_repo")
 
-    def test_container_injects_view_into_presenters(self) -> None:
-        """Presenters receive views."""
-        _ctx = FreeCadContext(app=None)  # type: ignore  # Setup for context
-        _snapshot_repo = InMemorySnapshotRepository()  # Setup for snapshot repo
-
-        fake_snapshot_view = FakeSnapshotView()
-        fake_diff_view = FakeDiffView()
-
-        # We need to manually wire with fake views since the container uses None
-        # This test verifies that presenters can accept views
-        from freecad.diff_wb.ui.presenters.application_state import ApplicationState
-        from freecad.diff_wb.ui.presenters.diff_presenter import DiffPresenter
-        from freecad.diff_wb.ui.presenters.snapshot_presenter import SnapshotPresenter
-
-        snapshot_presenter = SnapshotPresenter(view=fake_snapshot_view)
-
-        # Create stub actions for DiffPresenter dependencies
-        class StubGetEligibleDocsAction:
-            def execute(self, *args: Any, **kwargs: Any) -> Any:
-                return type("Result", (), {"is_success": True, "data": []})()
-
-        class StubCreateWorkingSnapshotAction:
-            def execute(self, *args: Any, **kwargs: Any) -> Any:
-                return type("Result", (), {"is_success": True, "data": None})()
-
-        class StubCreateCommitSnapshotAction:
-            def execute(self, *args: Any, **kwargs: Any) -> Any:
-                return type("Result", (), {"is_success": True, "data": None})()
-
-        class StubCreateDiffAction:
-            def execute(self, *args: Any, **kwargs: Any) -> Any:
-                return type("Result", (), {"is_success": True, "data": None})()
-
-        application_state = ApplicationState(git_repository=None)
-        diff_presenter = DiffPresenter(
-            view=fake_diff_view,
-            application_state=application_state,
-            get_eligible_docs_action=StubGetEligibleDocsAction(),  # type: ignore[arg-type]
-            create_working_snapshot_action=StubCreateWorkingSnapshotAction(),  # type: ignore[arg-type]
-            create_commit_snapshot_action=StubCreateCommitSnapshotAction(),  # type: ignore[arg-type]
-            create_diff_action=StubCreateDiffAction(),  # type: ignore[arg-type]
-        )
-
-        # Verify
-        assert snapshot_presenter._view is fake_snapshot_view
-        assert diff_presenter._view is fake_diff_view
-
     def test_container_returns_application_container_instance(self) -> None:
         """Container returns an ApplicationContainer instance."""
         # Setup
         ctx = FreeCadContext(app=None)  # type: ignore
-        snapshot_repo = InMemorySnapshotRepository()
 
         # Execute
-        container = create_application_container(ctx, snapshot_repo)
+        container = create_application_container(ctx)
 
         # Verify
         assert isinstance(container, ApplicationContainer)
-
-    def test_container_accepts_snapshot_view_parameter(self) -> None:
-        """Container accepts snapshot_view parameter and passes it to SnapshotPresenter."""
-        # Setup
-        ctx = FreeCadContext(app=None)  # type: ignore
-        snapshot_repo = InMemorySnapshotRepository()
-
-        fake_view = FakeSnapshotView()
-
-        # Execute with snapshot_view parameter
-        container = create_application_container(
-            ctx,
-            snapshot_repo,
-            snapshot_view=fake_view,
-        )
-
-        # Verify presenter was created with our view
-        assert container.snapshot_presenter is not None
-        assert container.snapshot_presenter._view is fake_view
-
-    def test_container_wires_list_snapshots_action_to_presenter(self) -> None:
-        """Container wires list_snapshots_action to SnapshotPresenter."""
-        # Setup
-        ctx = FreeCadContext(app=None)  # type: ignore
-        snapshot_repo = InMemorySnapshotRepository()
-
-        fake_view = FakeSnapshotView()
-
-        # Execute
-        container = create_application_container(
-            ctx,
-            snapshot_repo,
-            snapshot_view=fake_view,
-        )
-
-        # Verify presenter has list_snapshots_action wired
-        assert container.snapshot_presenter._list_snapshots_action is not None
-
-        # Verify we can call load_snapshots without error
-        try:
-            container.snapshot_presenter.load_snapshots()
-        except RuntimeError as e:
-            pytest.fail(f"load_snapshots() raised RuntimeError: {e}")
-
-        # Verify empty repository shows 0 snapshots
-        assert len(fake_view.get_shown_snapshots()) == 0
 
 
 class TestGitRepositoryDetectionWiring:
@@ -205,10 +74,9 @@ class TestGitRepositoryDetectionWiring:
         """Container creates a GitPortAdapter instance."""
         # Setup
         ctx = FreeCadContext(app=None)  # type: ignore
-        snapshot_repo = InMemorySnapshotRepository()
 
         # Execute
-        container = create_application_container(ctx, snapshot_repo)
+        container = create_application_container(ctx)
 
         # Verify
         assert isinstance(container.git_port, GitPortAdapter)
@@ -217,10 +85,8 @@ class TestGitRepositoryDetectionWiring:
         """Container creates a GitService instance."""
         # Setup
         ctx = FreeCadContext(app=None)  # type: ignore
-        snapshot_repo = InMemorySnapshotRepository()
-
         # Execute
-        container = create_application_container(ctx, snapshot_repo)
+        container = create_application_container(ctx)
 
         # Verify
         assert isinstance(container.git_service, GitService)
@@ -229,48 +95,20 @@ class TestGitRepositoryDetectionWiring:
         """Container creates a FindActiveGitRepositoryAction instance."""
         # Setup
         ctx = FreeCadContext(app=None)  # type: ignore
-        snapshot_repo = InMemorySnapshotRepository()
-
         # Execute
-        container = create_application_container(ctx, snapshot_repo)
+        container = create_application_container(ctx)
 
         # Verify
         assert container.find_active_git_repository_action is not None
         assert hasattr(container.find_active_git_repository_action, "_freecad_port")
         assert hasattr(container.find_active_git_repository_action, "_git_service")
 
-    def test_container_creates_application_state(self) -> None:
-        """Container creates an ApplicationState instance."""
-        # Setup
-        ctx = FreeCadContext(app=None)  # type: ignore
-        snapshot_repo = InMemorySnapshotRepository()
-
-        # Execute
-        container = create_application_container(ctx, snapshot_repo)
-
-        # Verify
-        assert isinstance(container.application_state, ApplicationState)
-
-    def test_application_state_initialized_with_none_git_repository(self) -> None:
-        """ApplicationState is initialized with git_repository=None."""
-        # Setup
-        ctx = FreeCadContext(app=None)  # type: ignore
-        snapshot_repo = InMemorySnapshotRepository()
-
-        # Execute
-        container = create_application_container(ctx, snapshot_repo)
-
-        # Verify
-        assert container.application_state.git_repository is None
-
     def test_git_service_injected_with_git_port(self) -> None:
         """GitService receives the GitPort instance."""
         # Setup
         ctx = FreeCadContext(app=None)  # type: ignore
-        snapshot_repo = InMemorySnapshotRepository()
-
         # Execute
-        container = create_application_container(ctx, snapshot_repo)
+        container = create_application_container(ctx)
 
         # Verify - check that git_service has _git_port attribute
         assert hasattr(container.git_service, "_git_port")
@@ -280,10 +118,8 @@ class TestGitRepositoryDetectionWiring:
         """FindActiveGitRepositoryAction receives correct dependencies."""
         # Setup
         ctx = FreeCadContext(app=None)  # type: ignore
-        snapshot_repo = InMemorySnapshotRepository()
-
         # Execute
-        container = create_application_container(ctx, snapshot_repo)
+        container = create_application_container(ctx)
 
         # Verify
         action = container.find_active_git_repository_action
@@ -294,10 +130,8 @@ class TestGitRepositoryDetectionWiring:
         """All git-related components are properly wired together."""
         # Setup
         ctx = FreeCadContext(app=None)  # type: ignore
-        snapshot_repo = InMemorySnapshotRepository()
-
         # Execute
-        container = create_application_container(ctx, snapshot_repo)
+        container = create_application_container(ctx)
 
         # Verify the complete wiring chain:
         # GitPortAdapter -> GitService -> FindActiveGitRepositoryAction
@@ -307,10 +141,6 @@ class TestGitRepositoryDetectionWiring:
         assert container.find_active_git_repository_action._git_service is container.git_service
         assert container.find_active_git_repository_action._freecad_port is container._freecad_port
 
-        # Verify ApplicationState is created but not yet wired to any presenter
-        # (Presenter wiring happens in Phase 1.9 during UI integration)
-        assert isinstance(container.application_state, ApplicationState)
-
 
 class TestGetCommitsActionWiring:
     """Tests for GetCommitsAction wiring in the container."""
@@ -319,10 +149,8 @@ class TestGetCommitsActionWiring:
         """Container has get_commits_action attribute."""
         # Setup
         ctx = FreeCadContext(app=None)  # type: ignore
-        snapshot_repo = InMemorySnapshotRepository()
-
         # Execute
-        container = create_application_container(ctx, snapshot_repo)
+        container = create_application_container(ctx)
 
         # Verify
         assert hasattr(container, "get_commits_action")
@@ -332,10 +160,8 @@ class TestGetCommitsActionWiring:
         """GetCommitsAction is properly initialized with git_service."""
         # Setup
         ctx = FreeCadContext(app=None)  # type: ignore
-        snapshot_repo = InMemorySnapshotRepository()
-
         # Execute
-        container = create_application_container(ctx, snapshot_repo)
+        container = create_application_container(ctx)
 
         # Verify
         action = container.get_commits_action
@@ -347,10 +173,8 @@ class TestGetCommitsActionWiring:
         """GetCommitsAction can retrieve commits through the container."""
         # Setup - configure fake git port via git service's port
         ctx = FreeCadContext(app=None)  # type: ignore
-        snapshot_repo = InMemorySnapshotRepository()
-
         # Execute
-        container = create_application_container(ctx, snapshot_repo)
+        container = create_application_container(ctx)
 
         # Verify - call execute with a valid repo to verify action is wired correctly
         # The fake git port returns empty commits for any path

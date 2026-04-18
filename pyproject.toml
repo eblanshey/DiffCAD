@@ -53,6 +53,7 @@ strict_equality = true
 exclude = [
     '^freecad/diff_wb/init_gui\\.py$',
     '^freecad/diff_wb/entrypoints/.*\\.py$',
+    '^scripts/.*\\.py$',
 ]
 explicit_package_bases = true
 
@@ -89,6 +90,7 @@ disable_error_code = ["attr-defined", "no-any-return"]
 [tool.ruff]
 target-version = "py312"
 line-length = 120
+exclude = ["scripts"]
 
 [tool.ruff.format]
 docstring-code-format = true

@@ -35,10 +35,15 @@ class _TakeSnapshotCommand:
     def Activated(self) -> None:
         """FreeCAD calls this when user clicks toolbar button."""
         from .._container import get_container
+        from ..ui.registry import ui_registry
 
         container = get_container()
+
+        # Action from container (application layer)
         result = container.take_snapshot_action.execute()
-        container.snapshot_presenter.present_result(result)
+
+        # Presenter from UI registry (UI layer)
+        ui_registry.snapshot_presenter.present_result(result)
 
 
 class _CompareCommand:
@@ -61,21 +66,16 @@ class _CompareCommand:
         from PySide6.QtWidgets import QMessageBox  # pylint: disable=import-error
 
         from .._container import get_container
+        from ..ui.registry import ui_registry
 
         container = get_container()
-
-        # Get the diff panel view from FreeCADGui
-        # The view is accessed via the workbench's main window
         view = self._get_view()
+
         if view is None:
             QMessageBox.critical(None, "Error", "Diff panel view not found.")
             return
 
-        # Get selected snapshot IDs from the view
         selected_ids = view.get_selected_snapshot_ids()
-
-        # Validate: require at least 2 snapshots (use first 2 if more selected)
-        # Selection order: first selected = old/from, second selected = new/to
         if len(selected_ids) < 2:
             QMessageBox.warning(
                 None,
@@ -84,13 +84,15 @@ class _CompareCommand:
             )
             return
 
-        # Use only the first 2 if more than 2 are selected
-        old_id = selected_ids[0]
-        new_id = selected_ids[1]
+        old_id, new_id = selected_ids[0], selected_ids[1]
 
         result = container.compare_snapshots_action.execute(old_id, new_id)
-        if result.success and container.diff_presenter and result.diff_result is not None:
-            container.diff_presenter.present_diff(result.diff_result)
+
+        # Presenter from UI registry
+        if result.success:
+            diff_presenter = ui_registry.diff_presenter
+            if diff_presenter is not None and result.diff_result is not None:
+                diff_presenter.present_diff(result.diff_result)
 
     def _get_view(self) -> DiffPanelView | None:
         """Get the DiffPanelView from FreeCADGui.

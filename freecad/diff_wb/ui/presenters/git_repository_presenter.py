@@ -7,7 +7,7 @@ from freecad.diff_wb.application.actions.find_active_git_repository import (
 )
 from freecad.diff_wb.application.actions.get_commits import GetCommitsAction
 from freecad.diff_wb.domain.git.models import GitRepository
-from freecad.diff_wb.ui.presenters.application_state import ApplicationState
+from freecad.diff_wb.ui.state import UIState
 from freecad.diff_wb.ui.views.diff_panel_view import DiffPanelView
 from freecad.diff_wb.utils import Log
 
@@ -17,7 +17,7 @@ class GitRepositoryPresenter:
 
     This presenter is responsible for:
     1. Detecting the active git repository when the workbench is activated
-    2. Updating the application state with the detected repository
+    2. Updating the UI state with the detected repository
     3. Displaying the repository information in the view
     4. Loading and displaying commits for the repository
 
@@ -25,7 +25,7 @@ class GitRepositoryPresenter:
         _view: The DiffPanelView instance for displaying repository info.
         _find_git_repo_action: The action for finding the active git repository.
         _get_commits_action: The action for getting git commits.
-        _application_state: The application state holder for storing repository.
+        _ui_state: The UI state holder for storing repository.
     """
 
     def __init__(
@@ -33,7 +33,7 @@ class GitRepositoryPresenter:
         view: DiffPanelView,
         find_git_repo_action: FindActiveGitRepositoryAction,
         get_commits_action: GetCommitsAction,
-        application_state: ApplicationState,
+        ui_state: UIState,
     ) -> None:
         """Initialize the presenter with required dependencies.
 
@@ -41,12 +41,12 @@ class GitRepositoryPresenter:
             view: The DiffPanelView instance for displaying repository info.
             find_git_repo_action: The action for finding the active git repository.
             get_commits_action: The action for getting git commits.
-            application_state: The application state holder for storing repository.
+            ui_state: The UI state holder for storing repository.
         """
         self._view = view
         self._find_git_repo_action = find_git_repo_action
         self._get_commits_action = get_commits_action
-        self._application_state = application_state
+        self._ui_state = ui_state
         self._view.set_refresh_callback(self.on_refresh_clicked)
 
     def on_workbench_activated(self) -> None:
@@ -71,14 +71,14 @@ class GitRepositoryPresenter:
 
         if result.is_success:
             repo = result.data
-            self._application_state.git_repository = repo
+            self._ui_state.git_repository = repo
             self._view.show_repository(repo)
 
             # After detecting repository, load commits
             if repo is not None:
                 self._load_commits(repo)
         else:
-            self._application_state.git_repository = None
+            self._ui_state.git_repository = None
             self._view.show_repository(None)
             Log.warning(f"Git detection failed: {result.message}")
 

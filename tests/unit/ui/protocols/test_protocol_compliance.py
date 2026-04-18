@@ -202,5 +202,8 @@ class TestProtocolValidationUtility:
             def set_refresh_callback(self, callback: Callable[[], None]) -> None:
                 pass
 
+            def set_history_selection_callback(self, callback: Callable[[object], None]) -> None:
+                pass
+
         violations = validate_protocol_compliance(CompliantView, DiffView, raise_on_error=False)
         assert violations == [], f"Should have no violations, got: {violations}"

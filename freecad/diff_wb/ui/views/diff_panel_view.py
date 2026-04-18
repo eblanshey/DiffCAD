@@ -207,7 +207,7 @@ class DiffPanelView(QWidget):
     MODIFIED_COLOR = QColor(200, 200, 255)  # Light blue
     UNCHANGED_COLOR = QColor(240, 240, 240)  # Light gray (neutral)
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         QWidget.__init__(self, parent)
         self._on_history_selection_callback: Callable[[HistorySelection], None] | None = None
         self._on_refresh_callback: Callable[[], None] | None = None

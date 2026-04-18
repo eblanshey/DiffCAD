@@ -31,19 +31,19 @@ def mock_get_commits_action():
 
 
 @pytest.fixture
-def mock_application_state():
-    """Create a mock ApplicationState."""
+def mock_ui_state():
+    """Create a mock UIState."""
     return MagicMock()
 
 
 @pytest.fixture
-def presenter(mock_view, mock_find_action, mock_get_commits_action, mock_application_state):
+def presenter(mock_view, mock_find_action, mock_get_commits_action, mock_ui_state):
     """Create a GitRepositoryPresenter instance with mocked dependencies."""
     return GitRepositoryPresenter(
         view=mock_view,
         find_git_repo_action=mock_find_action,
         get_commits_action=mock_get_commits_action,
-        application_state=mock_application_state,
+        ui_state=mock_ui_state,
     )
 
 
@@ -55,7 +55,7 @@ class TestGitRepositoryPresenter:
         presenter,
         mock_view,
         mock_find_action,
-        mock_application_state,
+        mock_ui_state,
     ):
         """on_workbench_activated() updates state and view when detection succeeds."""
         # Arrange
@@ -70,7 +70,7 @@ class TestGitRepositoryPresenter:
 
         # Assert
         mock_find_action.execute.assert_called_once()
-        mock_application_state.git_repository = repo
+        mock_ui_state.git_repository = repo
         mock_view.show_repository.assert_called_once_with(repo)
 
     def test_on_workbench_activated_with_failed_detection(
@@ -78,7 +78,7 @@ class TestGitRepositoryPresenter:
         presenter,
         mock_view,
         mock_find_action,
-        mock_application_state,
+        mock_ui_state,
     ):
         """on_workbench_activated() sets state to None and shows no repo message on failure."""
         # Arrange
@@ -92,7 +92,7 @@ class TestGitRepositoryPresenter:
 
         # Assert
         mock_find_action.execute.assert_called_once()
-        mock_application_state.git_repository = None
+        mock_ui_state.git_repository = None
         mock_view.show_repository.assert_called_once_with(None)
 
     def test_on_workbench_activated_with_none_repository(
@@ -100,7 +100,7 @@ class TestGitRepositoryPresenter:
         presenter,
         mock_view,
         mock_find_action,
-        mock_application_state,
+        mock_ui_state,
     ):
         """on_workbench_activated() handles case where action returns None repository."""
         # Arrange
@@ -114,7 +114,7 @@ class TestGitRepositoryPresenter:
 
         # Assert
         mock_find_action.execute.assert_called_once()
-        mock_application_state.git_repository = None
+        mock_ui_state.git_repository = None
         mock_view.show_repository.assert_called_once_with(None)
 
     def test_presenter_initialization_stores_dependencies(
@@ -122,7 +122,7 @@ class TestGitRepositoryPresenter:
         mock_view,
         mock_find_action,
         mock_get_commits_action,
-        mock_application_state,
+        mock_ui_state,
     ):
         """Presenter stores all dependencies correctly on initialization."""
         # Act
@@ -130,21 +130,21 @@ class TestGitRepositoryPresenter:
             view=mock_view,
             find_git_repo_action=mock_find_action,
             get_commits_action=mock_get_commits_action,
-            application_state=mock_application_state,
+            ui_state=mock_ui_state,
         )
 
         # Assert
         assert presenter._view is mock_view
         assert presenter._find_git_repo_action is mock_find_action
         assert presenter._get_commits_action is mock_get_commits_action
-        assert presenter._application_state is mock_application_state
+        assert presenter._ui_state is mock_ui_state
 
     def test_on_refresh_clicked_with_successful_detection(
         self,
         presenter,
         mock_view,
         mock_find_action,
-        mock_application_state,
+        mock_ui_state,
     ):
         """on_refresh_clicked() updates state and view when detection succeeds."""
         # Arrange
@@ -159,7 +159,7 @@ class TestGitRepositoryPresenter:
 
         # Assert
         mock_find_action.execute.assert_called_once()
-        mock_application_state.git_repository = repo
+        mock_ui_state.git_repository = repo
         mock_view.show_repository.assert_called_once_with(repo)
 
     def test_on_refresh_clicked_with_failed_detection(
@@ -167,7 +167,7 @@ class TestGitRepositoryPresenter:
         presenter,
         mock_view,
         mock_find_action,
-        mock_application_state,
+        mock_ui_state,
     ):
         """on_refresh_clicked() sets state to None and shows no repo message on failure."""
         # Arrange
@@ -181,7 +181,7 @@ class TestGitRepositoryPresenter:
 
         # Assert
         mock_find_action.execute.assert_called_once()
-        mock_application_state.git_repository = None
+        mock_ui_state.git_repository = None
         mock_view.show_repository.assert_called_once_with(None)
 
     def test_on_refresh_clicked_with_none_repository(
@@ -189,7 +189,7 @@ class TestGitRepositoryPresenter:
         presenter,
         mock_view,
         mock_find_action,
-        mock_application_state,
+        mock_ui_state,
     ):
         """on_refresh_clicked() handles case where action returns None repository."""
         # Arrange
@@ -203,7 +203,7 @@ class TestGitRepositoryPresenter:
 
         # Assert
         mock_find_action.execute.assert_called_once()
-        mock_application_state.git_repository = None
+        mock_ui_state.git_repository = None
         mock_view.show_repository.assert_called_once_with(None)
 
     def test_presenter_initialization_registers_refresh_callback(
@@ -211,7 +211,7 @@ class TestGitRepositoryPresenter:
         mock_view,
         mock_find_action,
         mock_get_commits_action,
-        mock_application_state,
+        mock_ui_state,
     ):
         """Presenter registers its on_refresh_clicked method as the refresh callback on initialization."""
         # Act
@@ -219,7 +219,7 @@ class TestGitRepositoryPresenter:
             view=mock_view,
             find_git_repo_action=mock_find_action,
             get_commits_action=mock_get_commits_action,
-            application_state=mock_application_state,
+            ui_state=mock_ui_state,
         )
 
         # Assert
@@ -286,7 +286,7 @@ class TestCommitLoading:
         mock_view,
         mock_find_action,
         mock_get_commits_action,
-        mock_application_state,
+        mock_ui_state,
     ):
         """_detect_git_repository() loads commits after detecting repository."""
         # Arrange

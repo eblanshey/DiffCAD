@@ -13,9 +13,9 @@ from freecad.diff_wb.domain.diff.models import DiffHierarchy, DiffResult, DiffSt
 from freecad.diff_wb.domain.git.models import GitRepository
 from freecad.diff_wb.domain.snapshots import Snapshot
 from freecad.diff_wb.domain.tree import Property, PropertyType
-from freecad.diff_wb.ui.presenters.application_state import ApplicationState
 from freecad.diff_wb.ui.presenters.diff_presenter import DiffPresenter
 from freecad.diff_wb.ui.presenters.presentation_models import NodePresentation, PropertyPresentation
+from freecad.diff_wb.ui.state import UIState
 from freecad.diff_wb.ui.views.diff_panel_view import HistorySelection
 from tests.fakes.fake_diff_view import FakeDiffView
 
@@ -27,7 +27,7 @@ def _create_test_presenter() -> tuple[FakeDiffView, DiffPresenter]:
         Tuple of (FakeDiffView, DiffPresenter) for test setup.
     """
     view = FakeDiffView()
-    application_state = ApplicationState(git_repository=None)
+    ui_state = UIState(git_repository=None)
 
     # Create mock actions
     get_eligible_docs_action = MagicMock(spec=GetOpenEligibleDocumentsAction)
@@ -37,7 +37,7 @@ def _create_test_presenter() -> tuple[FakeDiffView, DiffPresenter]:
 
     presenter = DiffPresenter(
         view=view,
-        application_state=application_state,
+        ui_state=ui_state,
         get_eligible_docs_action=get_eligible_docs_action,
         create_working_snapshot_action=create_working_snapshot_action,
         create_commit_snapshot_action=create_commit_snapshot_action,
@@ -73,10 +73,10 @@ class TestDiffPresenterGitPath:
         # Act
         presenter.present_diff(diff_result)
 
-        # Assert
+        # Assert - first call is set_history_selection_callback (wired in constructor)
         calls = fake_view.get_calls()
-        assert calls[0]["method"] == "show_diff_tree"
-        assert calls[0]["git_path"] == "path/to/doc.FCStd"
+        assert calls[1]["method"] == "show_diff_tree"
+        assert calls[1]["git_path"] == "path/to/doc.FCStd"
 
     def test_present_diff_uses_document_name_when_git_path_empty(self) -> None:
         """Falls back to document_name when git_path is empty."""
@@ -102,17 +102,17 @@ class TestDiffPresenterGitPath:
         # Act
         presenter.present_diff(diff_result)
 
-        # Assert
+        # Assert - first call is set_history_selection_callback (wired in constructor)
         calls = fake_view.get_calls()
-        assert calls[0]["method"] == "show_diff_tree"
-        assert calls[0]["git_path"] == "MyDocument"
+        assert calls[1]["method"] == "show_diff_tree"
+        assert calls[1]["git_path"] == "MyDocument"
 
 
 class TestDiffPresenter:
     """Tests for DiffPresenter."""
 
     def test_present_diff_calls_view_methods(self) -> None:
-        """Calls show_diff_tree and show_summary on view."""
+        """Calls set_history_selection_callback in constructor, then show_diff_tree and show_summary."""
         # Arrange
         fake_view, presenter = _create_test_presenter()
         # Create a node with no property changes so it's UNCHANGED
@@ -127,11 +127,12 @@ class TestDiffPresenter:
         # Act
         presenter.present_diff(diff_result)
 
-        # Assert
-        assert fake_view.get_call_count() == 2
+        # Assert - 3 calls: set_history_selection_callback (constructor), show_diff_tree, show_summary
+        assert fake_view.get_call_count() == 3
         calls = fake_view.get_calls()
-        assert calls[0]["method"] == "show_diff_tree"
-        assert calls[1]["method"] == "show_summary"
+        assert calls[0]["method"] == "set_history_selection_callback"
+        assert calls[1]["method"] == "show_diff_tree"
+        assert calls[2]["method"] == "show_summary"
 
     def test_formats_node_diffs_correctly(self) -> None:
         """Transforms NodeDiff to NodePresentation correctly."""
@@ -153,9 +154,9 @@ class TestDiffPresenter:
         # Act
         presenter.present_diff(diff_result)
 
-        # Assert
+        # Assert - first call is set_history_selection_callback (constructor)
         calls = fake_view.get_calls()
-        nodes = calls[0]["nodes"]
+        nodes = calls[1]["nodes"]
         assert len(nodes) == 1
         presentation = nodes[0]
         assert isinstance(presentation, NodePresentation)
@@ -187,9 +188,9 @@ class TestDiffPresenter:
         # Act
         presenter.present_diff(diff_result)
 
-        # Assert
+        # Assert - first call is set_history_selection_callback (constructor)
         calls = fake_view.get_calls()
-        nodes = calls[0]["nodes"]
+        nodes = calls[1]["nodes"]
         presentation = nodes[0]
         assert presentation.has_changes is True
         assert presentation.state == DiffState.MODIFIED
@@ -207,14 +208,14 @@ class TestDiffPresenter:
         # Act
         presenter.present_diff(diff_result)
 
-        # Assert
+        # Assert - first call is set_history_selection_callback (constructor)
         calls = fake_view.get_calls()
-        assert calls[0]["method"] == "show_diff_tree"
-        assert calls[0]["nodes"] == []
-        assert calls[1]["method"] == "show_summary"
-        assert calls[1]["added"] == 0
-        assert calls[1]["deleted"] == 0
-        assert calls[1]["modified"] == 0
+        assert calls[1]["method"] == "show_diff_tree"
+        assert calls[1]["nodes"] == []
+        assert calls[2]["method"] == "show_summary"
+        assert calls[2]["added"] == 0
+        assert calls[2]["deleted"] == 0
+        assert calls[2]["modified"] == 0
 
     def test_calculates_summary_counts(self) -> None:
         """Calculates correct added/deleted/modified counts."""
@@ -252,9 +253,9 @@ class TestDiffPresenter:
         # Act
         presenter.present_diff(diff_result)
 
-        # Assert
+        # Assert - first call is set_history_selection_callback (constructor)
         calls = fake_view.get_calls()
-        summary_call = calls[1]
+        summary_call = calls[2]
         assert summary_call["added"] == 1
         assert summary_call["deleted"] == 1
         assert summary_call["modified"] == 1
@@ -297,9 +298,9 @@ class TestDiffPresenterFormatsChildren:
         # Act
         presenter.present_diff(diff_result)
 
-        # Assert
+        # Assert - first call is set_history_selection_callback (constructor)
         calls = fake_view.get_calls()
-        presentations = calls[0]["nodes"]
+        presentations = calls[1]["nodes"]
         assert len(presentations) == 1
 
         # Check parent presentation
@@ -350,9 +351,9 @@ class TestDiffPresenterFormatsChildren:
         # Act
         presenter.present_diff(diff_result)
 
-        # Assert
+        # Assert - first call is set_history_selection_callback (constructor)
         calls = fake_view.get_calls()
-        presentations = calls[0]["nodes"]
+        presentations = calls[1]["nodes"]
 
         # Root level
         assert len(presentations) == 1
@@ -406,9 +407,9 @@ class TestDiffPresenterFormatsChildren:
         # Act
         presenter.present_diff(diff_result)
 
-        # Assert
+        # Assert - first call is set_history_selection_callback (constructor)
         calls = fake_view.get_calls()
-        presentations = calls[0]["nodes"]
+        presentations = calls[1]["nodes"]
         assert len(presentations) == 1
         assert presentations[0].path == "Part/Leaf"
         assert presentations[0].children == []
@@ -780,7 +781,7 @@ class TestDiffPresenterWorkingTreeOrchestration:
 
         # Setup mock repo
         mock_repo = GitRepository(name="test-repo", absolute_path="/test/path")
-        presenter._application_state.git_repository = mock_repo  # type: ignore
+        presenter._ui_state.git_repository = mock_repo  # type: ignore
 
         # Setup mock action
         mock_docs_result = MagicMock()
@@ -803,7 +804,7 @@ class TestDiffPresenterWorkingTreeOrchestration:
 
         # Setup mock repo
         mock_repo = GitRepository(name="test-repo", absolute_path="/test/path")
-        presenter._application_state.git_repository = mock_repo  # type: ignore
+        presenter._ui_state.git_repository = mock_repo  # type: ignore
 
         # Setup mock documents
         mock_doc1 = MagicMock(spec=DocumentLike)
@@ -858,7 +859,7 @@ class TestDiffPresenterWorkingTreeOrchestration:
 
         # Setup mock repo
         mock_repo = GitRepository(name="test-repo", absolute_path="/test/path")
-        presenter._application_state.git_repository = mock_repo  # type: ignore
+        presenter._ui_state.git_repository = mock_repo  # type: ignore
 
         # Setup mock document
         mock_doc = MagicMock(spec=DocumentLike)
@@ -918,7 +919,7 @@ class TestDiffPresenterWorkingTreeOrchestration:
 
         # Setup mock repo
         mock_repo = GitRepository(name="test-repo", absolute_path="/test/path")
-        presenter._application_state.git_repository = mock_repo  # type: ignore
+        presenter._ui_state.git_repository = mock_repo  # type: ignore
 
         # Setup multiple documents
         mock_doc1 = MagicMock(spec=DocumentLike)
@@ -987,7 +988,7 @@ class TestDiffPresenterWorkingTreeOrchestration:
 
         # Setup mock repo
         mock_repo = GitRepository(name="test-repo", absolute_path="/test/path")
-        presenter._application_state.git_repository = mock_repo  # type: ignore
+        presenter._ui_state.git_repository = mock_repo  # type: ignore
 
         # Setup two documents
         mock_doc1 = MagicMock(spec=DocumentLike)

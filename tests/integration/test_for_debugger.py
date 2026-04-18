@@ -358,7 +358,7 @@ Part_MyPart (App::Part)
                                     # Some objects use 'name' instead of 'Name'
                                     child_names.append(child.name)
                             claim_children_map[name] = child_names
-                    except Exception as e:
+                    except (AttributeError, RuntimeError) as e:
                         print(f"  Warning: claimChildren failed for {name}: {e}")
 
             # Report GUI availability status

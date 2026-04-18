@@ -1,11 +1,13 @@
-"""File responsibility: Dependency injection container for application and UI layers.
+"""File responsibility: Dependency injection container for application layer.
 
-This module wires actions, presenters, and views together.
-It's the composition root for the application layer.
+This module wires actions and domain services together.
+It's the composition root for the application layer (backend).
+UI layer components are composed separately in the composer module.
+
+NO UI knowledge: no presenters, no views, no UIState.
 """
 
 from dataclasses import dataclass
-from typing import Any
 
 from ...domain.diff.engine import DiffEngine
 from ...domain.freecad_ports import AppPort, FreeCadContext, FreeCadPort
@@ -16,11 +18,6 @@ from ...domain.snapshots.repository import InMemorySnapshotRepository
 from ...infrastructure.freecad.ports import get_app_port, get_port
 from ...infrastructure.freecad.settings_repo import FreeCADSettingsRepository
 from ...infrastructure.git.git_port_adapter import GitPortAdapter
-from ...ui.presenters.application_state import ApplicationState
-from ...ui.presenters.diff_presenter import DiffPresenter
-from ...ui.presenters.snapshot_presenter import SnapshotPresenter
-from ...ui.protocols.diff_view import DiffView
-from ...ui.protocols.snapshot_view import SnapshotView
 from ..actions.commands.compare_snapshots import CompareSnapshotsAction
 from ..actions.commands.take_snapshot import TakeSnapshotAction
 from ..actions.create_diff import CreateDiffAction
@@ -32,30 +29,6 @@ from ..actions.get_open_eligible_documents import GetOpenEligibleDocumentsAction
 from ..actions.queries.list_snapshots import ListSnapshotsAction
 
 
-class NullSnapshotView(SnapshotView):
-    """Null object implementation of SnapshotView for use when no view is available.
-
-    This follows the Null Object pattern to avoid passing None to SnapshotPresenter,
-    which violates the type contract. All methods are no-ops.
-    """
-
-    def show_success(self, snapshot_name: str) -> None:
-        """Do nothing - null object pattern."""
-        pass
-
-    def show_error(self, error_message: str) -> None:
-        """Do nothing - null object pattern."""
-        pass
-
-    def show_loading(self, message: str | None = None) -> None:
-        """Do nothing - null object pattern."""
-        pass
-
-    def show_snapshots(self, snapshots: list[Any]) -> None:
-        """Do nothing - null object pattern."""
-        pass
-
-
 __all__ = [
     "ApplicationContainer",
     "create_application_container",
@@ -64,17 +37,22 @@ __all__ = [
 
 @dataclass
 class ApplicationContainer:
-    """Holds all wired application layer components.
+    """Holds all wired application layer dependencies ONLY.
 
-    The container also stores port instances and provides helper methods
-    for entry points to use without knowing about the port infrastructure.
+    This container is created at workbench Initialize() time,
+    BEFORE any GUI components exist. It contains only:
+    - Actions (application layer - API endpoint handlers)
+    - Domain services
+    - Ports/Repositories
+
+    NO UI knowledge: no presenters, no views, no UIState.
     """
 
     # Ports (infrastructure adapters)
     _freecad_port: FreeCadPort
     _app_port: AppPort
 
-    # Actions (application layer)
+    # Actions (application layer - pure orchestration, no UI)
     take_snapshot_action: TakeSnapshotAction
     compare_snapshots_action: CompareSnapshotsAction
     list_snapshots_action: ListSnapshotsAction
@@ -83,16 +61,12 @@ class ApplicationContainer:
     create_commit_snapshot_action: CreateDocumentSnapshotForCommitAction
     create_diff_action: CreateDiffAction
 
-    # Presenters (UI layer)
-    snapshot_presenter: SnapshotPresenter
-    diff_presenter: DiffPresenter | None
-
-    # Git repository detection components
+    # Git components (domain layer)
     git_port: GitPort
     git_service: GitService
     find_active_git_repository_action: FindActiveGitRepositoryAction
     get_commits_action: GetCommitsAction
-    application_state: ApplicationState
+    # NO ui_state - that's frontend state, not application state
 
     def log(self, message: str) -> None:
         """Log a message to the FreeCAD console.
@@ -121,32 +95,25 @@ class ApplicationContainer:
         return self._app_port.translate(context, text)
 
 
-def create_application_container(
-    ctx: FreeCadContext,
-    snapshot_repo: InMemorySnapshotRepository,
-    diff_view: DiffView | None = None,
-    snapshot_view: SnapshotView | None = None,
-    settings_repo: FreeCADSettingsRepository | None = None,
-) -> ApplicationContainer:
-    """Wire all application layer dependencies.
+def create_application_container(ctx: FreeCadContext) -> ApplicationContainer:
+    """Wire ONLY application layer dependencies.
+
+    No UI components are created here - this runs before GUI exists.
+    UIState is created by the composer later when GUI is available.
 
     Args:
         ctx: FreeCAD runtime context
-        snapshot_repo: Snapshot repository (created in init_gui.py)
-        diff_view: Optional view for diff display
-        snapshot_view: Optional view for snapshot display
-        settings_repo: Optional settings repository (uses FreeCADSettingsRepository if None)
 
     Returns:
-        ApplicationContainer with all wired components
+        ApplicationContainer with only application layer wired components
     """
     # Get infrastructure adapters
     freecad_port = get_port(ctx)
     app_port = get_app_port(ctx)
 
-    # Use provided settings_repo or create default
-    if settings_repo is None:
-        settings_repo = FreeCADSettingsRepository(ctx)
+    # Create domain components
+    snapshot_repo = InMemorySnapshotRepository()
+    settings_repo = FreeCADSettingsRepository(ctx)
 
     # Create domain services
     extractor = SnapshotExtractor()
@@ -190,27 +157,6 @@ def create_application_container(
     create_commit_snapshot_action = CreateDocumentSnapshotForCommitAction(git_service=git_service)
     create_diff_action = CreateDiffAction(diff_engine=diff_engine)
 
-    # Create presenters (UI layer - interface adapters)
-    snapshot_presenter = SnapshotPresenter(
-        view=snapshot_view or NullSnapshotView(),
-        list_snapshots_action=list_snapshots_action,
-    )
-
-    application_state = ApplicationState(git_repository=None)
-
-    # Create DiffPresenter with all dependencies if diff_view is available
-    if diff_view is not None:
-        diff_presenter = DiffPresenter(
-            view=diff_view,
-            application_state=application_state,
-            get_eligible_docs_action=get_open_eligible_docs_action,
-            create_working_snapshot_action=create_working_snapshot_action,
-            create_commit_snapshot_action=create_commit_snapshot_action,
-            create_diff_action=create_diff_action,
-        )
-    else:
-        diff_presenter = None
-
     return ApplicationContainer(
         _freecad_port=freecad_port,
         _app_port=app_port,
@@ -221,11 +167,8 @@ def create_application_container(
         create_working_snapshot_action=create_working_snapshot_action,
         create_commit_snapshot_action=create_commit_snapshot_action,
         create_diff_action=create_diff_action,
-        snapshot_presenter=snapshot_presenter,
-        diff_presenter=diff_presenter,
         git_port=git_port,
         git_service=git_service,
         find_active_git_repository_action=find_active_git_repository_action,
         get_commits_action=get_commits_action,
-        application_state=application_state,
     )

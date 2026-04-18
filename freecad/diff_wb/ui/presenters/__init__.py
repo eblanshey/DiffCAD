@@ -1,8 +1,12 @@
 """Module responsibility: Data presentation."""
 
-from .application_state import ApplicationState
+from ..state import UIState
 from .diff_presenter import DiffPresenter
 from .snapshot_presenter import SnapshotPresenter
 
 
-__all__ = ["SnapshotPresenter", "DiffPresenter", "ApplicationState"]
+# Backward compatibility alias - ApplicationState renamed to UIState
+ApplicationState = UIState
+
+
+__all__ = ["SnapshotPresenter", "DiffPresenter", "UIState", "ApplicationState"]

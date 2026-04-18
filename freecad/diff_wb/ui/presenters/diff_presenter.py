@@ -11,8 +11,8 @@ from ...domain.diff.models import DiffState, NodeDiff, PropertyDiff
 from ...domain.tree import Property
 from ...utils import Log
 from ..protocols.diff_view import DiffView
+from ..state import UIState
 from ..views.diff_panel_view import HistorySelection
-from .application_state import ApplicationState
 from .presentation_models import DiffTreePresentation, NodePresentation, PropertyPresentation
 
 
@@ -29,7 +29,7 @@ class DiffPresenter:
     def __init__(
         self,
         view: DiffView,
-        application_state: ApplicationState,
+        ui_state: UIState,
         get_eligible_docs_action: GetOpenEligibleDocumentsAction,
         create_working_snapshot_action: CreateDocumentSnapshotForWorkingTreeAction,
         create_commit_snapshot_action: CreateDocumentSnapshotForCommitAction,
@@ -39,14 +39,14 @@ class DiffPresenter:
 
         Args:
             view: DiffView implementation to display diff results
-            application_state: Application state holder containing git repository info
+            ui_state: UI state holder containing git repository info
             get_eligible_docs_action: Action to get eligible open documents
             create_working_snapshot_action: Action to create working tree snapshots
             create_commit_snapshot_action: Action to create commit snapshots (stub)
             create_diff_action: Action to compute diffs between snapshots
         """
         self._view = view
-        self._application_state = application_state
+        self._ui_state = ui_state
         self._get_eligible_docs = get_eligible_docs_action
         self._create_working_tree_snapshot = create_working_snapshot_action
         self._create_commit_snapshot = create_commit_snapshot_action
@@ -102,7 +102,7 @@ class DiffPresenter:
         2. Create diff against None (old snapshot)
         3. Collect results, logging warnings for failures
         """
-        repo = self._application_state.git_repository
+        repo = self._ui_state.git_repository
         if repo is None:
             Log.warning("No git repository detected")
             return

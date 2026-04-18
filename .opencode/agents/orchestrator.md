@@ -56,7 +56,7 @@ Note that the implementer automatically runs and fixes automated tests.
 ### STEP 2: Code Review (MANDATORY AFTER EVERY PHASE)
 **CRITICAL: You MUST run reviewer after every single phase. DO NOT skip this step.**
 
-After implementer confirms (tests already run by implementer), delegate to **reviewer** subagent with:
+After implementer confirms (tests already run by implementer), create a new sub-agent session and delegate to **reviewer** subagent with:
 - Task file path
 - Description of what was implemented
 - Request review against task requirements and architecture
@@ -121,6 +121,7 @@ After completion, confirm task is fully complete and inform user.
 3. **ALWAYS follow the sequence** - Do not skip steps or change order
 4. **ALWAYS wait for completion** - Do not proceed until subagent confirms
 5. **MANDATORY REVIEWER AFTER EVERY PHASE** - Never mark a phase complete without reviewer approval. This is NON-NEGOTIABLE.
+6. **Do NOT re-use agent session** - a subagent completes work, consider that session done. Future reviewers and implementers should start new sub-agent threads.
 6. **NEVER assume completion** - Verify through reviewer before marking phase done
 7. **ALWAYS update task file** - Check off items only after reviewer approval
 8. **STOP on loops** - Ask user for help after 5 failed fix attempts

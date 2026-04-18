@@ -12,9 +12,9 @@ from freecad.diff_wb.application.actions.get_open_eligible_documents import GetO
 from freecad.diff_wb.domain.diff.models import DiffHierarchy, DiffResult, DiffState, NodeDiff, PropertyDiff
 from freecad.diff_wb.domain.snapshots import Snapshot
 from freecad.diff_wb.domain.tree import Property, PropertyType
-from freecad.diff_wb.ui.presenters.application_state import ApplicationState
 from freecad.diff_wb.ui.presenters.diff_presenter import DiffPresenter
 from freecad.diff_wb.ui.presenters.presentation_models import PropertyPresentation
+from freecad.diff_wb.ui.state import UIState
 from tests.fakes.fake_diff_view import FakeDiffView
 
 
@@ -25,7 +25,7 @@ def _create_test_presenter() -> tuple[FakeDiffView, DiffPresenter]:
         Tuple of (FakeDiffView, DiffPresenter) for test setup.
     """
     view = FakeDiffView()
-    application_state = ApplicationState(git_repository=None)
+    ui_state = UIState(git_repository=None)
 
     # Create mock actions
     get_eligible_docs_action = MagicMock(spec=GetOpenEligibleDocumentsAction)
@@ -35,7 +35,7 @@ def _create_test_presenter() -> tuple[FakeDiffView, DiffPresenter]:
 
     presenter = DiffPresenter(
         view=view,
-        application_state=application_state,
+        ui_state=ui_state,
         get_eligible_docs_action=get_eligible_docs_action,
         create_working_snapshot_action=create_working_snapshot_action,
         create_commit_snapshot_action=create_commit_snapshot_action,

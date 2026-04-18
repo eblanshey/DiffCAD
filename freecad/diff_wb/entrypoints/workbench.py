@@ -51,7 +51,6 @@ if Gui is not None:
 
             from .._container import set_container
             from ..application.di.container import create_application_container
-            from ..domain.snapshots.repository import InMemorySnapshotRepository
             from ..entrypoints.commands import register_commands
             from ..infrastructure.freecad.logger import FreeCADLogger
             from ..infrastructure.freecad.ports import get_freecad_runtime_context
@@ -59,11 +58,8 @@ if Gui is not None:
             # Create runtime context
             ctx = get_freecad_runtime_context()
 
-            # Create snapshot repository
-            snapshot_repo = InMemorySnapshotRepository()
-
             # Create container (wires all actions/presenters)
-            container = create_application_container(ctx, snapshot_repo=snapshot_repo)
+            container = create_application_container(ctx)
 
             # Initialize global logger with FreeCAD logger
             set_logger(FreeCADLogger(container._freecad_port))
@@ -102,7 +98,7 @@ if Gui is not None:
             # Presenter reference is kept alive; cleaned up by _on_subwindow_closed if window closes
 
         def _create_diff_panel(self) -> None:
-            """Create the 3-column diff panel as an MDI subwindow."""
+            """Create UI components and register them."""
             if getMainWindow is None:
                 Log.warning("FreeCADGui not available")
                 return
@@ -111,11 +107,10 @@ if Gui is not None:
                 from PySide6.QtCore import Qt
                 from PySide6.QtWidgets import QMdiArea
 
-                from .._container import _container  # By now _container is set
-                from ..ui import DiffPanelView
-                from ..ui.presenters.snapshot_presenter import SnapshotPresenter
+                from .._container import _container
+                from ..ui.composer import compose_and_register_ui
 
-                # Get MDI area from FreeCAD's main window
+                # Get MDI area
                 main_window = getMainWindow()
                 mdi_area = main_window.findChild(QMdiArea)
 
@@ -123,60 +118,22 @@ if Gui is not None:
                     Log.warning("Could not get MDI area")
                     return
 
-                # Create panel
-                panel = DiffPanelView()
+                # Compose UI and register presenters globally
+                view = compose_and_register_ui(_container)
 
-                # Update container's snapshot_presenter to use the real DiffPanelView
-                # This fixes the bug where commands were using NullSnapshotView instead of the actual UI
-                _container.snapshot_presenter = SnapshotPresenter(
-                    view=panel,
-                    list_snapshots_action=_container.list_snapshots_action,
-                )
-
-                # Update container's diff_presenter to use the real DiffPanelView
-                # This fixes the bug where compare command couldn't display diff results
-                from ..ui.presenters.diff_presenter import DiffPresenter
-
-                _container.diff_presenter = DiffPresenter(view=panel)
-
-                # Connect tree selection to diff presenter
-                panel.tree_widget.itemClicked.connect(
-                    lambda item, col: _container.diff_presenter.on_node_selected(item.data(0, Qt.ItemDataRole.UserRole))
-                )
-
-                # Create and initialize git repository presenter
-                from ..ui.presenters.git_repository_presenter import GitRepositoryPresenter
-
-                git_repository_presenter = GitRepositoryPresenter(
-                    view=panel,
-                    find_git_repo_action=_container.find_active_git_repository_action,
-                    get_commits_action=_container.get_commits_action,
-                    application_state=_container.application_state,
-                )
-                git_repository_presenter.on_workbench_activated()
-
-                # Add as subwindow (QMdiSubWindow created automatically)
-                # Do NOT call setParent - let FreeCAD handle it
-                self._subwindow = mdi_area.addSubWindow(panel)
-
-                # Configure subwindow
+                # Add as MDI subwindow
+                self._subwindow = mdi_area.addSubWindow(view)
                 self._subwindow.setWindowTitle("Diff View")
-
-                # Set proper cleanup attribute
                 self._subwindow.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, True)
-
-                # Set a reasonable default size that doesn't interfere with other views
                 self._subwindow.resize(900, 600)
-
-                # Show normally (not maximized) to coexist with other MDI views
                 self._subwindow.show()
 
-                # Load snapshots after showing the panel
-                _container.snapshot_presenter.load_snapshots()
+                # Note: Snapshots are loaded automatically after creation via SnapshotPresenter.present_result()
+                # No need to load on panel creation - commits are shown by GitRepositoryPresenter instead
 
-                # Connect destroyed signal to reset reference when window is closed
-                # QMdiSubWindow inherits from QWidget which inherits from QObject
+                # Connect window close cleanup
                 self._subwindow.destroyed.connect(self._on_subwindow_closed)
+
             except Exception as e:
                 Log.exception(f"ERROR creating diff panel: {e} traceback: {traceback.format_exc()}")
 
