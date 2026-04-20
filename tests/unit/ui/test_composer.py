@@ -40,6 +40,7 @@ class TestComposeAndRegisterUiReturnsView:
         mock_container.stage_documents_action = MagicMock()
         mock_container.get_dirty_documents_action = MagicMock()
         mock_container.get_staged_file_paths_action = MagicMock()
+        mock_container.get_committed_file_paths_action = MagicMock()
         mock_container.find_active_git_repository_action = MagicMock()
         mock_container.get_commits_action = MagicMock()
 
@@ -70,6 +71,7 @@ class TestComposeCreatesUiState:
         mock_container.stage_documents_action = MagicMock()
         mock_container.get_dirty_documents_action = MagicMock()
         mock_container.get_staged_file_paths_action = MagicMock()
+        mock_container.get_committed_file_paths_action = MagicMock()
         mock_container.find_active_git_repository_action = MagicMock()
         mock_container.get_commits_action = MagicMock()
 
@@ -100,6 +102,8 @@ class TestComposerRegistersSnapshotPresenter:
         mock_container.stage_documents_action = MagicMock()
         mock_container.get_dirty_documents_action = MagicMock()
         mock_container.get_staged_file_paths_action = MagicMock()
+        mock_container.get_committed_file_paths_action = MagicMock()
+        mock_container.get_committed_file_paths_action = MagicMock()
         mock_container.find_active_git_repository_action = MagicMock()
         mock_container.get_commits_action = MagicMock()
         return mock_container
@@ -150,6 +154,7 @@ class TestComposerRegistersDiffPresenter:
         mock_container.stage_documents_action = MagicMock()
         mock_container.get_dirty_documents_action = MagicMock()
         mock_container.get_staged_file_paths_action = MagicMock()
+        mock_container.get_committed_file_paths_action = MagicMock()
         mock_container.find_active_git_repository_action = MagicMock()
         mock_container.get_commits_action = MagicMock()
         return mock_container
@@ -200,6 +205,7 @@ class TestComposerRegistersDiffPresenter:
             assert "stage_documents_action" in call_args.kwargs
             assert "get_dirty_documents_action" in call_args.kwargs
             assert "get_staged_file_paths_action" in call_args.kwargs
+            assert "get_committed_file_paths_action" in call_args.kwargs
 
 
 class TestComposerConnectsTreeWidgetCallback:
@@ -216,6 +222,7 @@ class TestComposerConnectsTreeWidgetCallback:
         mock_container.stage_documents_action = MagicMock()
         mock_container.get_dirty_documents_action = MagicMock()
         mock_container.get_staged_file_paths_action = MagicMock()
+        mock_container.get_committed_file_paths_action = MagicMock()
         mock_container.find_active_git_repository_action = MagicMock()
         mock_container.get_commits_action = MagicMock()
         return mock_container
@@ -278,6 +285,7 @@ class TestComposerInitializesGitRepositoryPresenter:
         mock_container.stage_documents_action = MagicMock()
         mock_container.get_dirty_documents_action = MagicMock()
         mock_container.get_staged_file_paths_action = MagicMock()
+        mock_container.get_committed_file_paths_action = MagicMock()
         mock_container.find_active_git_repository_action = MagicMock()
         mock_container.get_commits_action = MagicMock()
         return mock_container
@@ -358,6 +366,7 @@ class TestComposerWiresAllDependencies:
         mock_container.stage_documents_action = MagicMock()
         mock_container.get_dirty_documents_action = MagicMock()
         mock_container.get_staged_file_paths_action = MagicMock()
+        mock_container.get_committed_file_paths_action = MagicMock()
         mock_container.find_active_git_repository_action = MagicMock()
         mock_container.get_commits_action = MagicMock()
         return mock_container
@@ -401,6 +410,10 @@ class TestComposerWiresAllDependencies:
             assert (
                 MockDiffPresenter.call_args.kwargs["get_staged_file_paths_action"]
                 == mock_container.get_staged_file_paths_action
+            )
+            assert (
+                MockDiffPresenter.call_args.kwargs["get_committed_file_paths_action"]
+                == mock_container.get_committed_file_paths_action
             )
 
             # GitRepositoryPresenter gets its actions

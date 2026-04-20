@@ -26,6 +26,7 @@ from ..actions.create_document_snapshot_commit import CreateDocumentSnapshotForC
 from ..actions.create_document_snapshot_working import CreateDocumentSnapshotForWorkingTreeAction
 from ..actions.find_active_git_repository import FindActiveGitRepositoryAction
 from ..actions.get_commits import GetCommitsAction
+from ..actions.get_committed_file_paths import GetCommittedFilePathsAction
 from ..actions.get_dirty_documents import GetDirtyDocumentsAction
 from ..actions.get_open_eligible_documents import GetOpenEligibleDocumentsAction
 from ..actions.get_staged_file_paths import GetStagedFilePathsAction
@@ -67,6 +68,7 @@ class ApplicationContainer:
     stage_documents_action: StageDocumentsAction
     get_dirty_documents_action: GetDirtyDocumentsAction
     get_staged_file_paths_action: GetStagedFilePathsAction
+    get_committed_file_paths_action: GetCommittedFilePathsAction
     commit_staging_action: CommitStagingAction
 
     # Git components (domain layer)
@@ -167,6 +169,7 @@ def create_application_container(ctx: FreeCadContext) -> ApplicationContainer:
     stage_documents_action = StageDocumentsAction(git_service=git_service)
     get_dirty_documents_action = GetDirtyDocumentsAction(git_service=git_service)
     get_staged_file_paths_action = GetStagedFilePathsAction(git_service=git_service)
+    get_committed_file_paths_action = GetCommittedFilePathsAction(git_service=git_service)
     commit_staging_action = CommitStagingAction(git_service=git_service)
 
     return ApplicationContainer(
@@ -182,6 +185,7 @@ def create_application_container(ctx: FreeCadContext) -> ApplicationContainer:
         stage_documents_action=stage_documents_action,
         get_dirty_documents_action=get_dirty_documents_action,
         get_staged_file_paths_action=get_staged_file_paths_action,
+        get_committed_file_paths_action=get_committed_file_paths_action,
         commit_staging_action=commit_staging_action,
         git_port=git_port,
         git_service=git_service,

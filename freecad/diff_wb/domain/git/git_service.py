@@ -2,7 +2,9 @@
 # File responsibility: This module provides the GitService class which combines
 # GitPort interface with GitRepository model creation. It is responsible for
 # providing a convenient method to get GitRepository objects from file or
-# directory paths using dependency injection. It has no external dependencies.
+# directory paths using dependency injection, including commit listing, file
+# staging, committed file queries, and commit creation. It has no external
+# dependencies.
 """Git domain service."""
 
 import os
@@ -160,3 +162,15 @@ class GitService:
             True if commit succeeded, False otherwise.
         """
         return self._git_port.commit(repo.absolute_path, message)
+
+    def get_committed_files(self, repo: GitRepository, commit: str) -> list[str]:
+        """Get list of FCStd file paths changed in a specific commit.
+
+        Args:
+            repo: GitRepository to check.
+            commit: Commit reference (hash, "HEAD", "HEAD~1", etc.)
+
+        Returns:
+            List of relative paths (from git root) of .FCStd files changed in the commit.
+        """
+        return self._git_port.get_committed_files(repo.absolute_path, commit)

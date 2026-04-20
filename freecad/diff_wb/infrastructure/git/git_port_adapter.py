@@ -1,9 +1,8 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
 # File responsibility: This module provides the GitPortAdapter class that implements
 # the GitPort protocol using git CLI via subprocess. It handles git repository
-# detection by running 'git rev-parse --show-toplevel' and returning the root path
-# or None if the path is not in a git repository. It also retrieves recent commits
-# using 'git log' with proper parsing of commit data.
+# detection, commit listing, file staging, commit creation, and committed file path
+# queries. All git operations use subprocess with proper error handling.
 """GitPort adapter implementation using git CLI."""
 
 import os
@@ -425,3 +424,36 @@ class GitPortAdapter(GitPort):
         except (NotADirectoryError, OSError) as e:
             Log.warning(f"Git error: {e}")
             return False
+
+    def get_committed_files(self, git_root: str, commit: str) -> list[str]:
+        """Get FCStd file paths changed in a specific commit using git diff-tree.
+
+        Uses `git diff-tree --root --no-commit-id --name-only -r <commit>` to list
+        all files changed in the given commit. The `--root` flag ensures root commits
+        also return their files. Results are filtered to only include .FCStd files.
+
+        Args:
+            git_root: Absolute path to git repository root.
+            commit: Commit reference (hash, "HEAD", "HEAD~1", etc.)
+
+        Returns:
+            List of relative paths (from git root) of .FCStd files changed in the commit.
+            Empty list if no FCStd files changed or error occurred.
+        """
+        try:
+            result = subprocess.run(
+                # --root: include root commits (diff against empty tree)
+                # --no-commit-id: suppress the commit hash output line
+                # --name-only: show only file paths, no diffs
+                # -r: recurse into subdirectories
+                ["git", "diff-tree", "--root", "--no-commit-id", "--name-only", "-r", commit],
+                cwd=git_root,
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
+            if result.returncode != 0:
+                return []
+            return [line for line in result.stdout.strip().split("\n") if line and line.endswith(".FCStd")]
+        except (subprocess.TimeoutExpired, FileNotFoundError, NotADirectoryError, OSError):
+            return []

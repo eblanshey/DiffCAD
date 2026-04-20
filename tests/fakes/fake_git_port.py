@@ -23,6 +23,7 @@ class FakeGitPort:
         _staged_paths: List of staged paths for get_staged_paths.
         _file_contents: Mapping of (commit, git_path) to file contents.
         _last_commit_call: Tuple of (git_root, message) from the last commit() call, or None.
+        _committed_files: Mapping of (git_root, commit) tuples to lists of FCStd file paths.
     """
 
     def __init__(self, fail_stage: bool = False, fail_commit: bool = False) -> None:
@@ -46,6 +47,8 @@ class FakeGitPort:
         self._file_contents: dict[tuple[str | None, str], str] = {}
         # Tracks the last commit() call for argument verification
         self._last_commit_call: tuple[str, str] | None = None
+        # Maps (git_root, commit) tuples to lists of FCStd file paths
+        self._committed_files: dict[tuple[str, str], list[str]] = {}
 
     def add_git_repo(self, root_path: str) -> None:
         """Add a simulated git repository root.
@@ -268,3 +271,26 @@ class FakeGitPort:
         """
         self._last_commit_call = (git_root, message)
         return not self._fail_commit
+
+    def set_committed_files(self, root_path: str, commit: str, paths: list[str]) -> None:
+        """Set committed file paths for a specific commit in a repo.
+
+        Args:
+            root_path: The absolute path to the git repository root.
+            commit: The commit reference (hash, "HEAD", etc.).
+            paths: List of relative FCStd file paths changed in the commit.
+        """
+        self._committed_files[(root_path, commit)] = paths
+
+    def get_committed_files(self, git_root: str, commit: str) -> list[str]:
+        """Get FCStd file paths changed in a specific commit.
+
+        Args:
+            git_root: Absolute path to git repository root.
+            commit: Commit reference (hash, "HEAD", "HEAD~1", etc.)
+
+        Returns:
+            List of relative paths (from git root) of .FCStd files changed in the commit.
+            Empty list if no FCStd files changed or not configured.
+        """
+        return self._committed_files.get((git_root, commit), [])

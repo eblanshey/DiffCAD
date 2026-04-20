@@ -8,6 +8,7 @@ from freecad.diff_wb.application.actions.create_document_snapshot_commit import 
 from freecad.diff_wb.application.actions.create_document_snapshot_working import (
     CreateDocumentSnapshotForWorkingTreeAction,
 )
+from freecad.diff_wb.application.actions.get_committed_file_paths import GetCommittedFilePathsAction
 from freecad.diff_wb.application.actions.get_dirty_documents import GetDirtyDocumentsAction
 from freecad.diff_wb.application.actions.get_open_eligible_documents import GetOpenEligibleDocumentsAction
 from freecad.diff_wb.application.actions.get_staged_file_paths import GetStagedFilePathsAction
@@ -40,6 +41,7 @@ def _create_test_presenter() -> tuple[FakeDiffView, DiffPresenter]:
     stage_documents_action = MagicMock(spec=StageDocumentsAction)
     get_dirty_documents_action = MagicMock(spec=GetDirtyDocumentsAction)
     get_staged_file_paths_action = MagicMock(spec=GetStagedFilePathsAction)
+    get_committed_file_paths_action = MagicMock(spec=GetCommittedFilePathsAction)
 
     presenter = DiffPresenter(
         view=view,
@@ -51,6 +53,7 @@ def _create_test_presenter() -> tuple[FakeDiffView, DiffPresenter]:
         stage_documents_action=stage_documents_action,
         get_dirty_documents_action=get_dirty_documents_action,
         get_staged_file_paths_action=get_staged_file_paths_action,
+        get_committed_file_paths_action=get_committed_file_paths_action,
     )
     return view, presenter
 

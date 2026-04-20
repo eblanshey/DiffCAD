@@ -5,6 +5,7 @@ from typing import Any
 from ...application.actions.create_diff import CreateDiffAction
 from ...application.actions.create_document_snapshot_commit import CreateDocumentSnapshotForCommitAction
 from ...application.actions.create_document_snapshot_working import CreateDocumentSnapshotForWorkingTreeAction
+from ...application.actions.get_committed_file_paths import GetCommittedFilePathsAction
 from ...application.actions.get_dirty_documents import GetDirtyDocumentsAction
 from ...application.actions.get_open_eligible_documents import GetOpenEligibleDocumentsAction
 from ...application.actions.get_staged_file_paths import GetStagedFilePathsAction
@@ -41,6 +42,7 @@ class DiffPresenter:
         stage_documents_action: StageDocumentsAction,
         get_dirty_documents_action: GetDirtyDocumentsAction,
         get_staged_file_paths_action: GetStagedFilePathsAction,
+        get_committed_file_paths_action: GetCommittedFilePathsAction,
     ) -> None:
         """Initialize with required dependencies.
 
@@ -54,6 +56,7 @@ class DiffPresenter:
             stage_documents_action: Action to stage documents to git
             get_dirty_documents_action: Action to get dirty document paths
             get_staged_file_paths_action: Action to get staged file paths
+            get_committed_file_paths_action: Action to get committed file paths
         """
         self._view = view
         self._ui_state = ui_state
@@ -64,6 +67,7 @@ class DiffPresenter:
         self._stage_documents = stage_documents_action
         self._get_dirty_documents = get_dirty_documents_action
         self._get_staged_file_paths = get_staged_file_paths_action
+        self._get_committed_file_paths = get_committed_file_paths_action
         self._diff_results_by_path: dict[str, DiffResult] = {}
 
         # Wire up the callback for history selection
@@ -272,9 +276,83 @@ class DiffPresenter:
             Log.warning(f"Failed to compute diff for {git_path}: {diff_result.message}")
             return None, False
 
+    def _compute_commit_diffs(self, repo: GitRepository, commit_hash: str) -> tuple[list[DiffResult], list[str]]:
+        """Compute diffs for files changed in a commit vs its parent.
+
+        For each FCStd file changed between the commit and its parent:
+        1. Extract snapshots from both commits
+        2. Compute diff between snapshots
+        3. Track paths where parent snapshot is missing
+
+        Args:
+            repo: GitRepository containing the documents.
+            commit_hash: The commit hash to compute diffs for.
+
+        Returns:
+            Tuple of (list of DiffResult, list of paths with missing parent snapshots).
+        """
+        all_diff_results: list[DiffResult] = []
+        missing_snapshot_paths: list[str] = []
+
+        commit_result = self._get_committed_file_paths.execute(repo, commit_hash)
+        parent_result = self._get_committed_file_paths.execute(repo, commit_hash + "^")
+
+        commit_paths = set(commit_result.data) if commit_result.is_success else set()
+        parent_paths = set(parent_result.data) if parent_result.is_success else set()
+        all_paths = commit_paths | parent_paths
+
+        for git_path in all_paths:
+            commit_snap_result = self._create_commit_snapshot.execute(repo, commit_hash, git_path)
+            parent_snap_result = self._create_commit_snapshot.execute(repo, commit_hash + "^", git_path)
+
+            commit_snapshot = commit_snap_result.data if commit_snap_result.is_success else None
+            parent_snapshot = parent_snap_result.data if parent_snap_result.is_success else None
+
+            if commit_snapshot is not None and parent_snapshot is not None:
+                # Both snapshots exist - compute diff
+                diff_result = self._create_diff.execute(parent_snapshot, commit_snapshot)
+                if diff_result.is_success and diff_result.data is not None:
+                    all_diff_results.append(diff_result.data)
+            elif commit_snapshot is not None and parent_snapshot is None:
+                # Parent snapshot missing (extraction failed, no YAML, etc.) - show with warning
+                diff_result = self._create_diff.execute(None, commit_snapshot)
+                if diff_result.is_success and diff_result.data is not None:
+                    all_diff_results.append(diff_result.data)
+                missing_snapshot_paths.append(git_path)
+            # Skip cases where commit_snapshot is None (no data to compare)
+
+        return all_diff_results, missing_snapshot_paths
+
     def _on_commit_selected(self, commit_hash: str | None) -> None:
-        """Handle commit item selection. STUB: For now, does nothing."""
-        pass
+        """Handle commit item selection.
+
+        Delegates per-file diff computation to _compute_commit_diffs(),
+        then stores results and presents them to the view.
+        """
+        if commit_hash is None:
+            Log.warning("Commit selection received without commit hash")
+            return
+
+        repo = self._ui_state.git_repository
+        if repo is None:
+            Log.warning("No git repository detected")
+            return
+
+        # Compute diffs for all changed files (extracted for testability)
+        all_diff_results, missing_paths = self._compute_commit_diffs(repo, commit_hash)
+
+        # Store diff results keyed by git_path for later use
+        self._diff_results_by_path.clear()
+        for result in all_diff_results:
+            git_path = result.new_snapshot.git_path
+            if git_path:
+                self._diff_results_by_path[git_path] = result
+
+        if all_diff_results or missing_paths:
+            self.present_diffs(all_diff_results, set(), missing_paths)
+        else:
+            Log.info(f"No FCStd files changed in commit {commit_hash}")
+            self._view.show_diff_trees([])
 
     def on_add_button_clicked(self, git_path: str) -> None:
         """Handle '+ Stage' button click for staging.

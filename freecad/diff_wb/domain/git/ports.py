@@ -2,7 +2,9 @@
 # File responsibility: This module defines the GitPort protocol interface for git
 # repository operations. It provides a contract for git port implementations that
 # can be used by the domain layer without coupling to specific implementations.
-# The protocol has no external dependencies beyond the standard library.
+# The protocol supports repository detection, commit listing, file staging, commit
+# creation, and committed file path queries. The protocol has no external dependencies
+# beyond the standard library.
 """Git domain ports (protocol interfaces)."""
 
 from typing import Protocol
@@ -136,5 +138,18 @@ class GitPort(Protocol):
 
         Returns:
             True if commit succeeded, False otherwise.
+        """
+        ...
+
+    def get_committed_files(self, git_root: str, commit: str) -> list[str]:
+        """Get list of FCStd file paths changed in a specific commit.
+
+        Args:
+            git_root: Absolute path to git repository root.
+            commit: Commit reference (hash, "HEAD", "HEAD~1", etc.)
+
+        Returns:
+            List of relative paths (from git root) of .FCStd files changed in the commit.
+            Empty list if no FCStd files changed or error occurred.
         """
         ...

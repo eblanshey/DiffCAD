@@ -70,7 +70,8 @@ After implementer confirms (tests already run by implementer), create a new sub-
 ### STEP 3: Complete Phase
 After reviewer approval:
 1. Update task file: mark all checklist items in current phase as `- [x]`
-2. Check if more incomplete phases exist
+2. Do NOT remove code snippets or details, for historical reasons
+3. Check if more incomplete phases exist
    - If YES → Set next phase as current phase, return to STEP 1
    - If NO → Proceed to STEP 4 (Final Validation)
 
