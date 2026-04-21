@@ -56,6 +56,9 @@ class FreeCadPortAdapter:
     def get_object(self, doc: DocumentLike, name: str) -> object | None:
         return doc.getObject(name)
 
+    def save_document(self, doc: DocumentLike) -> None:
+        doc.save()
+
     def try_recompute_active_document(self) -> None:
         doc = self._ctx.app.ActiveDocument
         if doc is not None:

@@ -40,6 +40,11 @@ class FakeFreeCadPort(FreeCadPort):
         self._call_log.append(f"get_object:{name}")
         return None
 
+    def save_document(self, doc: DocumentLike) -> None:
+        """Call save on the provided document."""
+        self._call_log.append("save_document")
+        doc.save()
+
     def try_recompute_active_document(self) -> None:
         """Log the call (not actually recomputing)."""
         self._call_log.append("try_recompute_active_document")

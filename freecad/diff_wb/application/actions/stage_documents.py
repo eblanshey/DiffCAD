@@ -7,6 +7,7 @@
 
 import os
 
+from ...domain.freecad_ports import DocumentLike, FreeCadPort
 from ...domain.git.git_service import GitService
 from ...domain.git.models import GitRepository
 from ...domain.snapshots import get_snapshot_yaml_path_for_document
@@ -22,8 +23,23 @@ __all__ = ["StageDocumentsAction"]
 class StageDocumentsAction:
     """Stage documents to git by persisting snapshots and running git add."""
 
-    def __init__(self, git_service: GitService) -> None:
+    def __init__(self, git_service: GitService, freecad_port: FreeCadPort) -> None:
         self._git_service = git_service
+        self._freecad_port = freecad_port
+
+    def _get_open_docs_by_git_path(self, repo: GitRepository) -> dict[str, DocumentLike]:
+        """Return eligible open FreeCAD documents keyed by repository git path."""
+        all_open_docs = self._freecad_port.get_all_open_documents()
+        eligible_docs = self._git_service.get_eligible_docs(repo, list(all_open_docs))
+
+        docs_by_git_path: dict[str, DocumentLike] = {}
+        for doc in eligible_docs:
+            doc_path = getattr(doc, "FileName", "")
+            if not doc_path:
+                continue
+            git_path = os.path.relpath(doc_path, repo.absolute_path)
+            docs_by_git_path[git_path] = doc
+        return docs_by_git_path
 
     def execute(self, repo: GitRepository, snapshots: list[Snapshot]) -> Result:
         """Stage documents by persisting snapshots and adding to git.
@@ -45,12 +61,22 @@ class StageDocumentsAction:
             return Result.success(True)
 
         all_paths_to_stage: list[str] = []
+        docs_by_git_path = self._get_open_docs_by_git_path(repo)
 
         for snapshot in snapshots:
             git_path = snapshot.git_path
             if not git_path:
                 Log.warning(f"Snapshot has no git_path, cannot stage: {snapshot.document_name}")
                 continue
+
+            matching_doc = docs_by_git_path.get(git_path)
+            if matching_doc is not None:
+                try:
+                    self._freecad_port.save_document(matching_doc)
+                    Log.info(f"Saved open document before staging: {git_path}")
+                except Exception as e:
+                    Log.exception(f"Failed to save open document before staging {git_path}: {e}")
+                    return Result.failure(f"Failed to save document before staging: {e}")
 
             # Get the yaml path (relative to git_path) and make it absolute
             yaml_path_relative = get_snapshot_yaml_path_for_document(git_path)

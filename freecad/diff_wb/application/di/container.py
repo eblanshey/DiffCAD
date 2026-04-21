@@ -166,7 +166,7 @@ def create_application_container(ctx: FreeCadContext) -> ApplicationContainer:
     )
     create_commit_snapshot_action = CreateDocumentSnapshotForCommitAction(git_service=git_service)
     create_diff_action = CreateDiffAction(diff_engine=diff_engine)
-    stage_documents_action = StageDocumentsAction(git_service=git_service)
+    stage_documents_action = StageDocumentsAction(git_service=git_service, freecad_port=freecad_port)
     get_dirty_documents_action = GetDirtyDocumentsAction(git_service=git_service)
     get_staged_file_paths_action = GetStagedFilePathsAction(git_service=git_service)
     get_committed_file_paths_action = GetCommittedFilePathsAction(git_service=git_service)

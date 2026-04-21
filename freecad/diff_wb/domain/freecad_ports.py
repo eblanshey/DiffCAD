@@ -32,6 +32,7 @@ class DocumentLike(Protocol):
 
     def getObject(self, name: str) -> object | None: ...
     def recompute(self) -> None: ...
+    def save(self) -> None: ...
 
 
 class QtModule(Protocol):
@@ -91,6 +92,10 @@ class FreeCadPort(Protocol):
 
     def get_object(self, doc: DocumentLike, name: str) -> object | None:
         """Get a document object by name."""
+        ...
+
+    def save_document(self, doc: DocumentLike) -> None:
+        """Persist an open document to disk."""
         ...
 
     def try_recompute_active_document(self) -> None:

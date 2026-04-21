@@ -8,6 +8,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from freecad.diff_wb.application.actions.stage_documents import StageDocumentsAction
+from freecad.diff_wb.domain.freecad_ports import FreeCadPort
 from freecad.diff_wb.domain.git.git_service import GitService
 from freecad.diff_wb.domain.git.models import GitRepository
 from freecad.diff_wb.domain.snapshots.models import Snapshot
@@ -20,7 +21,8 @@ class TestStageDocumentsActionEmptyList:
         """Test that execute returns Result.success(True) immediately for empty list (no-op)."""
         # Given an empty list of snapshots
         git_service = MagicMock(spec=GitService)
-        action = StageDocumentsAction(git_service=git_service)
+        freecad_port = MagicMock(spec=FreeCadPort)
+        action = StageDocumentsAction(git_service=git_service, freecad_port=freecad_port)
         repo = GitRepository(name="test_repo", absolute_path="/tmp/test_repo")
 
         # When execute is called with empty snapshots
@@ -41,7 +43,10 @@ class TestStageDocumentsActionSnapshotYaml:
         """Test that SnapshotYamlSerializer.to_yaml is called with correct path."""
         # Given a mock GitService that returns correct snapshot directory
         git_service = MagicMock(spec=GitService)
-        action = StageDocumentsAction(git_service=git_service)
+        freecad_port = MagicMock(spec=FreeCadPort)
+        freecad_port.get_all_open_documents.return_value = []
+        git_service.get_eligible_docs.return_value = []
+        action = StageDocumentsAction(git_service=git_service, freecad_port=freecad_port)
         repo = GitRepository(name="test_repo", absolute_path="/tmp/test_repo")
 
         # Create a test snapshot
@@ -72,7 +77,10 @@ class TestStageDocumentsActionStaging:
         # Given snapshots with git_path "path/to/mydoc.FCStd"
         git_service = MagicMock(spec=GitService)
         git_service.stage_files.return_value = True
-        action = StageDocumentsAction(git_service=git_service)
+        freecad_port = MagicMock(spec=FreeCadPort)
+        freecad_port.get_all_open_documents.return_value = []
+        git_service.get_eligible_docs.return_value = []
+        action = StageDocumentsAction(git_service=git_service, freecad_port=freecad_port)
         repo = GitRepository(name="test_repo", absolute_path="/tmp/test_repo")
 
         snapshot = Snapshot(
@@ -101,7 +109,10 @@ class TestStageDocumentsActionStaging:
         # Given two snapshots
         git_service = MagicMock(spec=GitService)
         git_service.stage_files.return_value = True
-        action = StageDocumentsAction(git_service=git_service)
+        freecad_port = MagicMock(spec=FreeCadPort)
+        freecad_port.get_all_open_documents.return_value = []
+        git_service.get_eligible_docs.return_value = []
+        action = StageDocumentsAction(git_service=git_service, freecad_port=freecad_port)
         repo = GitRepository(name="test_repo", absolute_path="/tmp/test_repo")
 
         snapshot1 = Snapshot(
@@ -137,6 +148,36 @@ class TestStageDocumentsActionStaging:
             git_service.stage_files.assert_called_once_with(repo, expected_paths)
             assert result.is_success is True
 
+    def test_stage_documents_saves_matching_open_document_before_staging(self) -> None:
+        """Test that open document is saved before snapshot YAML and git add."""
+        git_service = MagicMock(spec=GitService)
+        git_service.stage_files.return_value = True
+        freecad_port = MagicMock(spec=FreeCadPort)
+
+        mock_doc = MagicMock()
+        mock_doc.FileName = "/tmp/test_repo/path/to/mydoc.FCStd"
+        freecad_port.get_all_open_documents.return_value = [mock_doc]
+        git_service.get_eligible_docs.return_value = [mock_doc]
+
+        action = StageDocumentsAction(git_service=git_service, freecad_port=freecad_port)
+        repo = GitRepository(name="test_repo", absolute_path="/tmp/test_repo")
+        snapshot = Snapshot(
+            snapshot_id="test-uuid-123",
+            document_name="MyDocument",
+            timestamp=None,  # type: ignore
+            nodes=[],
+            git_path="path/to/mydoc.FCStd",
+        )
+
+        with (
+            patch("freecad.diff_wb.application.actions.stage_documents.SnapshotYamlSerializer"),
+            patch("pathlib.Path.mkdir"),
+        ):
+            result = action.execute(repo, [snapshot])
+
+        assert result.is_success is True
+        freecad_port.save_document.assert_called_once_with(mock_doc)
+
 
 class TestStageDocumentsActionSuccess:
     """Tests for success scenarios."""
@@ -146,7 +187,10 @@ class TestStageDocumentsActionSuccess:
         # Given all operations succeed
         git_service = MagicMock(spec=GitService)
         git_service.stage_files.return_value = True
-        action = StageDocumentsAction(git_service=git_service)
+        freecad_port = MagicMock(spec=FreeCadPort)
+        freecad_port.get_all_open_documents.return_value = []
+        git_service.get_eligible_docs.return_value = []
+        action = StageDocumentsAction(git_service=git_service, freecad_port=freecad_port)
         repo = GitRepository(name="test_repo", absolute_path="/tmp/test_repo")
 
         snapshot = Snapshot(
@@ -178,7 +222,10 @@ class TestStageDocumentsActionFailure:
         """Test that Result.failure is returned when SnapshotYamlSerializer.to_yaml raises."""
         # Given SnapshotYamlSerializer.to_yaml raises
         git_service = MagicMock(spec=GitService)
-        action = StageDocumentsAction(git_service=git_service)
+        freecad_port = MagicMock(spec=FreeCadPort)
+        freecad_port.get_all_open_documents.return_value = []
+        git_service.get_eligible_docs.return_value = []
+        action = StageDocumentsAction(git_service=git_service, freecad_port=freecad_port)
         repo = GitRepository(name="test_repo", absolute_path="/tmp/test_repo")
 
         snapshot = Snapshot(
@@ -202,11 +249,42 @@ class TestStageDocumentsActionFailure:
             # And git_service.stage_files was never called
             git_service.stage_files.assert_not_called()
 
+    def test_stage_documents_returns_failure_on_save_error(self) -> None:
+        """Test that Result.failure is returned when save_document raises."""
+        git_service = MagicMock(spec=GitService)
+        freecad_port = MagicMock(spec=FreeCadPort)
+
+        mock_doc = MagicMock()
+        mock_doc.FileName = "/tmp/test_repo/mydoc.FCStd"
+        freecad_port.get_all_open_documents.return_value = [mock_doc]
+        git_service.get_eligible_docs.return_value = [mock_doc]
+        freecad_port.save_document.side_effect = Exception("save failed")
+
+        action = StageDocumentsAction(git_service=git_service, freecad_port=freecad_port)
+        repo = GitRepository(name="test_repo", absolute_path="/tmp/test_repo")
+        snapshot = Snapshot(
+            snapshot_id="test-uuid",
+            document_name="MyDocument",
+            timestamp=None,  # type: ignore
+            nodes=[],
+            git_path="mydoc.FCStd",
+        )
+
+        result = action.execute(repo, [snapshot])
+
+        assert result.is_success is False
+        assert result.message is not None
+        assert "Failed to save document before staging" in result.message
+        git_service.stage_files.assert_not_called()
+
     def test_stage_documents_returns_failure_on_directory_creation_error(self) -> None:
         """Test that Result.failure is returned when snapshot directory creation fails."""
         # Given snapshot directory creation fails
         git_service = MagicMock(spec=GitService)
-        action = StageDocumentsAction(git_service=git_service)
+        freecad_port = MagicMock(spec=FreeCadPort)
+        freecad_port.get_all_open_documents.return_value = []
+        git_service.get_eligible_docs.return_value = []
+        action = StageDocumentsAction(git_service=git_service, freecad_port=freecad_port)
         repo = GitRepository(name="test_repo", absolute_path="/tmp/test_repo")
 
         snapshot = Snapshot(
@@ -234,7 +312,10 @@ class TestStageDocumentsActionFailure:
         # Given git staging fails
         git_service = MagicMock(spec=GitService)
         git_service.stage_files.return_value = False
-        action = StageDocumentsAction(git_service=git_service)
+        freecad_port = MagicMock(spec=FreeCadPort)
+        freecad_port.get_all_open_documents.return_value = []
+        git_service.get_eligible_docs.return_value = []
+        action = StageDocumentsAction(git_service=git_service, freecad_port=freecad_port)
         repo = GitRepository(name="test_repo", absolute_path="/tmp/test_repo")
 
         snapshot = Snapshot(
@@ -262,7 +343,10 @@ class TestStageDocumentsActionFailure:
         # Given a snapshot with no git_path
         git_service = MagicMock(spec=GitService)
         git_service.stage_files.return_value = True
-        action = StageDocumentsAction(git_service=git_service)
+        freecad_port = MagicMock(spec=FreeCadPort)
+        freecad_port.get_all_open_documents.return_value = []
+        git_service.get_eligible_docs.return_value = []
+        action = StageDocumentsAction(git_service=git_service, freecad_port=freecad_port)
         repo = GitRepository(name="test_repo", absolute_path="/tmp/test_repo")
 
         snapshot = Snapshot(
