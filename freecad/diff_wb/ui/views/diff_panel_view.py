@@ -1,13 +1,14 @@
 """File responsibility: Diff panel view with 3-column layout, implementing DiffView and SnapshotView protocols."""
 
 from collections.abc import Callable
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 
 from PySide6.QtCore import QCoreApplication, QSize, Qt
 from PySide6.QtGui import QBrush, QColor, QIcon
 from PySide6.QtWidgets import (
     QAbstractItemView,
+    QFrame,
     QHBoxLayout,
     QHeaderView,
     QLabel,
@@ -170,6 +171,63 @@ class _PropertyValueDelegate(QStyledItemDelegate):
         editor.setGeometry(option.rect)  # type: ignore[attr-defined]
 
 
+class _HistoryListItemWidget(QWidget):
+    """Styled widget used for history list items."""
+
+    def __init__(
+        self,
+        *,
+        left_text: str = "",
+        center_text: str = "",
+        right_text: str = "",
+        bottom_text: str = "",
+        is_bottom_bold: bool = False,
+        centered_text: str | None = None,
+    ) -> None:
+        QWidget.__init__(self)
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(8, 8, 8, 0)
+        layout.setSpacing(6)
+
+        if centered_text is not None:
+            centered_label = QLabel(centered_text)
+            centered_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            layout.addWidget(centered_label)
+        else:
+            top_row = QHBoxLayout()
+            top_row.setContentsMargins(0, 0, 0, 0)
+            top_row.setSpacing(8)
+
+            left_label = QLabel(left_text)
+            left_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+            left_label.setStyleSheet("font-weight: 700;")
+
+            center_label = QLabel(center_text)
+            center_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+            right_label = QLabel(right_text)
+            right_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+
+            top_row.addWidget(left_label, 1)
+            top_row.addWidget(center_label, 1)
+            top_row.addWidget(right_label, 1)
+            layout.addLayout(top_row)
+
+            bottom_label = QLabel(bottom_text)
+            bottom_label.setWordWrap(True)
+            bottom_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+            if is_bottom_bold:
+                bottom_label.setStyleSheet("font-weight: 700;")
+            layout.addWidget(bottom_label)
+
+        separator = QFrame()
+        separator.setFrameShape(QFrame.Shape.NoFrame)
+        separator.setFixedHeight(1)
+        separator.setStyleSheet("background-color: black;")
+        layout.addWidget(separator)
+
+
 class DiffPanelView(QWidget):
     """3-column diff panel view implementing DiffView and SnapshotView protocols.
 
@@ -222,6 +280,7 @@ class DiffPanelView(QWidget):
         self.history_list.setMinimumWidth(150)
         self.history_list.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.history_list.setWordWrap(True)  # Enable text wrapping for long messages
+        self.history_list.setSpacing(0)
         history_placeholder = QLabel(HISTORY_LABEL)
         history_placeholder.setAlignment(Qt.AlignmentFlag.AlignLeft)
         # Repository info label (shown above history list)
@@ -382,6 +441,12 @@ class DiffPanelView(QWidget):
             HistorySelection(item_kind="WORKING_TREE", commit_hash=None),
         )
         self.history_list.addItem(working_tree_item)
+        self.history_list.setItemWidget(
+            working_tree_item,
+            _HistoryListItemWidget(centered_text="Working Tree"),
+        )
+        working_tree_item.setText("")
+        working_tree_item.setSizeHint(self.history_list.itemWidget(working_tree_item).sizeHint())
 
         # Add "Staging" item
         staging_item = QListWidgetItem("Staging")
@@ -391,6 +456,9 @@ class DiffPanelView(QWidget):
             HistorySelection(item_kind="STAGING", commit_hash=None),
         )
         self.history_list.addItem(staging_item)
+        self.history_list.setItemWidget(staging_item, _HistoryListItemWidget(centered_text="Staging"))
+        staging_item.setText("")
+        staging_item.setSizeHint(self.history_list.itemWidget(staging_item).sizeHint())
 
         # Guard: no commits to display after adding special items
         if not commits:
@@ -407,7 +475,7 @@ class DiffPanelView(QWidget):
             short_hash = commit.id[:7] if len(commit.id) >= 7 else commit.id
 
             # Format line 1: hash, author, timestamp
-            timestamp_str = commit.timestamp.strftime("%Y-%m-%d %H:%M")
+            timestamp_str = self._format_commit_timestamp(commit.timestamp)
 
             # Get first line of message for line 2
             first_line = commit.message.split("\n")[0].strip() if commit.message and commit.message.strip() else ""
@@ -432,6 +500,15 @@ class DiffPanelView(QWidget):
 
             # Add to list
             self.history_list.addItem(item)
+            item.setText("")
+            commit_widget = _HistoryListItemWidget(
+                left_text=short_hash,
+                center_text=commit.author,
+                right_text=timestamp_str,
+                bottom_text=first_line,
+            )
+            self.history_list.setItemWidget(item, commit_widget)
+            item.setSizeHint(commit_widget.sizeHint())
 
         # Restore previous selection if possible; otherwise default to Working Tree.
         self._restore_history_selection(previous_selection)
@@ -546,6 +623,38 @@ class DiffPanelView(QWidget):
         """
         dt = datetime.fromisoformat(iso_string)
         return dt.strftime("%b %d, %Y %I:%M%p").replace(" 0", " ")
+
+    def _format_commit_timestamp(self, timestamp: datetime) -> str:
+        """Format commit timestamp in a human-friendly way.
+
+        Rules:
+        - Today: show only time (e.g., "2:45 PM")
+        - Yesterday: show "Yesterday <time>"
+        - This year: show "Mon D <time>"
+        - Older years: show "Mon D, YYYY <time>"
+
+        Args:
+            timestamp: Commit datetime to format.
+
+        Returns:
+            Human-friendly timestamp string for commit rows.
+        """
+        local_timestamp = timestamp.astimezone() if timestamp.tzinfo is not None else timestamp
+        now = datetime.now(local_timestamp.tzinfo) if local_timestamp.tzinfo is not None else datetime.now()
+
+        def _time(dt: datetime) -> str:
+            return dt.strftime("%I:%M %p").lstrip("0")
+
+        if local_timestamp.date() == now.date():
+            return _time(local_timestamp)
+
+        if local_timestamp.date() == (now - timedelta(days=1)).date():
+            return f"Yesterday {_time(local_timestamp)}"
+
+        if local_timestamp.year == now.year:
+            return local_timestamp.strftime("%b %d ").replace(" 0", " ") + _time(local_timestamp)
+
+        return local_timestamp.strftime("%b %d, %Y ").replace(" 0", " ") + _time(local_timestamp)
 
     def show_success(self, snapshot_name: str) -> None:
         """Notify view of successful snapshot creation.

@@ -10,11 +10,29 @@ Tests for special items (Working Tree, Staging) verify their presence, alignment
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
 from freecad.diff_wb.ui.views.diff_panel_view import HistorySelection
+
+
+def _history_row_text(panel, row: int) -> str:  # type: ignore[no-untyped-def]
+    """Return visible text for a history row, including custom item widgets."""
+    from PySide6.QtWidgets import QLabel
+
+    item = panel.history_list.item(row)
+    widget = panel.history_list.itemWidget(item)
+    if widget is None:
+        return item.text()
+
+    labels = widget.findChildren(QLabel)
+    if len(labels) == 1:
+        return labels[0].text()
+    if len(labels) >= 4:
+        top_line = f"{labels[0].text()} {labels[1].text()} {labels[2].text()}"
+        return f"{top_line}\n{labels[3].text()}"
+    return item.text()
 
 
 class TestHistorySelection:
@@ -371,17 +389,17 @@ class TestShowCommitsSpecialItems:
         # Verify Working Tree is first
         working_tree_item = panel.history_list.item(0)
         assert working_tree_item is not None
-        assert working_tree_item.text() == "Working Tree"
+        assert _history_row_text(panel, 0) == "Working Tree"
 
         # Verify Staging is second
         staging_item = panel.history_list.item(1)
         assert staging_item is not None
-        assert staging_item.text() == "Staging"
+        assert _history_row_text(panel, 1) == "Staging"
 
         # Verify commit is third
         commit_item = panel.history_list.item(2)
         assert commit_item is not None
-        assert "a1b2c3d" in commit_item.text()
+        assert "a1b2c3d" in _history_row_text(panel, 2)
 
     def test_show_commits_shows_special_items_even_with_empty_commits(self, panel) -> None:  # type: ignore[no-untyped-def]
         """Test that Working Tree and Staging items are present even when no commits are provided."""
@@ -393,12 +411,12 @@ class TestShowCommitsSpecialItems:
         # Verify Working Tree is first
         working_tree_item = panel.history_list.item(0)
         assert working_tree_item is not None
-        assert working_tree_item.text() == "Working Tree"
+        assert _history_row_text(panel, 0) == "Working Tree"
 
         # Verify Staging is second
         staging_item = panel.history_list.item(1)
         assert staging_item is not None
-        assert staging_item.text() == "Staging"
+        assert _history_row_text(panel, 1) == "Staging"
 
     def test_show_commits_working_tree_has_center_alignment(self, panel) -> None:  # type: ignore[no-untyped-def]
         """Test that Working Tree item has center alignment set."""
@@ -494,8 +512,8 @@ class TestShowCommitsSpecialItems:
         ]
         panel.show_commits(commits1)
         assert panel.history_list.count() == 3
-        assert panel.history_list.item(0).text() == "Working Tree"
-        assert panel.history_list.item(1).text() == "Staging"
+        assert _history_row_text(panel, 0) == "Working Tree"
+        assert _history_row_text(panel, 1) == "Staging"
 
         # Second call with different commits
         commits2 = [
@@ -516,10 +534,10 @@ class TestShowCommitsSpecialItems:
 
         # Verify special items are still at top
         assert panel.history_list.count() == 4  # 2 special + 2 commits
-        assert panel.history_list.item(0).text() == "Working Tree"
-        assert panel.history_list.item(1).text() == "Staging"
-        assert "Second commit" in panel.history_list.item(2).text()
-        assert "Third commit" in panel.history_list.item(3).text()
+        assert _history_row_text(panel, 0) == "Working Tree"
+        assert _history_row_text(panel, 1) == "Staging"
+        assert "Second commit" in _history_row_text(panel, 2)
+        assert "Third commit" in _history_row_text(panel, 3)
 
 
 class TestShowCommits:
@@ -543,18 +561,17 @@ class TestShowCommits:
         # Verify there are 3 items total (Working Tree, Staging, and the commit)
         assert panel.history_list.count() == 3
         # Verify the commit is at position 2 (after special items)
-        item = panel.history_list.item(2)
-        assert "a1b2c3d" in item.text()  # 7-char hash
-        assert "John Doe" in item.text()  # Author
-        assert "2024-01-15" in item.text()  # Date
+        assert "a1b2c3d" in _history_row_text(panel, 2)  # 7-char hash
+        assert "John Doe" in _history_row_text(panel, 2)  # Author
+        assert panel._format_commit_timestamp(commits[0].timestamp) in _history_row_text(panel, 2)
 
     def test_show_commits_empty_list(self, panel) -> None:  # type: ignore[no-untyped-def]
         """Test that empty commit list shows only special items."""
         panel.show_commits([])
         # Special items (Working Tree, Staging) are always present
         assert panel.history_list.count() == 2
-        assert panel.history_list.item(0).text() == "Working Tree"
-        assert panel.history_list.item(1).text() == "Staging"
+        assert _history_row_text(panel, 0) == "Working Tree"
+        assert _history_row_text(panel, 1) == "Staging"
 
     def test_show_commits_tooltip_has_full_message(self, panel) -> None:  # type: ignore[no-untyped-def]
         """Test that tooltip contains full commit message."""
@@ -599,8 +616,8 @@ class TestShowCommits:
 
         # List should now contain special items + commit (not snapshots)
         assert panel.history_list.count() == 3
-        assert panel.history_list.item(0).text() == "Working Tree"
-        assert panel.history_list.item(1).text() == "Staging"
+        assert _history_row_text(panel, 0) == "Working Tree"
+        assert _history_row_text(panel, 1) == "Staging"
 
     def test_show_commits_two_line_format(self, panel) -> None:  # type: ignore[no-untyped-def]
         """Test that commits display with two-line format."""
@@ -615,8 +632,7 @@ class TestShowCommits:
 
         panel.show_commits([commit])
         # Commit is at row 2 (after special items)
-        item = panel.history_list.item(2)
-        text = item.text()
+        text = _history_row_text(panel, 2)
 
         # Check that there's a newline in the display text (two lines)
         assert "\n" in text
@@ -625,9 +641,76 @@ class TestShowCommits:
         assert len(lines) == 2
         assert "abc123d" in lines[0]  # 7-char hash
         assert "Alice Smith" in lines[0]  # Author
-        assert "2024-03-20" in lines[0]  # Date
+        assert panel._format_commit_timestamp(commit.timestamp) in lines[0]
         # Line 2 should have first line of message
         assert "This is the subject line" in lines[1]
+
+    def test_show_commits_commit_item_widget_has_aligned_top_row_and_bold_hash(self, panel) -> None:  # type: ignore[no-untyped-def]
+        """Commit row uses left/center/right top alignment and bold hash text."""
+        from PySide6.QtCore import Qt
+        from PySide6.QtWidgets import QLabel
+
+        from freecad.diff_wb.domain.git.models import GitCommit
+
+        commit = GitCommit(
+            id="abc123def456",
+            message="Subject line",
+            author="Alice Smith",
+            timestamp=datetime.fromisoformat("2024-03-20T14:45:00+00:00"),
+        )
+
+        panel.show_commits([commit])
+
+        item = panel.history_list.item(2)
+        widget = panel.history_list.itemWidget(item)
+        assert widget is not None
+
+        labels = widget.findChildren(QLabel)
+        hash_label = next(label for label in labels if label.text() == "abc123d")
+        author_label = next(label for label in labels if label.text() == "Alice Smith")
+        timestamp_label = next(
+            label for label in labels if label.text() == panel._format_commit_timestamp(commit.timestamp)
+        )
+        subject_label = next(label for label in labels if label.text() == "Subject line")
+        hash_style = hash_label.styleSheet()
+
+        assert hash_label.alignment() & Qt.AlignmentFlag.AlignLeft
+        assert author_label.alignment() & Qt.AlignmentFlag.AlignHCenter
+        assert timestamp_label.alignment() & Qt.AlignmentFlag.AlignRight
+        assert "font-weight: 700" in hash_style
+        assert "font-weight: 700" not in subject_label.styleSheet()
+
+    def test_format_commit_timestamp_today_shows_time_only(self, panel) -> None:  # type: ignore[no-untyped-def]
+        """Today's commits show only time."""
+        now = datetime.now(UTC)
+        formatted = panel._format_commit_timestamp(now)
+
+        assert "Yesterday" not in formatted
+        assert "," not in formatted
+        assert ":" in formatted
+
+    def test_format_commit_timestamp_yesterday_shows_yesterday_prefix(self, panel) -> None:  # type: ignore[no-untyped-def]
+        """Yesterday's commits include the Yesterday prefix."""
+        yesterday = datetime.now(UTC) - timedelta(days=1)
+        formatted = panel._format_commit_timestamp(yesterday)
+
+        assert formatted.startswith("Yesterday ")
+
+    def test_show_commits_history_items_include_black_separator_line(self, panel) -> None:  # type: ignore[no-untyped-def]
+        """Each history item widget includes a horizontal separator line."""
+        from PySide6.QtWidgets import QFrame
+
+        panel.show_commits([])
+
+        working_tree_item = panel.history_list.item(0)
+        widget = panel.history_list.itemWidget(working_tree_item)
+        assert widget is not None
+        separators = [
+            frame
+            for frame in widget.findChildren(QFrame)
+            if frame.height() == 1 and "background-color: black" in frame.styleSheet()
+        ]
+        assert separators
 
     def test_show_commits_multiple_commits_newest_first(self, panel) -> None:  # type: ignore[no-untyped-def]
         """Test that multiple commits are displayed in the order provided (assumed pre-sorted by adapter).
@@ -665,12 +748,12 @@ class TestShowCommits:
         # Verify order matches input (pre-sorted) + special items at top
         assert panel.history_list.count() == 5  # 2 special + 3 commits
         # Special items at top
-        assert panel.history_list.item(0).text() == "Working Tree"
-        assert panel.history_list.item(1).text() == "Staging"
+        assert _history_row_text(panel, 0) == "Working Tree"
+        assert _history_row_text(panel, 1) == "Staging"
         # Commits start at row 2
-        assert "New commit" in panel.history_list.item(2).text()
-        assert "Middle commit" in panel.history_list.item(3).text()
-        assert "Old commit" in panel.history_list.item(4).text()
+        assert "New commit" in _history_row_text(panel, 2)
+        assert "Middle commit" in _history_row_text(panel, 3)
+        assert "Old commit" in _history_row_text(panel, 4)
 
     def test_show_commits_short_hash_truncation(self, panel) -> None:  # type: ignore[no-untyped-def]
         """Test that long commit hashes are truncated to 7 characters."""
@@ -685,8 +768,7 @@ class TestShowCommits:
 
         panel.show_commits([commit])
         # Commit is at row 2 (after special items)
-        item = panel.history_list.item(2)
-        text = item.text()
+        text = _history_row_text(panel, 2)
 
         # Should have 7-char hash, not the full hash
         assert "a1b2c3d" in text
@@ -820,10 +902,8 @@ class TestShowCommits:
 
         panel.show_commits([commit])
         # Commit is at row 2 (after special items)
-        item = panel.history_list.item(2)
-
         # Verify the full message is in the text
-        assert "A" * 100 in item.text()  # Should contain the long message
+        assert "A" * 100 in _history_row_text(panel, 2)  # Should contain the long message
 
         # Verify word wrap is enabled on the list
         assert panel.history_list.wordWrap() is True
@@ -842,13 +922,9 @@ class TestShowCommits:
 
         panel.show_commits([commit_empty])
         # Commit is at row 2 (after special items)
-        item = panel.history_list.item(2)
-
-        # Should not crash and should have some display text (hash, author, date)
-        assert item is not None
-        assert "a1b2c3d" in item.text()
+        assert "a1b2c3d" in _history_row_text(panel, 2)
         # First line of message should be empty
-        lines = item.text().split("\n")
+        lines = _history_row_text(panel, 2).split("\n")
         assert len(lines) == 2
         assert lines[1] == ""
 
@@ -861,11 +937,7 @@ class TestShowCommits:
         )
 
         panel.show_commits([commit_whitespace])
-        item = panel.history_list.item(2)
-
-        # Should not crash
-        assert item is not None
-        lines = item.text().split("\n")
+        lines = _history_row_text(panel, 2).split("\n")
         assert len(lines) == 2
         assert lines[1] == ""  # Whitespace should be stripped to empty
 
