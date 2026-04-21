@@ -625,3 +625,39 @@ class TestShowDiffTreesSelectionKeyWiring:
         panel._on_tree_item_clicked(child_item, 0)
 
         assert captured == [("parts/A.FCStd", "Body")]
+
+
+class TestShowDiffTreesWarningDisplay:
+    """Tests for warning indicator rendering in show_diff_trees()."""
+
+    def test_show_diff_trees_warning_is_tooltip_only(self, panel) -> None:  # type: ignore[no-untyped-def]
+        """Warnings are exposed via tooltip and not as inline orange text labels."""
+        from PySide6.QtWidgets import QLabel
+
+        from freecad.diff_wb.ui.presenters.presentation_models import DiffTreePresentation
+
+        panel.show_diff_trees(
+            [
+                DiffTreePresentation(
+                    nodes=[],
+                    git_path="parts/A.FCStd",
+                    warnings=["Old snapshot missing"],
+                )
+            ]
+        )
+
+        root_item = panel.tree_widget.topLevelItem(0)
+        assert root_item is not None
+        container = panel.tree_widget.itemWidget(root_item, 0)
+        assert container is not None
+
+        labels = container.findChildren(QLabel)
+        assert labels
+        assert not any(label.text() == "Old snapshot missing" for label in labels)
+
+        # Warning tooltip is shown on the icon label when icon assets are available.
+        # In headless/unit environments icon loading may be unavailable, so keep this
+        # assertion conditional.
+        tooltip_values = [label.toolTip() for label in labels]
+        if any(tooltip_values):
+            assert "Old snapshot missing" in tooltip_values

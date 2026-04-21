@@ -132,4 +132,5 @@ objects: []
 
         # Then Result.failure is returned
         assert result.is_success is False
+        assert result.message is not None
         assert "Failed to deserialize snapshot" in result.message

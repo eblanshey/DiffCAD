@@ -182,7 +182,7 @@ class TestDiffPresenter:
         # Arrange
         fake_view, presenter = _create_test_presenter()
         old_prop = Property.from_freecad(10.0, {".": "Sketch.X"}, "Base")
-        new_prop = Property.from_freecad(20.0, {".": None}, "Base")
+        new_prop = Property.from_freecad(20.0, {}, "Base")
         node_diff = NodeDiff(
             path="Part",
             type_id="Part::Feature",

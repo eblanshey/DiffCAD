@@ -23,7 +23,7 @@ from ...application.actions.get_open_eligible_documents import GetOpenEligibleDo
 from ...application.actions.get_staged_file_paths import GetStagedFilePathsAction
 from ...application.actions.stage_documents import StageDocumentsAction
 from ...domain.diff.engine import DiffResult
-from ...domain.diff.models import DiffState, NodeDiff, PropertyPathDiff
+from ...domain.diff.models import WARNING_OLD_SNAPSHOT_MISSING, DiffState, NodeDiff, PropertyPathDiff
 from ...domain.git.models import GitRepository
 from ...domain.tree import Property
 from ...utils import Log
@@ -556,14 +556,14 @@ class DiffPresenter:
         For each FCStd file changed between the commit and its parent:
         1. Extract snapshots from both commits
         2. Compute diff between snapshots
-        3. Track paths where parent snapshot is missing
+        3. Track paths where the selected commit snapshot is missing
 
         Args:
             repo: GitRepository containing the documents.
             commit_hash: The commit hash to compute diffs for.
 
         Returns:
-            Tuple of (list of DiffResult, list of paths with missing parent snapshots).
+            Tuple of (list of DiffResult, list of paths with missing commit snapshots).
         """
         all_diff_results: list[DiffResult] = []
         missing_snapshot_paths: list[str] = []
@@ -588,12 +588,14 @@ class DiffPresenter:
                 if diff_result.is_success and diff_result.data is not None:
                     all_diff_results.append(diff_result.data)
             elif commit_snapshot is not None and parent_snapshot is None:
-                # Parent snapshot missing (extraction failed, no YAML, etc.) - show with warning
+                # Parent snapshot missing - compare against None and rely on diff warnings.
                 diff_result = self._create_diff.execute(None, commit_snapshot)
                 if diff_result.is_success and diff_result.data is not None:
                     all_diff_results.append(diff_result.data)
+            elif commit_snapshot is None and parent_snapshot is not None:
+                # Commit snapshot missing for a changed path - show flat warning row.
                 missing_snapshot_paths.append(git_path)
-            # Skip cases where commit_snapshot is None (no data to compare)
+            # Skip cases where both snapshots are None (no data to compare)
 
         return all_diff_results, missing_snapshot_paths
 
@@ -711,7 +713,7 @@ class DiffPresenter:
                 DiffTreePresentation(
                     nodes=[],  # Empty - flat item
                     git_path=git_path,
-                    warnings=["WARNING_OLD_SNAPSHOT_MISSING"],
+                    warnings=[WARNING_OLD_SNAPSHOT_MISSING],
                     stage_button_enabled=False,
                 )
             )

@@ -218,7 +218,7 @@ class TestDiffPresenterPropertyHandling:
         fake_view, presenter = _create_test_presenter()
 
         old_prop = Property.from_freecad(3.0, {".": "Sketch.X"}, "Base")
-        new_prop = Property.from_freecad(3.0, {".": None}, "Base")
+        new_prop = Property.from_freecad(3.0, {}, "Base")
         node_diff = NodeDiff(
             path="Part",
             type_id="Part::Feature",
@@ -589,7 +589,7 @@ class TestPropertyValueTypeExtraction:
             Rotation = MockRotation()
 
         old_prop = Property.from_freecad(MockPlacement(), {}, "Base")
-        new_prop = Property.from_freecad(MockPlacement(), {".": None}, "Base")
+        new_prop = Property.from_freecad(MockPlacement(), {}, "Base")
         node_diff = NodeDiff(
             path="Part",
             type_id="Part::Feature",
@@ -907,7 +907,7 @@ class TestPhase2OldValueAndExpression:
         # Arrange
         fake_view, presenter = _create_test_presenter()
 
-        old_prop = Property.from_freecad(10.0, {".": None}, "Base")
+        old_prop = Property.from_freecad(10.0, {}, "Base")
         new_prop = Property.from_freecad(10.0, {".": "Sketch.X"}, "Base")
         node_diff = NodeDiff(
             path="Part",
@@ -949,7 +949,7 @@ class TestPhase2OldValueAndExpression:
         fake_view, presenter = _create_test_presenter()
 
         old_prop = Property.from_freecad(10.0, {".": "Sketch.X"}, "Base")
-        new_prop = Property.from_freecad(10.0, {".": None}, "Base")
+        new_prop = Property.from_freecad(10.0, {}, "Base")
         node_diff = NodeDiff(
             path="Part",
             type_id="Part::Feature",

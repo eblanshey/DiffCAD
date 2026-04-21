@@ -595,8 +595,8 @@ class DiffPanelView(QWidget):
             # Add text label
             layout.addWidget(QLabel(top_level_text))
 
-            # Add warning indicators
-            self._add_warning_indicators(layout, diff.warnings, not diff.nodes)
+            # Add warning indicators (tooltip-only)
+            self._add_warning_indicators(layout, diff.warnings)
 
             layout.addStretch()
 
@@ -633,13 +633,12 @@ class DiffPanelView(QWidget):
         # Ensure tree widget is visible
         self.tree_widget.show()
 
-    def _add_warning_indicators(self, layout: QHBoxLayout, warnings: list[str], show_text: bool) -> None:
-        """Add warning icon and optionally text to the layout.
+    def _add_warning_indicators(self, layout: QHBoxLayout, warnings: list[str]) -> None:
+        """Add warning icon with tooltip to the layout.
 
         Args:
             layout: The QHBoxLayout to add widgets to.
             warnings: List of warning strings to display.
-            show_text: If True, display warning text prominently (for flat items).
         """
         if not warnings:
             return
@@ -653,13 +652,6 @@ class DiffPanelView(QWidget):
             warning_icon_label.setPixmap(_WARNING_ICON.pixmap(16, 16))
             warning_icon_label.setToolTip(warning_tooltip)
             layout.addWidget(warning_icon_label)
-
-        # For flat warning items (empty nodes), display warning text prominently
-        if show_text:
-            for warning in warnings:
-                warning_label = QLabel(warning)
-                warning_label.setStyleSheet("color: orange; font-style: italic;")
-                layout.addWidget(warning_label)
 
     def _on_add_button_clicked(self, git_path: str) -> None:
         """Handle '+ Stage' button click by invoking the callback.

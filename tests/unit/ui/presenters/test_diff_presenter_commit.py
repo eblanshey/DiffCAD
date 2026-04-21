@@ -353,7 +353,7 @@ class TestDiffPresenterOnCommitSelected:
         presenter._create_diff.execute.assert_not_called()
 
     def test_on_commit_selected_parent_snapshot_missing_tracked_as_missing(self) -> None:
-        """Parent snapshot missing → diff created + path tracked in missing_snapshot_paths."""
+        """Parent snapshot missing → single diff row with warning, no flat duplicate."""
         fake_view, presenter, mock_get_paths = _create_test_presenter()
 
         mock_repo = GitRepository(name="test-repo", absolute_path="/test/path")
@@ -379,17 +379,13 @@ class TestDiffPresenterOnCommitSelected:
         # Act
         presenter._on_commit_selected("abc123")
 
-        # Assert - present_diffs should be called with missing paths
+        # Assert - only a single diff row is presented
         calls = fake_view.get_calls()
         present_diffs_call = next((c for c in calls if c["method"] == "show_diff_trees"), None)
         assert present_diffs_call is not None
         presentations = present_diffs_call["diff_trees"]
-        # Should have 1 diff tree + 1 warning item for missing snapshot
-        assert len(presentations) == 2
-        # Find the warning item
-        warning_items = [p for p in presentations if p.warnings]
-        assert len(warning_items) == 1
-        assert warning_items[0].git_path == "doc.FCStd"
+        assert len(presentations) == 1
+        assert presentations[0].git_path == "doc.FCStd"
 
     def test_on_commit_selected_no_git_repository_early_return(self) -> None:
         """Returns early with no diff computation when no git repository is set."""
@@ -534,8 +530,7 @@ class TestDiffPresenterComputeCommitDiffs:
         assert isinstance(results, list)
         assert isinstance(missing_paths, list)
         assert len(results) == 1
-        assert len(missing_paths) == 1
-        assert missing_paths[0] == "doc.FCStd"
+        assert missing_paths == []
 
     def test_compute_commit_diffs_handles_failed_get_paths_returns_empty(self) -> None:
         """When GetCommittedFilePathsAction fails, returns empty results."""
@@ -637,8 +632,7 @@ class TestDiffPresenterComputeCommitDiffs:
 
         # Assert
         assert len(results) == 1
-        assert len(missing_paths) == 1
-        assert missing_paths[0] == "new_file.FCStd"
+        assert missing_paths == []
 
     def test_compute_commit_diffs_union_of_commit_and_parent_paths(self) -> None:
         """Union of commit and parent paths includes files only in parent."""
@@ -683,7 +677,7 @@ class TestDiffPresenterComputeCommitDiffs:
         assert results[0].new_snapshot is snap1
 
     def test_compute_commit_diffs_diff_creation_failure_returns_empty(self) -> None:
-        """When diff creation fails, path is not in results but IS in missing_paths."""
+        """When diff creation fails, path is not in results and not in missing_paths."""
         fake_view, presenter, mock_get_paths = _create_test_presenter()
 
         mock_repo = GitRepository(name="test-repo", absolute_path="/test/path")
@@ -708,7 +702,31 @@ class TestDiffPresenterComputeCommitDiffs:
         # Act
         results, missing_paths = presenter._compute_commit_diffs(mock_repo, "abc123")
 
-        # Assert - path is in missing_paths because parent snapshot is None
-        # (regardless of whether diff creation succeeded or not)
+        # Assert - no diff result and no flat warning path
+        assert results == []
+        assert missing_paths == []
+
+    def test_compute_commit_diffs_missing_commit_snapshot_tracked_as_missing(self) -> None:
+        """When commit snapshot is missing but parent exists, return flat warning path."""
+        fake_view, presenter, mock_get_paths = _create_test_presenter()
+
+        mock_repo = GitRepository(name="test-repo", absolute_path="/test/path")
+
+        mock_get_paths_result = _make_result(is_success=True, data=["doc.FCStd"])
+        mock_get_paths.execute.return_value = mock_get_paths_result
+
+        parent_snap = _make_snapshot("s2", "doc.FCStd", git_path="doc.FCStd")
+
+        def snapshot_side_effect(repo, ref, path):
+            if ref == "abc123":
+                return _make_result(is_success=True, data=None)
+            return _make_result(is_success=True, data=parent_snap)
+
+        presenter._create_commit_snapshot.execute.side_effect = snapshot_side_effect
+
+        # Act
+        results, missing_paths = presenter._compute_commit_diffs(mock_repo, "abc123")
+
+        # Assert
         assert results == []
         assert missing_paths == ["doc.FCStd"]
