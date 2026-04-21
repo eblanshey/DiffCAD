@@ -301,15 +301,31 @@ class TestFlattenDataPath:
     def test_constraint_data(self) -> None:
         cd = ConstraintData(
             paths={
-                "Type": PropertyPathValue(PropertyPathType.INT, 0),
+                "Type": PropertyPathValue(PropertyPathType.STRING, "Distance"),
+                "Name": PropertyPathValue(PropertyPathType.STRING, "LengthConstraint"),
                 "Value": PropertyPathValue(PropertyPathType.FLOAT, 1.0),
                 "First": PropertyPathValue(PropertyPathType.INT, 1),
+                "FirstPos": PropertyPathValue(PropertyPathType.INT, 1),
+                "Second": PropertyPathValue(PropertyPathType.INT, 2),
+                "SecondPos": PropertyPathValue(PropertyPathType.INT, 0),
+                "Third": PropertyPathValue(PropertyPathType.INT, -2000),
+                "ThirdPos": PropertyPathValue(PropertyPathType.INT, 0),
+                "Driving": PropertyPathValue(PropertyPathType.BOOL, True),
+                "IsActive": PropertyPathValue(PropertyPathType.BOOL, True),
             }
         )
         result = _flatten_data_path(cd)
         assert "Type" in result
+        assert "Name" in result
         assert "Value" in result
         assert "First" in result
+        assert "FirstPos" in result
+        assert "Second" in result
+        assert "SecondPos" in result
+        assert "Third" in result
+        assert "ThirdPos" in result
+        assert "Driving" in result
+        assert "IsActive" in result
 
     def test_unknown_data(self) -> None:
         ud = UnknownData(

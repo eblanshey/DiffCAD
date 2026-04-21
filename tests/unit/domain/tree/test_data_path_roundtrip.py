@@ -255,20 +255,91 @@ class TestConstraintDataRoundTrip:
         original = ConstraintData(
             paths={
                 "Type": PropertyPathValue(PropertyPathType.INT, 0, None),
+                "Name": PropertyPathValue(PropertyPathType.STRING, "Distance1", None),
                 "Value": PropertyPathValue(PropertyPathType.FLOAT, 10.0, None),
                 "First": PropertyPathValue(PropertyPathType.INT, 1, None),
+                "FirstPos": PropertyPathValue(PropertyPathType.INT, 0, None),
                 "Second": PropertyPathValue(PropertyPathType.INT, 2, None),
+                "SecondPos": PropertyPathValue(PropertyPathType.INT, 1, None),
+                "Third": PropertyPathValue(PropertyPathType.INT, -2000, None),
+                "ThirdPos": PropertyPathValue(PropertyPathType.INT, 0, None),
                 "Driving": PropertyPathValue(PropertyPathType.BOOL, True, None),
+                "IsActive": PropertyPathValue(PropertyPathType.BOOL, True, None),
             }
         )
         serialized = original.serialize()
         restored = data_path_from_serialized(serialized)
         assert isinstance(restored, ConstraintData)
-        assert restored.paths["Type"].value == 0
-        assert restored.paths["Value"].value == 10.0
-        assert restored.paths["First"].value == 1
-        assert restored.paths["Second"].value == 2
-        assert restored.paths["Driving"].value is True
+        actual_values = {path: pv.value for path, pv in restored.paths.items() if path != "."}
+        assert actual_values == {
+            "Type": 0,
+            "Name": "Distance1",
+            "Value": 10.0,
+            "First": 1,
+            "FirstPos": 0,
+            "Second": 2,
+            "SecondPos": 1,
+            "Third": -2000,
+            "ThirdPos": 0,
+            "Driving": True,
+            "IsActive": True,
+        }
+
+    def test_from_freecad_value_extracts_extended_fields(self) -> None:
+        """ConstraintData.from_freecad_value should include name, positions, and flags."""
+
+        class MockConstraint:
+            Type = "Distance"
+            Name = "LengthConstraint"
+            Value = 15.0
+            First = 3
+            FirstPos = 1
+            Second = 4
+            SecondPos = 2
+            Third = -2000
+            ThirdPos = 0
+            Driving = True
+            IsActive = True
+            InVirtualSpace = False
+
+        result = ConstraintData.from_freecad_value(MockConstraint(), expr_map={".": "5 mm"})
+
+        actual_values = {path: pv.value for path, pv in result.paths.items() if path != "."}
+        assert actual_values == {
+            "Type": "Distance",
+            "Name": "LengthConstraint",
+            "Value": 15.0,
+            "First": 3,
+            "FirstPos": 1,
+            "Second": 4,
+            "SecondPos": 2,
+            "Third": -2000,
+            "ThirdPos": 0,
+            "Driving": True,
+            "IsActive": True,
+        }
+        assert result.paths["."].expression == "5 mm"
+        assert "InVirtualSpace" not in actual_values
+
+    def test_from_freecad_value_omits_empty_name(self) -> None:
+        """ConstraintData.from_freecad_value should omit Name when unset."""
+
+        class MockConstraint:
+            Type = "Distance"
+            Name = ""
+            Value = 10.0
+            First = 1
+            FirstPos = 0
+            Second = -2000
+            SecondPos = 0
+            Third = -2000
+            ThirdPos = 0
+            Driving = True
+            IsActive = True
+
+        result = ConstraintData.from_freecad_value(MockConstraint(), expr_map={})
+
+        assert "Name" not in result.paths
 
     def test_roundtrip_with_expression(self) -> None:
         """Test ConstraintData round-trip preserves root expression."""

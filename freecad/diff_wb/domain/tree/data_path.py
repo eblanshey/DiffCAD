@@ -594,16 +594,30 @@ class ConstraintData:
     INTERNAL_TYPE: ClassVar[InternalType] = InternalType.Constraint
     paths: dict[str, PropertyPathValue]
 
-    VISIBLE_FIELDS = ("Type", "Value", "First", "Second", "Third", "Driving")
+    VISIBLE_FIELDS = (
+        "Type",
+        "Name",
+        "Value",
+        "First",
+        "FirstPos",
+        "Second",
+        "SecondPos",
+        "Third",
+        "ThirdPos",
+        "Driving",
+        "IsActive",
+    )
 
     @staticmethod
     def from_freecad_value(value: Any, expr_map: dict[str, str]) -> ConstraintData:
         """Create ConstraintData from a FreeCAD Sketcher.Constraint value.
 
-        Extracts the VISIBLE_FIELDS (Type, Value, First, Second, Third, Driving)
-        from the constraint object and stores them as separate path entries.
-        None values are skipped. If the root expression map contains a '.'
-        key, it is stored as a root path entry.
+        Extracts the VISIBLE_FIELDS (Type, Name, Value, First, FirstPos,
+        Second, SecondPos, Third, ThirdPos, Driving, IsActive) from the
+        constraint object and stores them as separate path entries. None
+        values are skipped. Name is also skipped when it is an empty string.
+        If the root expression map contains a '.' key, it is stored as a
+        root path entry.
 
         Args:
             value: A FreeCAD Sketcher.Constraint or compatible object.
@@ -618,6 +632,8 @@ class ConstraintData:
                 continue
             v = getattr(value, name)
             if v is None:
+                continue
+            if name == "Name" and v == "":
                 continue
             paths[name] = PropertyPathValue.from_python(v, None)
 
