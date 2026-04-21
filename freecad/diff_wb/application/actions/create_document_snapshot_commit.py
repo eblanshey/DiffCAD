@@ -57,6 +57,7 @@ class CreateDocumentSnapshotForCommitAction:
 
         try:
             snapshot = SnapshotYamlSerializer.from_yaml(yaml_contents)
+            snapshot = snapshot.with_identity(fcstd_git_path)
             return Result.success(snapshot)
         except Exception as e:
             Log.exception(f"Failed to deserialize snapshot for {yaml_git_path}: {e}")

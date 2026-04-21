@@ -45,6 +45,8 @@ objects:
         assert isinstance(result.data, Snapshot)
         assert result.data.snapshot_id == "test-uuid-index"
         assert len(result.data.nodes) == 1
+        assert result.data.git_path == "path/to/doc.FCStd"
+        assert result.data.document_name == "doc.FCStd"
 
     def test_execute_with_commit_hash_returns_commit_snapshot(self) -> None:
         """Test: Execute with commit hash returns snapshot from that commit."""
@@ -74,6 +76,31 @@ objects:
         assert result.is_success is True
         assert result.data is not None
         assert result.data.snapshot_id == "test-uuid-commit"
+        assert result.data.git_path == "path/to/doc.FCStd"
+        assert result.data.document_name == "doc.FCStd"
+
+    def test_execute_with_nested_path_preserves_git_path_and_filename(self) -> None:
+        """Test: Nested git paths are preserved while document name uses filename."""
+        # Given a GitService that returns YAML content
+        mock_git_service = MagicMock(spec=GitService)
+        yaml_content = """v: 1
+timestamp: 2024-02-20T14:00:00+00:00
+uid: test-uuid-nested
+objects: []
+"""
+        mock_git_service.get_file_contents.return_value = yaml_content
+
+        action = CreateDocumentSnapshotForCommitAction(git_service=mock_git_service)
+        repo = GitRepository(name="test-repo", absolute_path="/path/to/repo")
+
+        # When execute is called with a nested path
+        result = action.execute(repo, "HEAD", "assemblies/sub/Widget.FCStd")
+
+        # Then full git_path is preserved and document_name is filename
+        assert result.is_success is True
+        assert result.data is not None
+        assert result.data.git_path == "assemblies/sub/Widget.FCStd"
+        assert result.data.document_name == "Widget.FCStd"
 
     def test_execute_returns_none_when_no_content(self) -> None:
         """Test: Execute returns None when file doesn't exist in git."""

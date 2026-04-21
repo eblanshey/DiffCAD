@@ -1195,3 +1195,120 @@ class TestDiffPresenterAddButton:
 
             # Assert - refresh was called after staging
             mock_refresh.assert_called_once()
+
+
+class TestDiffPresenterStagingSelection:
+    """Tests for staging selection plumbing and node lookup."""
+
+    def test_on_staging_selected_populates_diff_map_using_git_path(self) -> None:
+        """Staging selection stores diff results keyed by snapshot git_path."""
+        fake_view, presenter = _create_test_presenter()
+
+        presenter._ui_state.git_repository = GitRepository(name="repo", absolute_path="/repo")
+        presenter._get_staged_file_paths.execute.return_value = MagicMock(is_success=True, data=["a.FCStd"])
+
+        index_snapshot = Snapshot(
+            snapshot_id="idx-1",
+            document_name="a.FCStd",
+            timestamp=datetime.datetime.now(),
+            git_path="a.FCStd",
+        )
+        head_snapshot = Snapshot(
+            snapshot_id="head-1",
+            document_name="a.FCStd",
+            timestamp=datetime.datetime.now(),
+            git_path="a.FCStd",
+        )
+        presenter._create_commit_snapshot.execute.side_effect = [
+            MagicMock(is_success=True, data=index_snapshot),
+            MagicMock(is_success=True, data=head_snapshot),
+        ]
+
+        hierarchy = DiffHierarchy()
+        hierarchy.add_node(NodeDiff(path="Body", type_id="PartDesign::Body", _force_state=DiffState.MODIFIED))
+        presenter._create_diff.execute.return_value = MagicMock(
+            is_success=True,
+            data=DiffResult(old_snapshot=head_snapshot, new_snapshot=index_snapshot, hierarchy=hierarchy),
+        )
+
+        presenter._on_staging_selected()
+
+        assert "a.FCStd" in presenter._diff_results_by_path
+
+    def test_on_staging_selected_node_click_resolves_document_diff(self) -> None:
+        """After staging selection, node click resolves and shows properties."""
+        fake_view, presenter = _create_test_presenter()
+
+        presenter._ui_state.git_repository = GitRepository(name="repo", absolute_path="/repo")
+        presenter._get_staged_file_paths.execute.return_value = MagicMock(is_success=True, data=["a.FCStd"])
+
+        index_snapshot = Snapshot(
+            snapshot_id="idx-1",
+            document_name="a.FCStd",
+            timestamp=datetime.datetime.now(),
+            git_path="a.FCStd",
+        )
+        head_snapshot = Snapshot(
+            snapshot_id="head-1",
+            document_name="a.FCStd",
+            timestamp=datetime.datetime.now(),
+            git_path="a.FCStd",
+        )
+        presenter._create_commit_snapshot.execute.side_effect = [
+            MagicMock(is_success=True, data=index_snapshot),
+            MagicMock(is_success=True, data=head_snapshot),
+        ]
+
+        old_prop = Property.from_freecad(10.0, {}, "Base")
+        new_prop = Property.from_freecad(20.0, {}, "Base")
+        node = NodeDiff(
+            path="Body",
+            type_id="PartDesign::Body",
+            property_diffs=[PropertyDiff(property_name="Length", old_value=old_prop, new_value=new_prop)],
+            _force_state=DiffState.MODIFIED,
+        )
+        hierarchy = DiffHierarchy()
+        hierarchy.add_node(node)
+        presenter._create_diff.execute.return_value = MagicMock(
+            is_success=True,
+            data=DiffResult(old_snapshot=head_snapshot, new_snapshot=index_snapshot, hierarchy=hierarchy),
+        )
+
+        presenter._on_staging_selected()
+        presenter.on_node_selected("a.FCStd", "Body")
+
+        prop_calls = [c for c in fake_view.get_calls() if c["method"] == "show_properties"]
+        assert prop_calls
+        assert len(prop_calls[-1]["properties"]) == 1
+
+    def test_on_staging_selected_missing_git_path_key_clears_properties(self) -> None:
+        """Node selection clears properties when staged diff has no keyable git_path."""
+        fake_view, presenter = _create_test_presenter()
+
+        presenter._ui_state.git_repository = GitRepository(name="repo", absolute_path="/repo")
+        presenter._get_staged_file_paths.execute.return_value = MagicMock(is_success=True, data=["a.FCStd"])
+
+        index_snapshot = Snapshot(
+            snapshot_id="idx-1",
+            document_name="a.FCStd",
+            timestamp=datetime.datetime.now(),
+            git_path="",
+        )
+        presenter._create_commit_snapshot.execute.side_effect = [
+            MagicMock(is_success=True, data=index_snapshot),
+            MagicMock(is_success=True, data=None),
+        ]
+
+        hierarchy = DiffHierarchy()
+        hierarchy.add_node(NodeDiff(path="Body", type_id="PartDesign::Body", _force_state=DiffState.MODIFIED))
+        presenter._create_diff.execute.return_value = MagicMock(
+            is_success=True,
+            data=DiffResult(old_snapshot=None, new_snapshot=index_snapshot, hierarchy=hierarchy),
+        )
+
+        presenter._on_staging_selected()
+        presenter.on_node_selected("a.FCStd", "Body")
+
+        prop_calls = [c for c in fake_view.get_calls() if c["method"] == "show_properties"]
+        assert prop_calls
+        assert prop_calls[-1]["properties"] == []

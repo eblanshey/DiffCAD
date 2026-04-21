@@ -549,6 +549,7 @@ class DiffPanelView(QWidget):
         # Create top-level item with git_path (or document_name fallback)
         top_level_text = git_path or "Unnamed Document"
         root_item = QTreeWidgetItem([top_level_text])
+        root_item.setData(0, Qt.ItemDataRole.UserRole, git_path or top_level_text)
 
         # Add child nodes from hierarchy
         for node in nodes:
@@ -583,8 +584,8 @@ class DiffPanelView(QWidget):
 
             # Create root item
             root_item = QTreeWidgetItem([top_level_text])
-            # Store git_path in root item's UserRole for later retrieval when children are clicked
-            root_item.setData(0, Qt.ItemDataRole.UserRole, diff.git_path)
+            # Store stable root selection key for later retrieval when children are clicked
+            root_item.setData(0, Qt.ItemDataRole.UserRole, diff.git_path or top_level_text)
 
             # Create container widget with layout
             container = QWidget()

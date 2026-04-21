@@ -571,3 +571,57 @@ class TestShowDiffTreeGitPath:
 
         sketch_item = pad_item.child(0)
         assert sketch_item.text(0) == "Sketch (PartDesign::Sketch)"
+
+
+class TestShowDiffTreesSelectionKeyWiring:
+    """Tests for show_diff_trees() root key and click callback wiring."""
+
+    def test_show_diff_trees_stores_fallback_root_key_in_user_role(self, panel) -> None:  # type: ignore[no-untyped-def]
+        """Root item stores fallback selection key when git_path is empty."""
+        from PySide6.QtCore import Qt
+
+        from freecad.diff_wb.ui.presenters.presentation_models import DiffTreePresentation
+
+        panel.show_diff_trees([DiffTreePresentation(nodes=[], git_path="", warnings=[])])
+
+        root_item = panel.tree_widget.topLevelItem(0)
+        assert root_item is not None
+        assert root_item.text(0) == "Unnamed Document"
+        assert root_item.data(0, Qt.ItemDataRole.UserRole) == "Unnamed Document"
+
+    def test_tree_item_click_forwards_root_key_and_node_path(self, panel) -> None:  # type: ignore[no-untyped-def]
+        """Clicking child item forwards (git_path, node_path) to callback."""
+        from freecad.diff_wb.ui.presenters.presentation_models import DiffTreePresentation, NodePresentation
+
+        captured: list[tuple[str, str]] = []
+
+        def callback(git_path: str, node_path: str) -> None:
+            captured.append((git_path, node_path))
+
+        panel.set_node_selection_callback(callback)
+        panel.show_diff_trees(
+            [
+                DiffTreePresentation(
+                    nodes=[
+                        NodePresentation(
+                            path="Body",
+                            type_id="PartDesign::Body",
+                            state=DiffState.MODIFIED,
+                            has_changes=True,
+                            children=[],
+                        )
+                    ],
+                    git_path="parts/A.FCStd",
+                    warnings=[],
+                )
+            ]
+        )
+
+        root_item = panel.tree_widget.topLevelItem(0)
+        assert root_item is not None
+        child_item = root_item.child(0)
+        assert child_item is not None
+
+        panel._on_tree_item_clicked(child_item, 0)
+
+        assert captured == [("parts/A.FCStd", "Body")]

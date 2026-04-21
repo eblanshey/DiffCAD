@@ -5,8 +5,9 @@
 # from the tree domain models.
 """Snapshot domain models."""
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime
+from pathlib import PurePosixPath
 
 from ..tree.node import TreeNode
 
@@ -86,3 +87,18 @@ class Snapshot:
             if node.path == path:
                 return node
         return None
+
+    def with_identity(self, git_path: str) -> "Snapshot":
+        """Return a new snapshot enriched with runtime identity fields.
+
+        The serialized YAML intentionally does not persist git_path/document_name.
+        Callers that know repository context can enrich a deserialized snapshot
+        using this helper while preserving Snapshot immutability.
+
+        Args:
+            git_path: Repository-relative path to the FCStd document.
+
+        Returns:
+            A new Snapshot with git_path and document_name populated.
+        """
+        return replace(self, git_path=git_path, document_name=PurePosixPath(git_path).name)

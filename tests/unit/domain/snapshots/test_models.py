@@ -237,3 +237,24 @@ class TestSnapshot:
         str_repr_no_path = str(snapshot_without_path)
         assert "TestDocument" in str_repr_no_path
         assert "path/to/doc.FCStd" not in str_repr_no_path
+
+    def test_with_identity_sets_git_path_and_filename(self) -> None:
+        """with_identity() enriches snapshot with git path and filename."""
+        timestamp = datetime(2024, 1, 1, 0, 0, 0)
+        snapshot = Snapshot(snapshot_id="test-id", document_name="", timestamp=timestamp, git_path="")
+
+        enriched = snapshot.with_identity("parts/Widget.FCStd")
+
+        assert enriched.git_path == "parts/Widget.FCStd"
+        assert enriched.document_name == "Widget.FCStd"
+
+    def test_with_identity_returns_new_instance(self) -> None:
+        """with_identity() returns new immutable instance, preserving original."""
+        timestamp = datetime(2024, 1, 1, 0, 0, 0)
+        snapshot = Snapshot(snapshot_id="test-id", document_name="orig", timestamp=timestamp, git_path="")
+
+        enriched = snapshot.with_identity("a/b/C.FCStd")
+
+        assert enriched is not snapshot
+        assert snapshot.document_name == "orig"
+        assert snapshot.git_path == ""
