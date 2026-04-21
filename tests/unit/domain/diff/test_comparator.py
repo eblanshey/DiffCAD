@@ -892,6 +892,77 @@ class TestIdBasedCompareSnapshots:
         assert body_diff.children[0].path == "Body/Pad"
 
 
+class TestHierarchyOrderingByAfter:
+    """Tests for hierarchy sibling/root ordering based on after links."""
+
+    def test_orders_added_siblings_using_new_after(self) -> None:
+        """Added siblings follow new snapshot ordering from new_after links."""
+        old_snapshot = Snapshot(snapshot_id="old", document_name="Test", timestamp=datetime.now(), nodes=[])
+
+        new_nodes = [
+            TreeNode(id=1, name="Body", type_id="PartDesign::Body", label="Body", path="Body", after=None),
+            # Intentionally not in desired after-chain order.
+            TreeNode(
+                id=4,
+                name="Pocket",
+                type_id="PartDesign::Pocket",
+                label="Pocket",
+                path="Body/Pocket",
+                after="Sketch",
+            ),
+            TreeNode(id=2, name="Pad", type_id="PartDesign::Pad", label="Pad", path="Body/Pad", after=None),
+            TreeNode(
+                id=3,
+                name="Sketch",
+                type_id="PartDesign::Sketch",
+                label="Sketch",
+                path="Body/Sketch",
+                after="Pad",
+            ),
+        ]
+        new_snapshot = Snapshot(snapshot_id="new", document_name="Test", timestamp=datetime.now(), nodes=new_nodes)
+
+        result = _tree_comparator.compare_snapshots(old_snapshot, new_snapshot, [], [])
+
+        assert len(result.hierarchy.roots) == 1
+        body_diff = result.hierarchy.roots[0]
+        assert [child.path for child in body_diff.children] == ["Body/Pad", "Body/Sketch", "Body/Pocket"]
+
+    def test_orders_roots_using_new_after(self) -> None:
+        """Root ordering follows new_after when nodes exist in new snapshot."""
+        old_snapshot = Snapshot(snapshot_id="old", document_name="Test", timestamp=datetime.now(), nodes=[])
+        new_snapshot = Snapshot(
+            snapshot_id="new",
+            document_name="Test",
+            timestamp=datetime.now(),
+            nodes=[
+                TreeNode(id=1, name="ZRoot", type_id="Part::Feature", label="ZRoot", path="ZRoot", after=None),
+                TreeNode(id=2, name="ARoot", type_id="Part::Feature", label="ARoot", path="ARoot", after="ZRoot"),
+            ],
+        )
+
+        result = _tree_comparator.compare_snapshots(old_snapshot, new_snapshot, [], [])
+
+        assert [node.path for node in result.hierarchy.roots] == ["ZRoot", "ARoot"]
+
+    def test_orders_deleted_nodes_using_old_after(self) -> None:
+        """Deleted-only siblings fall back to old snapshot ordering via old_after."""
+        old_snapshot = Snapshot(
+            snapshot_id="old",
+            document_name="Test",
+            timestamp=datetime.now(),
+            nodes=[
+                TreeNode(id=1, name="ZRoot", type_id="Part::Feature", label="ZRoot", path="ZRoot", after=None),
+                TreeNode(id=2, name="ARoot", type_id="Part::Feature", label="ARoot", path="ARoot", after="ZRoot"),
+            ],
+        )
+        new_snapshot = Snapshot(snapshot_id="new", document_name="Test", timestamp=datetime.now(), nodes=[])
+
+        result = _tree_comparator.compare_snapshots(old_snapshot, new_snapshot, [], [])
+
+        assert [node.path for node in result.hierarchy.roots] == ["ZRoot", "ARoot"]
+
+
 class TestExcludedTypesFiltering:
     """Tests for excluded_types filtering in compare_snapshots."""
 

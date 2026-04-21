@@ -9,6 +9,8 @@
 #   to PropertyDiff (which uses path-based diffs internally).
 """Tree and property comparison algorithms."""
 
+from collections import deque
+
 from ..snapshots import Snapshot
 from ..tree.node import TreeNode
 from ..tree.property import Property
@@ -59,8 +61,8 @@ class TreeComparator:
     2. Build ID index for new snapshot (O(m))
     3. Process old nodes to create deleted/modified diffs
     4. Process new nodes to create added diffs
-    5. Sort NodeDiffs by path length
-    6. Build DiffHierarchy using add_node()
+    5. Build DiffHierarchy using add_node()
+    6. Reorder roots and siblings using node ``after`` links
     7. Return DiffResult with DiffHierarchy and counts
     """
 
@@ -113,18 +115,144 @@ class TreeComparator:
         """
         return sorted(nodes, key=lambda n: (n.path.count("/") if n.path else 0, n.path))
 
-    def _sort_node_diffs_by_path_length(self, node_diffs: list[NodeDiff]) -> list[NodeDiff]:
-        """Sort NodeDiffs by path length (shortest first - parents before children).
+    def _node_name_from_path(self, path: str) -> str:
+        """Extract node name from path using final segment."""
+        if not path:
+            return ""
+        segments = [segment for segment in path.split("/") if segment]
+        return segments[-1] if segments else ""
 
-        This ensures parents are processed before children when building hierarchy.
+    def _preferred_after(self, node_diff: NodeDiff) -> str | None:
+        """Choose ordering source: new snapshot when available, else old snapshot.
 
-        Args:
-            node_diffs: List of NodeDiff objects to sort
-
-        Returns:
-            List of NodeDiffs sorted by path depth (shallowest first)
+        Nodes present in the new snapshot (UNCHANGED/MODIFIED/ADDED) are ordered
+        by ``new_after``. Deleted nodes are ordered by ``old_after``.
         """
-        return sorted(node_diffs, key=lambda d: (d.path.count("/") if d.path else 0, d.path))
+        if node_diff.new_path is not None:
+            return node_diff.new_after
+        return node_diff.old_after
+
+    def _order_nodes_by_after(self, nodes: list[NodeDiff]) -> list[NodeDiff]:
+        """Order sibling nodes using ``after`` links in linear time.
+
+        The ``after`` metadata encodes a predecessor constraint among siblings:
+        for a node ``B`` with ``after='A'``, ``A`` must appear before ``B``.
+        We model this as a directed edge ``A -> B`` and then compute a stable
+        topological ordering with Kahn's algorithm:
+
+        1. Build a sibling-name map in original insertion order.
+           - If duplicate sibling names are detected, return input order as a
+             safe fallback (name-based constraints would be ambiguous).
+        2. Build a graph from valid in-group ``after`` edges and an indegree map.
+           - Ignore ``after`` references that point outside the group.
+           - Ignore self-references.
+        3. Initialize a queue with indegree-0 nodes in original order.
+        4. Repeatedly emit queue head, decrement successor indegrees, enqueue
+           successors that reach indegree 0.
+        5. If unresolved nodes remain (cycle/broken chain), append them in
+           original order for deterministic behavior.
+
+        Complexity:
+            O(n + e) time and O(n + e) space, where ``n`` is sibling count and
+            ``e`` is number of valid in-group ``after`` edges (``e <= n`` here).
+        """
+        if len(nodes) <= 1:
+            return nodes
+
+        named_siblings = self._extract_named_siblings(nodes)
+        if named_siblings is None:
+            return nodes
+
+        name_to_node, node_names = named_siblings
+        adjacency, indegree = self._build_after_graph(nodes, node_names)
+        ordered_names = self._topologically_order_names(node_names, adjacency, indegree)
+        self._append_unresolved_names(nodes, indegree, ordered_names)
+        return [name_to_node[name] for name in ordered_names]
+
+    def _extract_named_siblings(self, nodes: list[NodeDiff]) -> tuple[dict[str, NodeDiff], list[str]] | None:
+        """Map sibling names to nodes while preserving insertion order.
+
+        Returns ``None`` when duplicate sibling names are detected.
+        """
+        name_to_node: dict[str, NodeDiff] = {}
+        node_names: list[str] = []
+        for node in nodes:
+            node_name = self._node_name_from_path(node.path)
+            if not node_name:
+                continue
+            if node_name in name_to_node:
+                return None
+            name_to_node[node_name] = node
+            node_names.append(node_name)
+        return name_to_node, node_names
+
+    def _build_after_graph(
+        self,
+        nodes: list[NodeDiff],
+        node_names: list[str],
+    ) -> tuple[dict[str, list[str]], dict[str, int]]:
+        """Build predecessor graph and indegree map from sibling after-links."""
+        adjacency: dict[str, list[str]] = {name: [] for name in node_names}
+        indegree: dict[str, int] = dict.fromkeys(node_names, 0)
+
+        for node in nodes:
+            node_name = self._node_name_from_path(node.path)
+            if node_name not in indegree:
+                continue
+
+            after = self._preferred_after(node)
+            if after is None or after not in indegree or after == node_name:
+                continue
+
+            adjacency[after].append(node_name)
+            indegree[node_name] += 1
+
+        return adjacency, indegree
+
+    def _topologically_order_names(
+        self,
+        node_names: list[str],
+        adjacency: dict[str, list[str]],
+        indegree: dict[str, int],
+    ) -> list[str]:
+        """Produce stable topological ordering using Kahn's algorithm."""
+        ready: deque[str] = deque(name for name in node_names if indegree[name] == 0)
+        ordered_names: list[str] = []
+
+        while ready:
+            name = ready.popleft()
+            ordered_names.append(name)
+            for successor in adjacency[name]:
+                indegree[successor] -= 1
+                if indegree[successor] == 0:
+                    ready.append(successor)
+
+        return ordered_names
+
+    def _append_unresolved_names(
+        self,
+        nodes: list[NodeDiff],
+        indegree: dict[str, int],
+        ordered_names: list[str],
+    ) -> None:
+        """Append nodes that remain unresolved (cycles/invalid chains)."""
+        if len(ordered_names) >= len(indegree):
+            return
+
+        ordered_set = set(ordered_names)
+        for node in nodes:
+            node_name = self._node_name_from_path(node.path)
+            if node_name in indegree and node_name not in ordered_set:
+                ordered_names.append(node_name)
+                ordered_set.add(node_name)
+
+    def _order_hierarchy_by_after(self, node_diffs: list[NodeDiff]) -> None:
+        """Recursively order roots/children using each node's ``after`` metadata."""
+        ordered = self._order_nodes_by_after(node_diffs)
+        node_diffs[:] = ordered
+        for node_diff in node_diffs:
+            if node_diff.children:
+                self._order_hierarchy_by_after(node_diff.children)
 
     def _is_node_excluded(
         self, node: TreeNode, excluded_types_set: set[str], paths_excluded: set[str]
@@ -420,8 +548,8 @@ class TreeComparator:
         2. Build ID index for new snapshot (by ID)
         3. Process old nodes to create deleted/modified diffs
         4. Process new nodes to create added diffs
-        5. Sort NodeDiffs by path length
-        6. Build DiffHierarchy using add_node()
+        5. Build DiffHierarchy using add_node()
+        6. Reorder roots and siblings using node ``after`` links
         7. Return DiffResult with DiffHierarchy and counts
 
         This algorithm achieves O((n+m) log (n+m)) complexity by using inline
@@ -470,14 +598,16 @@ class TreeComparator:
             excluded_properties_by_type,
         )
 
-        # Combine all node diffs and sort by path length
+        # Combine all node diffs
         all_node_diffs = old_node_diffs + added_node_diffs
-        sorted_node_diffs = self._sort_node_diffs_by_path_length(all_node_diffs)
 
         # Build DiffHierarchy
         hierarchy = DiffHierarchy()
-        for node_diff in sorted_node_diffs:
+        for node_diff in all_node_diffs:
             hierarchy.add_node(node_diff)
+
+        # Order roots/children by node after-links (new snapshot preferred).
+        self._order_hierarchy_by_after(hierarchy.roots)
 
         # Return DiffResult with hierarchy and counts
         return DiffResult(
