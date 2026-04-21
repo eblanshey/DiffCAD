@@ -8,7 +8,6 @@ from freecad.diff_wb.domain.tree.data_path import (
     ListData,
     PrimitiveData,
     PropertyPathType,
-    PropertyPathValue,
 )
 from freecad.diff_wb.domain.tree.property import Property
 

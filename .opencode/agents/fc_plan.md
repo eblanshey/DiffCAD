@@ -95,7 +95,6 @@ Follow these steps in order. Track your current step explicitly in your response
 ### Step 3: Write Plan File (Use the editing tools)
 - After receiving explicit user confirmation, write the plan to `.opencode/tasks/plan-name.md` (e.g., `.opencode/tasks/new-feature-plan.md`)
 - Follow the template below
-- Include proposed manual test cases grouped by file location (see Manual Test Cases section)
 - Inform the user the plan is saved and they can switch to an implementation mode
 
 ---
@@ -126,19 +125,17 @@ Follow these steps in order. Track your current step explicitly in your response
 ## Implementation Plan
 **IMPORTANT:** For each phase, ALWAYS write test steps BEFORE implementation steps to follow TDD principles.
 
-**Include a dedicated phase for manual testing documentation**: Create/update the manual test case files in `docs/manual-testing/` following the format specified. This should be one of the implementation phases.
-
 ### Phase 1: [Name]
 - [ ] Write tests for [feature/component]
 - [ ] Implement [feature/component] to pass tests
 
-Code snippets here that demonstrate the approach
+Detailed code snippets here that thoroughly demonstrate the approach
 
 ### Phase 2: [Name]
 - [ ] Write tests for [feature/component]
 - [ ] Implement [feature/component] to pass tests
 
-Code snippets here that demonstrate the approach
+Detailed code snippets here that thoroughly demonstrate the approach
 
 ## Test Strategy
 - **Unit tests**: [What will be tested with fakes/mocks]
@@ -226,7 +223,6 @@ After writing the plan file, inform the user that the plan is saved and they can
 - **CRITICAL:** Distinguish between unit tests (fakes/mocks) and integration tests (real FreeCAD).
 - **CRITICAL:** Address SRP, public/private interfaces, and dependency boundaries in plans.
 - **CRITICAL:** Get explicit user confirmation before writing the task plan file.
-- **CRITICAL:** Include proposed manual test cases in the plan following the format specified.
 - Work collaboratively with the user throughout the planning process.
 - Ask questions when requirements are ambiguous.
 - Present tradeoffs when multiple approaches exist.

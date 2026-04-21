@@ -20,6 +20,11 @@ from freecad.diff_wb.application.actions.stage_documents import StageDocumentsAc
 from freecad.diff_wb.domain.diff.models import DiffHierarchy, DiffResult, DiffState, NodeDiff, PropertyDiff
 from freecad.diff_wb.domain.snapshots import Snapshot
 from freecad.diff_wb.domain.tree import Property
+from freecad.diff_wb.domain.tree.data_path import (
+    PropertyPathType,
+    PropertyPathValue,
+    QuantityData,
+)
 from freecad.diff_wb.ui.presenters.diff_presenter import DiffPresenter
 from freecad.diff_wb.ui.presenters.presentation_models import PropertyPresentation
 from freecad.diff_wb.ui.state import UIState
@@ -978,3 +983,89 @@ class TestPhase2OldValueAndExpression:
         assert expr_pres.state == DiffState.DELETED
         assert expr_pres.old_value == "Sketch.X"
         assert expr_pres.new_value is None
+
+
+class TestQuantityPropertyPresentation:
+    """Tests for QuantityData property presentation with root-only string path."""
+
+    def test_quantity_property_single_row_from_root_string(self) -> None:
+        """Quantity property renders as a single row with root string value, no children."""
+        fake_view, presenter = _create_test_presenter()
+
+        old_prop = Property(
+            value=QuantityData(paths={".": PropertyPathValue(PropertyPathType.STRING, "10.0 mm")}),
+            group="Base",
+        )
+        new_prop = Property(
+            value=QuantityData(paths={".": PropertyPathValue(PropertyPathType.STRING, "12.0 mm")}),
+            group="Base",
+        )
+
+        node_diff = NodeDiff(
+            path="Part",
+            type_id="Part::Feature",
+            property_diffs=[PropertyDiff(property_name="Length", old_value=old_prop, new_value=new_prop)],
+            _force_state=DiffState.MODIFIED,
+        )
+        diff_result = DiffResult(
+            old_snapshot=Snapshot(snapshot_id="s1", document_name="\x01", timestamp=datetime.datetime.now()),
+            new_snapshot=Snapshot(snapshot_id="s2", document_name="\x02", timestamp=datetime.datetime.now()),
+            hierarchy=(lambda h: (h.add_node(node_diff), h)[1])(DiffHierarchy()),
+        )
+
+        presenter.present_diff(diff_result)
+        presenter.on_node_selected("\x02", "Part")
+
+        calls = fake_view.get_calls()
+        prop_call = next((c for c in calls if c["method"] == "show_properties"), None)
+        assert prop_call is not None
+        prop_pres = prop_call["properties"][0]
+
+        assert prop_pres.name == "Length"
+        assert prop_pres.old_value == "10.0 mm"
+        assert prop_pres.new_value == "12.0 mm"
+        assert prop_pres.state == DiffState.MODIFIED
+        assert prop_pres.children == []
+
+    def test_quantity_expression_row_still_supported_on_root_path(self) -> None:
+        """Quantity with root expression shows expression as nested child row."""
+        fake_view, presenter = _create_test_presenter()
+
+        old_prop = Property(
+            value=QuantityData(paths={".": PropertyPathValue(PropertyPathType.STRING, "10.0 mm", "Sketch.Length")}),
+            group="Base",
+        )
+        new_prop = Property(
+            value=QuantityData(paths={".": PropertyPathValue(PropertyPathType.STRING, "10.0 mm", None)}),
+            group="Base",
+        )
+
+        node_diff = NodeDiff(
+            path="Part",
+            type_id="Part::Feature",
+            property_diffs=[PropertyDiff(property_name="Length", old_value=old_prop, new_value=new_prop)],
+            _force_state=DiffState.MODIFIED,
+        )
+        diff_result = DiffResult(
+            old_snapshot=Snapshot(snapshot_id="s1", document_name="\x01", timestamp=datetime.datetime.now()),
+            new_snapshot=Snapshot(snapshot_id="s2", document_name="\x02", timestamp=datetime.datetime.now()),
+            hierarchy=(lambda h: (h.add_node(node_diff), h)[1])(DiffHierarchy()),
+        )
+
+        presenter.present_diff(diff_result)
+        presenter.on_node_selected("\x02", "Part")
+
+        calls = fake_view.get_calls()
+        prop_call = next((c for c in calls if c["method"] == "show_properties"), None)
+        assert prop_call is not None
+        prop_pres = prop_call["properties"][0]
+
+        assert len(prop_pres.children) == 1
+        expr_pres = prop_pres.children[0]
+        assert expr_pres.name == "Expression"
+        assert expr_pres.state == DiffState.DELETED
+        assert expr_pres.old_value == "Sketch.Length"
+        assert expr_pres.new_value is None
+        # Quantity value should be unchanged
+        assert prop_pres.old_value == "10.0 mm"
+        assert prop_pres.new_value == "10.0 mm"

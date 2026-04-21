@@ -311,7 +311,12 @@ class PrimitiveData:
 
 @dataclass(frozen=True)
 class QuantityData:
-    """Wraps a Base.Quantity with Value/Unit path entries."""
+    """Wraps a Base.Quantity as a single root string path entry.
+
+    The quantity is stored as a single STRING value at the root path "."
+    (e.g. "10.0 mm"), with the optional root expression co-located on the
+    same entry. This eliminates noisy Value/Unit sub-rows in the UI.
+    """
 
     INTERNAL_TYPE: ClassVar[InternalType] = InternalType.Quantity
     paths: dict[str, PropertyPathValue]
@@ -320,27 +325,29 @@ class QuantityData:
     def from_freecad_value(value: Any, expr_map: dict[str, str]) -> QuantityData:
         """Create QuantityData from a FreeCAD Base.Quantity value.
 
-        Extracts the Value (float) and Unit (str) attributes and stores them
-        as separate path entries. If the root expression map contains a '.'
-        key, it is stored as a root path entry.
+        Stores the string representation of the quantity (e.g. "10.0 mm")
+        as a single STRING entry at the root path ".". If the root expression
+        map contains a '.' key, it is stored as the expression on the same
+        root entry.
 
         Args:
             value: A FreeCAD Base.Quantity or compatible object.
             expr_map: Expression mapping that may contain a '.' key.
 
         Returns:
-            A new QuantityData instance.
+            A new QuantityData instance with root-only path entry.
         """
-        amount = float(getattr(value, "Value", 0.0))
-        unit = str(getattr(value, "Unit", ""))
-        paths: dict[str, PropertyPathValue] = {
-            "Value": PropertyPathValue(PropertyPathType.FLOAT, amount, None),
-            "Unit": PropertyPathValue(PropertyPathType.STRING, unit, None),
-        }
         root_expr = _root_expression(expr_map)
-        if root_expr is not None:
-            paths["."] = PropertyPathValue(PropertyPathType.NULL, None, root_expr)
-        return QuantityData(paths=paths)
+        quantity_text = str(value)
+        return QuantityData(
+            paths={
+                ".": PropertyPathValue(
+                    type_=PropertyPathType.STRING,
+                    value=quantity_text,
+                    expression=root_expr,
+                )
+            }
+        )
 
     @staticmethod
     def from_serialized_value(data: Any) -> QuantityData:
@@ -362,13 +369,14 @@ class QuantityData:
         """
         return {"type_": self.INTERNAL_TYPE.value, "paths": _serialize_path_entries(self.paths)}
 
-    def to_python(self) -> dict[str, Any]:
-        """Extract raw values from this QuantityData as a dict.
+    def to_python(self) -> str | None:
+        """Extract the raw string value from this QuantityData.
 
         Returns:
-            Dict mapping path keys to their raw values (e.g. {"Value": 1.0, "Unit": "mm"}).
+            The quantity string (e.g. "10.0 mm"), or None if no root entry exists.
         """
-        return {path: pv.value for path, pv in self.paths.items()}
+        root = self.paths.get(".")
+        return str(root.value) if root is not None and root.value is not None else None
 
 
 @dataclass(frozen=True)

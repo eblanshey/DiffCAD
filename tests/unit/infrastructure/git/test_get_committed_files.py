@@ -5,7 +5,6 @@
 """Unit tests for GitPortAdapter.get_committed_files()."""
 
 import subprocess
-import unittest.mock
 from unittest.mock import patch
 
 import pytest

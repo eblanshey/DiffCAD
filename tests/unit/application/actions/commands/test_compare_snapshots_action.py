@@ -2,8 +2,6 @@
 
 import datetime
 
-import pytest
-
 from freecad.diff_wb.application.actions.commands import CompareSnapshotsAction
 from freecad.diff_wb.domain.snapshots.models import Snapshot
 from freecad.diff_wb.domain.tree import Property

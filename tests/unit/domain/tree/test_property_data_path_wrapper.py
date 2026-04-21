@@ -9,8 +9,6 @@ restores the group from the serialized dict.
 
 from __future__ import annotations
 
-import pytest
-
 from freecad.diff_wb.domain.tree.data_path import (
     InternalType,
     PrimitiveData,

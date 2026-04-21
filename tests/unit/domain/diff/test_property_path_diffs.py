@@ -213,30 +213,31 @@ class TestFlattenDataPath:
         assert "." in result
         assert "" not in result
 
-    def test_quantity_data(self) -> None:
+    def test_quantity_data_root_only(self) -> None:
+        """QuantityData flattens to a single root '.' path with STRING value."""
         qd = QuantityData(
             paths={
-                "Value": PropertyPathValue(PropertyPathType.FLOAT, 10.0),
-                "Unit": PropertyPathValue(PropertyPathType.STRING, "mm"),
+                ".": PropertyPathValue(PropertyPathType.STRING, "10.0 mm"),
             }
         )
         result = _flatten_data_path(qd)
-        assert "Value" in result
-        assert "Unit" in result
-        assert result["Value"].value == 10.0
-        assert result["Unit"].value == "mm"
+        assert list(result.keys()) == ["."]
+        assert result["."].value == "10.0 mm"
+        assert result["."].type_ == PropertyPathType.STRING
 
-    def test_quantity_data_with_root(self) -> None:
+    def test_quantity_data_with_root_expression(self) -> None:
+        """QuantityData with root expression stores expression on the same entry."""
         qd = QuantityData(
             paths={
-                ".": PropertyPathValue(PropertyPathType.NULL, None, "Sketch.Length"),
-                "Value": PropertyPathValue(PropertyPathType.FLOAT, 10.0),
-                "Unit": PropertyPathValue(PropertyPathType.STRING, "mm"),
+                ".": PropertyPathValue(PropertyPathType.STRING, "10.0 mm", "Sketch.Length"),
             }
         )
         result = _flatten_data_path(qd)
         assert "." in result
+        assert result["."].value == "10.0 mm"
         assert result["."].expression == "Sketch.Length"
+        assert "Value" not in result
+        assert "Unit" not in result
 
     def test_vector_data(self) -> None:
         vd = VectorData(
