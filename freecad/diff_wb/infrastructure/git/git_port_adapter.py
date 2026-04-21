@@ -109,10 +109,13 @@ class GitPortAdapter(GitPort):
             commits = []
             # Process in groups of 4 (hash, message, author, timestamp)
             for i in range(0, len(parts) - 3, 4):
-                commit_hash = parts[i]
+                # Git inserts a newline between pretty-format entries. When using
+                # null-byte field delimiters this can prefix the next commit hash
+                # with "\n". Strip whitespace from scalar fields to keep values valid.
+                commit_hash = parts[i].strip()
                 full_message = parts[i + 1]
-                author = parts[i + 2]
-                timestamp = parts[i + 3]
+                author = parts[i + 2].strip()
+                timestamp = parts[i + 3].strip()
 
                 if commit_hash:  # Skip empty entries
                     # Parse ISO format timestamp into datetime instance

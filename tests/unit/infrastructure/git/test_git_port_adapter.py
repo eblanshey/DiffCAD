@@ -284,6 +284,27 @@ class TestGitPortAdapterGetCommits:
             assert commits[2].author == "Charlie"
             assert commits[2].timestamp.isoformat() == "2024-01-01T10:00:00+00:00"
 
+    def test_get_commits_trims_newline_prefixed_hashes(self) -> None:
+        """Test parsing commits when git log inserts newline between records."""
+        mock_result = subprocess.CompletedProcess(
+            args=["git", "log", "-n20", "--format=%H%x00%B%x00%an%x00%aI%x00"],
+            returncode=0,
+            stdout=(
+                "hash3\x00Third commit\x00Alice\x002024-01-03T10:00:00+00:00\x00"
+                "\nhash2\x00Second commit\x00Bob\x002024-01-02T10:00:00+00:00\x00"
+                "\nhash1\x00First commit\x00Charlie\x002024-01-01T10:00:00+00:00\x00"
+            ),
+            stderr="",
+        )
+
+        with patch.object(subprocess, "run", return_value=mock_result):
+            commits = self.adapter.get_commits("/path/to/repo")
+
+            assert len(commits) == 3
+            assert commits[0].id == "hash3"
+            assert commits[1].id == "hash2"
+            assert commits[2].id == "hash1"
+
     def test_get_commits_limit_parameter(self) -> None:
         """Test that limit parameter is passed correctly to git log."""
         mock_result = subprocess.CompletedProcess(
