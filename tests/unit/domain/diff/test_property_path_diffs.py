@@ -126,11 +126,23 @@ class TestPathValuesEqual:
         pv2 = PropertyPathValue(PropertyPathType.FLOAT, 2.0)
         assert _path_values_equal(pv1, pv2) is False
 
-    def test_float_at_tolerance_boundary(self) -> None:
-        # Values exactly at 1e-9 apart should be equal
+    def test_float_at_precision_boundary(self) -> None:
+        # Values that round to the same value at precision 2 are equal
         pv1 = PropertyPathValue(PropertyPathType.FLOAT, 0.0)
         pv2 = PropertyPathValue(PropertyPathType.FLOAT, 1e-9)
         assert _path_values_equal(pv1, pv2) is True
+
+    def test_float_values_round_to_same_are_equal(self) -> None:
+        # Values that round to the same value at precision 2 are equal
+        pv1 = PropertyPathValue(PropertyPathType.FLOAT, 1.567)
+        pv2 = PropertyPathValue(PropertyPathType.FLOAT, 1.569)
+        assert _path_values_equal(pv1, pv2) is True
+
+    def test_float_values_round_to_different_are_not_equal(self) -> None:
+        # Values that round to different values at precision 2 are not equal
+        pv1 = PropertyPathValue(PropertyPathType.FLOAT, 1.567)
+        pv2 = PropertyPathValue(PropertyPathType.FLOAT, 1.579)
+        assert _path_values_equal(pv1, pv2) is False
 
     def test_int_equal(self) -> None:
         pv1 = PropertyPathValue(PropertyPathType.INT, 42)
@@ -446,8 +458,8 @@ class TestPropertyPathDiff:
         diff = PropertyPathDiff(path="x", old_value=pv1, new_value=pv2)
         assert diff.value_state == DiffState.MODIFIED
 
-    def test_float_tolerance_in_value_state(self) -> None:
-        """Float values within tolerance produce UNCHANGED value_state."""
+    def test_float_precision_in_value_state(self) -> None:
+        """Float values that round to the same value produce UNCHANGED value_state."""
         pv1 = PropertyPathValue(PropertyPathType.FLOAT, 1.0)
         pv2 = PropertyPathValue(PropertyPathType.FLOAT, 1.0 + 1e-10)
         diff = PropertyPathDiff(path="x", old_value=pv1, new_value=pv2)

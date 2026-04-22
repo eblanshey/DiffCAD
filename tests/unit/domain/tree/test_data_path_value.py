@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
 # File responsibility: Unit tests for PropertyPathValue including factory creation
-# from Python values and float-tolerance equality behavior.
+# from Python values and precision-based float equality behavior.
 """Unit tests for PropertyPathValue class."""
 
 import pytest
@@ -51,7 +51,7 @@ class TestPropertyPathValueFromPython:
 
 
 class TestPropertyPathValueEquality:
-    """Tests for PropertyPathValue equality with float tolerance."""
+    """Tests for PropertyPathValue equality with precision-based float comparison."""
 
     def test_same_type_and_value_are_equal(self) -> None:
         """Test equality for identical values."""
@@ -74,15 +74,21 @@ class TestPropertyPathValueEquality:
     @pytest.mark.parametrize(
         ("v1", "v2", "expected_equal"),
         [
-            (1.0, 1.0 + 1e-10, True),  # within tolerance
-            (1.0, 1.0 + 1e-8, False),  # outside tolerance
-            (0.0, 1e-10, True),  # near zero, within tolerance
-            (1e6, 1e6 + 1e-4, True),  # large values, within tolerance
-            (1e6, 1e6 + 1e-2, False),  # large values, outside tolerance
+            (1.0, 1.0 + 1e-10, True),  # both round to 1.00 at precision 2
+            (1.0, 1.0 + 1e-8, True),  # both round to 1.00 at precision 2
+            (0.0, 1e-10, True),  # both round to 0.00 at precision 2
+            (1e6, 1e6 + 1e-4, True),  # both round to 1000000.00 at precision 2
+            (1e6, 1e6 + 0.001, True),  # both round to 1000000.00 at precision 2
+            (1e6, 1e6 + 0.01, False),  # 1000000.00 vs 1000000.01 — different
+            (1.567, 1.569, True),  # both round to 1.57
+            (1.567, 1.579, False),  # 1.57 vs 1.58 — different
+            (1.0, 1.1, False),  # 1.00 vs 1.10 — different
+            (0.0, 0.004, True),  # both round to 0.00 at precision 2
+            (0.0, 0.005, False),  # 0.00 vs 0.01 due to float representation — different
         ],
     )
-    def test_float_equality_with_tolerance(self, v1: float, v2: float, expected_equal: bool) -> None:
-        """Test float equality uses 1e-9 relative and absolute tolerance."""
+    def test_float_equality_with_precision(self, v1: float, v2: float, expected_equal: bool) -> None:
+        """Test float equality uses precision-based rounding (default 2 decimal places)."""
         pv1 = PropertyPathValue(PropertyPathType.FLOAT, v1)
         pv2 = PropertyPathValue(PropertyPathType.FLOAT, v2)
         if expected_equal:

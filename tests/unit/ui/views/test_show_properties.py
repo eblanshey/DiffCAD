@@ -550,15 +550,15 @@ class TestDiffPanelViewExpandableProperties:
         assert "y" in child_names
         assert "z" in child_names
 
-        # Verify old values in column 1
+        # Verify old values in column 1 (formatted with 2 decimal places)
         old_values = [prop_item.child(i).text(1) for i in range(3)]
-        assert "0.0" in old_values
+        assert "0.00" in old_values
 
-        # Verify new values in column 2
+        # Verify new values in column 2 (formatted with 2 decimal places)
         new_values = [prop_item.child(i).text(2) for i in range(3)]
-        assert "10.0" in new_values
-        assert "20.0" in new_values
-        assert "30.0" in new_values
+        assert "10.00" in new_values
+        assert "20.00" in new_values
+        assert "30.00" in new_values
 
     def test_expandable_property_with_list_value_has_children(self, panel) -> None:  # type: ignore[no-untyped-def]
         """show_properties() adds child items for expandable properties with list values in 3-column layout."""
@@ -956,16 +956,16 @@ class TestDiffPanelViewExpandablePropertyChildDiffs:
 
         # Check x child (UNCHANGED: same value 10.0)
         x_child = child_items["x"]
-        assert x_child.text(1) == "10.0"  # Old value
-        assert x_child.text(2) == "10.0"  # New value
+        assert x_child.text(1) == "10.00"  # Old value
+        assert x_child.text(2) == "10.00"  # New value
         # Unchanged children should have default background (not colored)
         x_bg = x_child.background(0).color()
         assert x_bg != QColor(200, 200, 255)  # Not MODIFIED color
 
         # Check y child (MODIFIED: 20.0 -> 25.0)
         y_child = child_items["y"]
-        assert y_child.text(1) == "20.0"  # Old value
-        assert y_child.text(2) == "25.0"  # New value
+        assert y_child.text(1) == "20.00"  # Old value
+        assert y_child.text(2) == "25.00"  # New value
         # Modified children should have blue background
         assert y_child.background(0).color() == QColor(200, 200, 255)
         assert y_child.background(1).color() == QColor(200, 200, 255)
@@ -973,8 +973,8 @@ class TestDiffPanelViewExpandablePropertyChildDiffs:
 
         # Check z child (UNCHANGED: same value 30.0)
         z_child = child_items["z"]
-        assert z_child.text(1) == "30.0"  # Old value
-        assert z_child.text(2) == "30.0"  # New value
+        assert z_child.text(1) == "30.00"  # Old value
+        assert z_child.text(2) == "30.00"  # New value
         # Unchanged children should have default background (not colored)
         z_bg = z_child.background(0).color()
         assert z_bg != QColor(200, 200, 255)  # Not MODIFIED color
@@ -1023,7 +1023,7 @@ class TestDiffPanelViewExpandablePropertyChildDiffs:
         # Check z child (ADDED: empty old value, has new value)
         z_child = child_items["z"]
         assert z_child.text(1) == ""  # Empty old value
-        assert z_child.text(2) == "30.0"  # New value
+        assert z_child.text(2) == "30.00"  # New value
         # Added children should have green background
         assert z_child.background(0).color() == QColor(200, 255, 200)
         assert z_child.background(1).color() == QColor(200, 255, 200)
@@ -1069,7 +1069,7 @@ class TestDiffPanelViewExpandablePropertyChildDiffs:
 
         # Check z child (DELETED: has old value, empty new value)
         z_child = child_items["z"]
-        assert z_child.text(1) == "30.0"  # Old value
+        assert z_child.text(1) == "30.00"  # Old value
         assert z_child.text(2) == ""  # Empty new value
         # Deleted children should have red background
         assert z_child.background(0).color() == QColor(255, 200, 200)
@@ -1519,7 +1519,7 @@ class TestDiffPanelViewNestedSubPathRendering:
         # Leaf node x has actual value
         x_item = base_item.child(0)
         assert x_item.text(1) == ""  # ADDED: empty old value
-        assert x_item.text(2) == "5.0"  # ADDED: new value
+        assert x_item.text(2) == "5.00"  # ADDED: new value
 
     def test_branch_ordering_stable_for_indexed_segments(self, panel) -> None:  # type: ignore[no-untyped-def]
         """Branch/item ordering is stable for indexed segments ([2] before [10]).

@@ -31,6 +31,9 @@ AUTO_EXCLUDED_PROPERTIES = [
     "Proxy",  # Contains custom logic not useful for diffing, e.g. assembly joint logic
 ]
 
+# Configurable float precision for comparison and display (matching FreeCAD's lowPrec)
+FLOAT_PRECISION = 2
+
 # Additional properties to exclude (can be overridden by user configuration)
 EXCLUDED_PROPERTIES = [
     *AUTO_EXCLUDED_PROPERTIES,

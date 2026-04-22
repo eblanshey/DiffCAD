@@ -14,3 +14,4 @@ class Settings:
     excluded_types: list[str]
     excluded_properties: list[str]
     excluded_properties_by_type: dict[str, list[str]]
+    float_precision: int = 2  # Decimal places for float comparison and display

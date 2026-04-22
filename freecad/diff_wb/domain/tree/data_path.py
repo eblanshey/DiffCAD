@@ -30,6 +30,9 @@ from dataclasses import dataclass
 from enum import StrEnum
 from typing import Any, ClassVar, Protocol, runtime_checkable
 
+from ...config import FLOAT_PRECISION
+from ...utils import float_values_equal
+
 
 class InternalType(StrEnum):
     """Internal type identifiers for path-based data values.
@@ -98,11 +101,11 @@ class PropertyPathValue:
         return PropertyPathValue(PropertyPathType.STRING, str(value), expression)
 
     def __eq__(self, other: object) -> bool:
-        """Equality with float tolerance for FLOAT types.
+        """Equality with float precision for FLOAT types.
 
         Two values are equal if they have the same type, the same expression
-        (both None or both the same string), and values that are close within
-        1e-9 relative and absolute tolerance for floats.
+        (both None or both the same string), and values that round to the
+        same value at the configured precision for floats.
         """
         if not isinstance(other, PropertyPathValue):
             return NotImplemented
@@ -111,7 +114,7 @@ class PropertyPathValue:
         if self.expression != other.expression:
             return False
         if self.type_ == PropertyPathType.FLOAT:
-            return math.isclose(float(self.value), float(other.value), rel_tol=1e-9, abs_tol=1e-9)
+            return float_values_equal(float(self.value), float(other.value), FLOAT_PRECISION)
         return self.value == other.value
 
 

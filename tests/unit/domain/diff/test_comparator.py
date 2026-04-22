@@ -311,9 +311,9 @@ class TestCompareProperties:
         # Verify IntProp is unchanged
         assert next(p for p in result if p.property_name == "IntProp").state == DiffState.UNCHANGED
 
-    def test_float_tolerance_edge_cases(self) -> None:
-        """Test float tolerance with various edge cases."""
-        # Very small difference within tolerance
+    def test_float_precision_edge_cases(self) -> None:
+        """Test float precision-based comparison with various edge cases."""
+        # Very small difference — rounds to same value at precision 2
         old_props = {
             "FloatProp": Property.from_freecad(1.0, {}, "Base"),
         }
@@ -321,12 +321,12 @@ class TestCompareProperties:
             "FloatProp": Property.from_freecad(1.0 + 1e-10, {}, "Base"),
         }
         result = compare_properties(old_props, new_props)
-        assert len(result) == 1  # Within tolerance, so unchanged but included
+        assert len(result) == 1  # Rounds to same value at precision 2, so unchanged
         assert result[0].state == DiffState.UNCHANGED
 
-        # Difference exceeding tolerance
+        # Difference exceeding precision — rounds to different value at precision 2
         new_props_exceed = {
-            "FloatProp": Property.from_freecad(1.0 + 1e-8, {}, "Base"),
+            "FloatProp": Property.from_freecad(1.0 + 0.015, {}, "Base"),
         }
         result_exceed = compare_properties(old_props, new_props_exceed)
         assert len(result_exceed) == 1

@@ -6,7 +6,12 @@
 
 from __future__ import annotations
 
-from ...config import EXCLUDED_PROPERTIES, EXCLUDED_PROPERTIES_BY_TYPE, EXCLUDED_TYPES
+from ...config import (
+    EXCLUDED_PROPERTIES,
+    EXCLUDED_PROPERTIES_BY_TYPE,
+    EXCLUDED_TYPES,
+    FLOAT_PRECISION,
+)
 from ...domain.settings.models import Settings
 from .ports import FreeCadContext
 
@@ -76,4 +81,5 @@ class FreeCADSettingsRepository:
             excluded_types=self.get_excluded_types(),
             excluded_properties=self.get_excluded_properties(),
             excluded_properties_by_type=self.get_excluded_properties_by_type(),
+            float_precision=FLOAT_PRECISION,
         )

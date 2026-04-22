@@ -5,7 +5,11 @@
 This module contains shared utilities including the unified logging system.
 """
 
-from typing import Protocol
+from typing import TYPE_CHECKING, Protocol
+
+
+if TYPE_CHECKING:
+    from PyQt5.QtCore import QLocale  # noqa: F401
 
 
 class LoggerProtocol(Protocol):
@@ -139,10 +143,55 @@ class Logger:
 Log = Logger()
 
 
+def format_float(value: float, precision: int) -> str:
+    """Format a float value to the given number of decimal places.
+
+    Uses QLocale for locale-aware number formatting, matching FreeCAD's
+    property viewer approach (QLocale().toString(value, 'f', decimals)).
+
+    Falls back to Python's built-in formatting when Qt is unavailable
+    (e.g., in unit test environments).
+
+    Args:
+        value: The float value to format.
+        precision: Number of decimal places.
+
+    Returns:
+        Formatted string like "1.23" or "-0.01".
+    """
+    try:
+        from PyQt5.QtCore import QLocale
+
+        return QLocale().toString(value, "f", precision)  # type: ignore[no-any-return]
+    except ImportError:
+        # Fall back to Python's built-in formatting when Qt is unavailable
+        return f"{value:.{precision}f}"
+
+
+def float_values_equal(v1: float, v2: float, precision: int) -> bool:
+    """Compare two float values after rounding to the given precision.
+
+    Values that look identical at N decimal places are considered equal.
+    This replaces math.isclose() for our use case where display precision
+    should drive comparison tolerance.
+
+    Args:
+        v1: First float value.
+        v2: Second float value.
+        precision: Number of decimal places to round to.
+
+    Returns:
+        True if rounded values are equal.
+    """
+    return round(v1, precision) == round(v2, precision)
+
+
 __all__ = [
     "LoggerProtocol",
     "StdoutLogger",
     "Logger",
     "Log",
     "set_logger",
+    "format_float",
+    "float_values_equal",
 ]

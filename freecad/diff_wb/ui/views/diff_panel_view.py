@@ -25,6 +25,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from ...config import FLOAT_PRECISION
+from ...utils import format_float
+
 
 # Module-level icon loading for refresh button and warning icon
 # This is done once at import time rather than per-instance to avoid repeated imports
@@ -1086,6 +1089,19 @@ class DiffPanelView(QWidget):
 
         return item
 
+    def _format_value_for_display(self, value: Any) -> str:
+        """Format a value for display, rounding floats to configured precision.
+
+        Args:
+            value: The value to format.
+
+        Returns:
+            Formatted string matching FreeCAD's property viewer display.
+        """
+        if isinstance(value, float):
+            return format_float(value, FLOAT_PRECISION)
+        return str(value)
+
     def _get_property_display_values(
         self,
         state: DiffState,
@@ -1105,15 +1121,17 @@ class DiffPanelView(QWidget):
             Tuple of (background_color, left_column_value, right_column_value).
         """
         if state == DiffState.ADDED:
-            return self.ADDED_COLOR, "", str(prop.new_value) if prop.new_value is not None else ""
+            new_val = self._format_value_for_display(prop.new_value) if prop.new_value is not None else ""
+            return self.ADDED_COLOR, "", new_val
         if state == DiffState.DELETED:
-            return self.DELETED_COLOR, str(prop.old_value) if prop.old_value is not None else "", ""
+            old_val = self._format_value_for_display(prop.old_value) if prop.old_value is not None else ""
+            return self.DELETED_COLOR, old_val, ""
         if state == DiffState.MODIFIED:
-            old_str = str(prop.old_value) if prop.old_value is not None else ""
-            new_str = str(prop.new_value) if prop.new_value is not None else ""
+            old_str = self._format_value_for_display(prop.old_value) if prop.old_value is not None else ""
+            new_str = self._format_value_for_display(prop.new_value) if prop.new_value is not None else ""
             return self.MODIFIED_COLOR, old_str, new_str
         # UNCHANGED - show same value in both columns
-        new_str = str(prop.new_value) if prop.new_value is not None else ""
+        new_str = self._format_value_for_display(prop.new_value) if prop.new_value is not None else ""
         return self.UNCHANGED_COLOR, new_str, new_str
 
     def _add_child_items(
@@ -1164,8 +1182,8 @@ class DiffPanelView(QWidget):
         Returns:
             Tuple of (left_value, right_value) for display.
         """
-        old_val = str(child.old_value) if child.old_value is not None else ""
-        new_val = str(child.new_value) if child.new_value is not None else ""
+        old_val = self._format_value_for_display(child.old_value) if child.old_value is not None else ""
+        new_val = self._format_value_for_display(child.new_value) if child.new_value is not None else ""
         if child.state == DiffState.ADDED:
             return "", new_val
         if child.state == DiffState.DELETED:

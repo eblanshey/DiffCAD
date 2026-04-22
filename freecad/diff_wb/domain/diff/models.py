@@ -13,11 +13,12 @@
 
 from __future__ import annotations
 
-import math
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import Any
 
+from ...config import FLOAT_PRECISION
+from ...utils import float_values_equal
 from ..snapshots import Snapshot
 from ..tree import Property
 from ..tree.data_path import (
@@ -118,14 +119,14 @@ def _calc_expression_state(old_expr: str | None, new_expr: str | None) -> DiffSt
 def _path_values_equal(old: PropertyPathValue, new: PropertyPathValue) -> bool:
     """Compare two ``PropertyPathValue`` instances for equality.
 
-    Float values are compared with ``math.isclose`` using 1e-9 relative
-    and absolute tolerance.  All other types use exact equality.
-    Expression is NOT compared here (expression has its own state).
+    Float values are compared after rounding to the configured precision.
+    All other types use exact equality.  Expression is NOT compared here
+    (expression has its own state).
     """
     if old.type_ != new.type_:
         return False
     if old.type_ == PropertyPathType.FLOAT:
-        return math.isclose(float(old.value), float(new.value), rel_tol=1e-9, abs_tol=1e-9)
+        return float_values_equal(float(old.value), float(new.value), FLOAT_PRECISION)
     return old.value == new.value
 
 

@@ -22,11 +22,12 @@ from ...application.actions.get_dirty_documents import GetDirtyDocumentsAction
 from ...application.actions.get_open_eligible_documents import GetOpenEligibleDocumentsAction
 from ...application.actions.get_staged_file_paths import GetStagedFilePathsAction
 from ...application.actions.stage_documents import StageDocumentsAction
+from ...config import FLOAT_PRECISION
 from ...domain.diff.engine import DiffResult
 from ...domain.diff.models import WARNING_OLD_SNAPSHOT_MISSING, DiffState, NodeDiff, PropertyPathDiff
 from ...domain.git.models import GitRepository
 from ...domain.tree import Property
-from ...utils import Log
+from ...utils import Log, format_float
 from ..protocols.diff_view import DiffView
 from ..state import UIState
 from ..views.models import HistorySelection
@@ -223,13 +224,15 @@ def _derive_container_summary(values: list[Any]) -> str | None:
     Used for container rows (e.g. Placement) where no direct value
     exists but children do. Produces output like "[0.00 0.00 0.00]".
 
+    Float values are formatted with the configured precision.
+
     Args:
         values: List of old or new values from child presentations.
 
     Returns:
         A bracketed string like "[0.00 0.00 0.00]", or None if no values.
     """
-    non_null = [str(v) for v in values if v is not None]
+    non_null = [format_float(v, FLOAT_PRECISION) if isinstance(v, float) else str(v) for v in values if v is not None]
     if not non_null:
         return None
     return "[" + " ".join(non_null) + "]"
