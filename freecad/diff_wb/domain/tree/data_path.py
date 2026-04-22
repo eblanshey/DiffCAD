@@ -537,7 +537,7 @@ class PlacementData:
             "Base.y": PropertyPathValue(PropertyPathType.FLOAT, float(base.y), expr_map.get("Base.y")),
             "Base.z": PropertyPathValue(PropertyPathType.FLOAT, float(base.z), expr_map.get("Base.z")),
             "Rotation.Angle": PropertyPathValue(
-                PropertyPathType.FLOAT, float(rot.Angle), expr_map.get("Rotation.Angle")
+                PropertyPathType.FLOAT, math.degrees(rot.Angle), expr_map.get("Rotation.Angle")
             ),
             "Rotation.Axis.x": PropertyPathValue(
                 PropertyPathType.FLOAT, float(axis.x), expr_map.get("Rotation.Axis.x")
