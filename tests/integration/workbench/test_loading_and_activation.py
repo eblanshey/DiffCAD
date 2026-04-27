@@ -52,6 +52,7 @@ class TestWorkbenchLoading:
                 assert DiffWorkbench.ToolTip == "Compare document snapshots"
                 assert DiffWorkbench.toolbox == [
                     "DiffRefreshRepository",
+                    "DiffRecomputeAllOpenDocuments",
                     "DiffOpenAllDocumentsInRepository",
                     "DiffCommit",
                     "DiffTakeSnapshot",
@@ -93,6 +94,7 @@ class TestWorkbenchLoading:
             assert wb.ToolTip == "Compare document snapshots"
             assert wb.toolbox == [
                 "DiffRefreshRepository",
+                "DiffRecomputeAllOpenDocuments",
                 "DiffOpenAllDocumentsInRepository",
                 "DiffCommit",
                 "DiffTakeSnapshot",

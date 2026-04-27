@@ -42,6 +42,7 @@ if Gui is not None:
         Icon = os.path.join(ICONPATH, "Logo.svg")
         toolbox = [
             "DiffRefreshRepository",
+            "DiffRecomputeAllOpenDocuments",
             "DiffOpenAllDocumentsInRepository",
             "DiffCommit",
             "DiffTakeSnapshot",

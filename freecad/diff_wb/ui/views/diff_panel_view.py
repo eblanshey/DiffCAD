@@ -318,7 +318,7 @@ class DiffPanelView(QWidget):
         self._refresh_button = QPushButton()
         self._refresh_button.setIcon(_REFRESH_ICON)
         self._refresh_button.setIconSize(QSize(24, 24))
-        self._refresh_button.setToolTip("Refresh git repository detection")
+        self._refresh_button.setToolTip("Refresh Git Repository and Commits")
         # Create header layout with repository label on left and refresh button on right
         repository_header_layout = QHBoxLayout()
         repository_header_layout.addWidget(self._repository_label)

@@ -237,7 +237,7 @@ class _RefreshRepositoryCommand:
     def GetResources(self) -> dict[str, str]:
         """Return FreeCAD command metadata for UI integration."""
         return {
-            "MenuText": "Refresh Repository and Load Commits",
+            "MenuText": "Refresh Git Repository and Commits",
             "ToolTip": "Refresh repository detection and reload commits",
             "Pixmap": os.path.join(ICONPATH, "RefreshRepository.svg"),
         }
@@ -294,6 +294,29 @@ class _OpenAllDocumentsInRepositoryCommand:
         container.open_all_documents_in_repository_action.execute(repo)
 
 
+class _RecomputeAllOpenDocumentsCommand:
+    """Command to recompute all open documents in FreeCAD."""
+
+    def GetResources(self) -> dict[str, str]:
+        """Return FreeCAD command metadata for UI integration."""
+        return {
+            "MenuText": "Recompute All",
+            "ToolTip": "Recompute every open document",
+            "Pixmap": os.path.join(ICONPATH, "RecomputeAll.svg"),
+        }
+
+    def IsActive(self) -> bool:
+        """Return whether the command should be enabled."""
+        return True
+
+    def Activated(self) -> None:
+        """FreeCAD calls this when user clicks toolbar button."""
+        from .._container import get_container
+
+        container = get_container()
+        container.recompute_all_open_documents_action.execute()
+
+
 def register_commands() -> None:
     """Register the Diff Workbench commands with FreeCAD."""
     import FreeCADGui as Gui  # pylint: disable=import-error
@@ -304,3 +327,4 @@ def register_commands() -> None:
     Gui.addCommand("DiffCommit", _CommitCommand())
     Gui.addCommand("DiffRefreshRepository", _RefreshRepositoryCommand())
     Gui.addCommand("DiffOpenAllDocumentsInRepository", _OpenAllDocumentsInRepositoryCommand())
+    Gui.addCommand("DiffRecomputeAllOpenDocuments", _RecomputeAllOpenDocumentsCommand())

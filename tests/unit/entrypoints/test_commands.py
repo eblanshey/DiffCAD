@@ -11,6 +11,7 @@ import pytest
 from freecad.diff_wb.application.actions.result_models import CompareResult, SnapshotResult
 from freecad.diff_wb.entrypoints.commands import (
     _CompareCommand,
+    _RecomputeAllOpenDocumentsCommand,
     _RefreshRepositoryCommand,
     _SwapColumnsCommand,
     _TakeSnapshotCommand,
@@ -499,7 +500,34 @@ class TestRefreshRepositoryCommand:
 
         resources = command.GetResources()
 
-        assert resources["MenuText"] == "Refresh Repository and Load Commits"
+        assert resources["MenuText"] == "Refresh Git Repository and Commits"
         assert "refresh" in resources["ToolTip"].lower()
+        assert resources["Pixmap"].endswith("RefreshRepository.svg")
+        assert command.IsActive() is True
+
+
+class TestRecomputeAllOpenDocumentsCommand:
+    """Tests for _RecomputeAllOpenDocumentsCommand."""
+
+    @patch("freecad.diff_wb._container.get_container")
+    def test_activated_calls_application_action(self, mock_get_container: Mock) -> None:
+        """Activated delegates to application action execute API."""
+        mock_container = MagicMock()
+        mock_get_container.return_value = mock_container
+
+        command = _RecomputeAllOpenDocumentsCommand()
+
+        command.Activated()
+
+        mock_container.recompute_all_open_documents_action.execute.assert_called_once_with()
+
+    def test_resources_and_activation(self) -> None:
+        """Command resources are valid and command active."""
+        command = _RecomputeAllOpenDocumentsCommand()
+
+        resources = command.GetResources()
+
+        assert resources["MenuText"] == "Recompute All"
+        assert "recompute" in resources["ToolTip"].lower()
         assert resources["Pixmap"].endswith("RefreshRepository.svg")
         assert command.IsActive() is True

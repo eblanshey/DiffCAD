@@ -10,6 +10,7 @@ from .get_diff_settings import GetDiffSettingsAction
 from .get_open_eligible_documents import GetOpenEligibleDocumentsAction
 from .open_all_documents_in_repository import OpenAllDocumentsInRepositoryAction
 from .queries import ListSnapshotsAction
+from .recompute_all_open_documents import RecomputeAllOpenDocumentsAction
 from .result_models import CompareResult, Result, SnapshotResult, SnapshotSummary
 from .save_diff_settings import SaveDiffSettingsAction
 
@@ -24,6 +25,7 @@ __all__ = [
     "GetDiffSettingsAction",
     "GetOpenEligibleDocumentsAction",
     "OpenAllDocumentsInRepositoryAction",
+    "RecomputeAllOpenDocumentsAction",
     "SaveDiffSettingsAction",
     "CreateDocumentSnapshotForWorkingTreeAction",
     "CreateDocumentSnapshotForCommitAction",

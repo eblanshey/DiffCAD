@@ -34,6 +34,7 @@ from ..actions.get_open_eligible_documents import GetOpenEligibleDocumentsAction
 from ..actions.get_staged_file_paths import GetStagedFilePathsAction
 from ..actions.open_all_documents_in_repository import OpenAllDocumentsInRepositoryAction
 from ..actions.queries.list_snapshots import ListSnapshotsAction
+from ..actions.recompute_all_open_documents import RecomputeAllOpenDocumentsAction
 from ..actions.save_diff_settings import SaveDiffSettingsAction
 from ..actions.stage_documents import StageDocumentsAction
 
@@ -86,6 +87,7 @@ class ApplicationContainer:
     find_active_git_repository_action: FindActiveGitRepositoryAction
     get_commits_action: GetCommitsAction
     open_all_documents_in_repository_action: OpenAllDocumentsInRepositoryAction
+    recompute_all_open_documents_action: RecomputeAllOpenDocumentsAction
     # NO ui_state - that's frontend state, not application state
 
     def log(self, message: str) -> None:
@@ -167,6 +169,9 @@ def create_application_container(ctx: FreeCadContext) -> ApplicationContainer:
     open_all_documents_in_repository_action = OpenAllDocumentsInRepositoryAction(
         freecad_port=freecad_port,
     )
+    recompute_all_open_documents_action = RecomputeAllOpenDocumentsAction(
+        freecad_port=freecad_port,
+    )
 
     # Create new actions for working tree diff
     get_open_eligible_docs_action = GetOpenEligibleDocumentsAction(
@@ -210,4 +215,5 @@ def create_application_container(ctx: FreeCadContext) -> ApplicationContainer:
         find_active_git_repository_action=find_active_git_repository_action,
         get_commits_action=get_commits_action,
         open_all_documents_in_repository_action=open_all_documents_in_repository_action,
+        recompute_all_open_documents_action=recompute_all_open_documents_action,
     )
