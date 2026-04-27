@@ -53,6 +53,9 @@ class FreeCadPortAdapter:
         docs_dict = self._ctx.app.listDocuments()
         return list(docs_dict.values())
 
+    def open_document(self, path: str) -> DocumentLike:
+        return self._ctx.app.openDocument(path)
+
     def get_object(self, doc: DocumentLike, name: str) -> object | None:
         return doc.getObject(name)
 

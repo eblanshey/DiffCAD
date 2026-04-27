@@ -231,6 +231,46 @@ class _CommitCommand:
             )
 
 
+class _OpenAllDocumentsInRepositoryCommand:
+    """Command to open all .FCStd documents under detected repository."""
+
+    def GetResources(self) -> dict[str, str]:
+        """Return FreeCAD command metadata for UI integration."""
+        return {
+            "MenuText": "Open All Documents in Repository",
+            "ToolTip": "Open every .FCStd file found in repository",
+            "Pixmap": os.path.join(ICONPATH, "OpenAllDocuments.svg"),
+        }
+
+    def IsActive(self) -> bool:
+        """Return whether the command should be enabled."""
+        return True
+
+    def Activated(self) -> None:
+        """FreeCAD calls this when user clicks toolbar button."""
+        from PySide6.QtWidgets import QMessageBox
+
+        from .._container import get_container
+        from ..ui.registry import ui_registry
+        from ..ui.translation_strings import (
+            OPEN_ALL_DOCUMENTS_NO_REPOSITORY_MESSAGE,
+            OPEN_ALL_DOCUMENTS_NO_REPOSITORY_TITLE,
+        )
+
+        container = get_container()
+        repo = ui_registry.ui_state.git_repository
+
+        if repo is None:
+            QMessageBox.warning(
+                None,  # type: ignore[arg-type]
+                container.translate("OpenAllDocuments", OPEN_ALL_DOCUMENTS_NO_REPOSITORY_TITLE),
+                container.translate("OpenAllDocuments", OPEN_ALL_DOCUMENTS_NO_REPOSITORY_MESSAGE),
+            )
+            return
+
+        container.open_all_documents_in_repository_action.execute(repo)
+
+
 def register_commands() -> None:
     """Register the Diff Workbench commands with FreeCAD."""
     import FreeCADGui as Gui  # pylint: disable=import-error
@@ -239,3 +279,4 @@ def register_commands() -> None:
     Gui.addCommand("DiffCompare", _CompareCommand())
     Gui.addCommand("DiffSwapColumns", _SwapColumnsCommand())
     Gui.addCommand("DiffCommit", _CommitCommand())
+    Gui.addCommand("DiffOpenAllDocumentsInRepository", _OpenAllDocumentsInRepositoryCommand())

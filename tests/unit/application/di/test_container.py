@@ -29,6 +29,7 @@ class TestApplicationContainer:
         assert container.take_snapshot_action is not None
         assert container.compare_snapshots_action is not None
         assert container.list_snapshots_action is not None
+        assert container.open_all_documents_in_repository_action is not None
 
     def test_container_wires_dependencies_correctly(self) -> None:
         """Actions have correct dependencies injected."""

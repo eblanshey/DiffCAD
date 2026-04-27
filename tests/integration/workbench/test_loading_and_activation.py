@@ -50,7 +50,13 @@ class TestWorkbenchLoading:
                 # Verify specific attribute values
                 assert DiffWorkbench.MenuText == "Diff"
                 assert DiffWorkbench.ToolTip == "Compare document snapshots"
-                assert DiffWorkbench.toolbox == ["DiffTakeSnapshot", "DiffCompare", "DiffSwapColumns"]
+                assert DiffWorkbench.toolbox == [
+                    "DiffTakeSnapshot",
+                    "DiffCompare",
+                    "DiffSwapColumns",
+                    "DiffCommit",
+                    "DiffOpenAllDocumentsInRepository",
+                ]
         finally:
             freecad_app.Console.PrintError = original_print_error
 
@@ -84,7 +90,13 @@ class TestWorkbenchLoading:
             assert hasattr(wb, "GetClassName")
             assert wb.MenuText == "Diff"
             assert wb.ToolTip == "Compare document snapshots"
-            assert wb.toolbox == ["DiffTakeSnapshot", "DiffCompare", "DiffSwapColumns"]
+            assert wb.toolbox == [
+                "DiffTakeSnapshot",
+                "DiffCompare",
+                "DiffSwapColumns",
+                "DiffCommit",
+                "DiffOpenAllDocumentsInRepository",
+            ]
         else:
             # Class not available (headless/Xvfb mode) - check source code instead
             source = inspect.getsource(wb_module)

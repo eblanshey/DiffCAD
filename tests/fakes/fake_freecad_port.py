@@ -23,6 +23,7 @@ class FakeFreeCadPort(FreeCadPort):
         self._open_documents: list[DocumentLike] = (
             cast(list[DocumentLike], open_documents) if open_documents is not None else []
         )
+        self.opened_document_paths: list[str] = []
         self._call_log: list[str] = []  # Track method calls for verification
 
     def get_active_document(self) -> DocumentLike | None:
@@ -34,6 +35,27 @@ class FakeFreeCadPort(FreeCadPort):
         """Return the configured open documents."""
         self._call_log.append("get_all_open_documents")
         return self._open_documents
+
+    def open_document(self, path: str) -> DocumentLike:
+        """Track opened path and return mock document."""
+        self._call_log.append(f"open_document:{path}")
+        self.opened_document_paths.append(path)
+        opened_doc = cast(
+            DocumentLike,
+            type(
+                "OpenedMockDoc",
+                (),
+                {
+                    "FileName": path,
+                    "Objects": [],
+                    "getObject": lambda self, name: None,
+                    "recompute": lambda self: None,
+                    "save": lambda self: None,
+                },
+            )(),
+        )
+        self._open_documents.append(opened_doc)
+        return opened_doc
 
     def get_object(self, doc: object, name: str) -> object | None:
         """Return None (not implemented in fake)."""

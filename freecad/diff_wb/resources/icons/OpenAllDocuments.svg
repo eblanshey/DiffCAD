@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="64"
+    height="64"
+    viewBox="0 0 64 64"
+    fill="none"
+>
+    <title>Open all documents</title>
+    <desc>Layered documents with open-folder cue.</desc>
+
+    <!-- Back document -->
+    <rect x="14" y="10" width="30" height="38" rx="3" fill="#D9E2EC" stroke="#6B7C93" stroke-width="2"/>
+    <rect x="20" y="18" width="18" height="2.5" rx="1" fill="#9FB3C8"/>
+    <rect x="20" y="24" width="14" height="2.5" rx="1" fill="#9FB3C8"/>
+
+    <!-- Middle document -->
+    <rect x="20" y="14" width="30" height="38" rx="3" fill="#F0F4F8" stroke="#52606D" stroke-width="2"/>
+    <rect x="26" y="22" width="18" height="2.5" rx="1" fill="#9FB3C8"/>
+    <rect x="26" y="28" width="14" height="2.5" rx="1" fill="#9FB3C8"/>
+
+    <!-- Front document -->
+    <rect x="26" y="18" width="30" height="38" rx="3" fill="#FFFFFF" stroke="#334E68" stroke-width="2"/>
+    <rect x="32" y="26" width="18" height="2.5" rx="1" fill="#7B8794"/>
+    <rect x="32" y="32" width="14" height="2.5" rx="1" fill="#7B8794"/>
+
+    <!-- Open cue: outward arrow from folder-tab style notch -->
+    <path d="M38 44 L48 44" stroke="#147D64" stroke-width="3" stroke-linecap="round"/>
+    <path d="M46 40 L52 44 L46 48" stroke="#147D64" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

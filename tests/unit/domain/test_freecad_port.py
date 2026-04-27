@@ -28,6 +28,10 @@ class TestFreeCadPortProtocol:
         """Test that FreeCadPort protocol includes save_document method."""
         assert hasattr(FreeCadPort, "save_document")
 
+    def test_protocol_has_open_document_method(self) -> None:
+        """Test that FreeCadPort protocol includes open_document method."""
+        assert hasattr(FreeCadPort, "open_document")
+
 
 class TestFreeCadPortGetAllOpenDocuments:
     """Tests for FreeCadPort.get_all_open_documents() method."""

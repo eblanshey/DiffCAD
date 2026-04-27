@@ -8,6 +8,7 @@ from .find_active_git_repository import FindActiveGitRepositoryAction
 from .get_commits import GetCommitsAction
 from .get_diff_settings import GetDiffSettingsAction
 from .get_open_eligible_documents import GetOpenEligibleDocumentsAction
+from .open_all_documents_in_repository import OpenAllDocumentsInRepositoryAction
 from .queries import ListSnapshotsAction
 from .result_models import CompareResult, Result, SnapshotResult, SnapshotSummary
 from .save_diff_settings import SaveDiffSettingsAction
@@ -22,6 +23,7 @@ __all__ = [
     "GetCommitsAction",
     "GetDiffSettingsAction",
     "GetOpenEligibleDocumentsAction",
+    "OpenAllDocumentsInRepositoryAction",
     "SaveDiffSettingsAction",
     "CreateDocumentSnapshotForWorkingTreeAction",
     "CreateDocumentSnapshotForCommitAction",

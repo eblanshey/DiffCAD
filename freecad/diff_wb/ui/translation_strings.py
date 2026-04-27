@@ -195,6 +195,14 @@ No placeholders. This is a static message.
 """
 
 # ============================================================================
+# OPEN ALL REPOSITORY DOCUMENTS STRINGS
+# ============================================================================
+# Context: "OpenAllDocuments"
+
+OPEN_ALL_DOCUMENTS_NO_REPOSITORY_TITLE = "No Repository"
+OPEN_ALL_DOCUMENTS_NO_REPOSITORY_MESSAGE = "No repository detected. Open a FreeCAD document in a git repository first."
+
+# ============================================================================
 # PREFERENCES VIEW STRINGS
 # ============================================================================
 # Context: "PreferencesView"
@@ -251,6 +259,9 @@ __all__ = [
     "COMMIT_EMPTY_MESSAGE_TITLE",
     "COMMIT_EMPTY_MESSAGE",
     "COMMIT_FAILED_TITLE",
+    # Open All Documents
+    "OPEN_ALL_DOCUMENTS_NO_REPOSITORY_TITLE",
+    "OPEN_ALL_DOCUMENTS_NO_REPOSITORY_MESSAGE",
     # Preferences View
     "PREFERENCES_RUNTIME_ONLY_NOTICE",
     "PREFERENCES_GROUP_EXCLUDED_OBJECT_TYPES",
