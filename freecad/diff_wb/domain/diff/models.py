@@ -137,7 +137,7 @@ def _path_values_equal(
 ) -> bool:
     """Compare two ``PropertyPathValue`` instances for equality.
 
-    Float values are compared after rounding to the given precision.
+    Float and Quantity values are compared after rounding to the given precision.
     All other types use exact equality.  Expression is NOT compared here
     (expression has its own state).
 
@@ -148,7 +148,14 @@ def _path_values_equal(
     """
     if old.type_ != new.type_:
         return False
-    if old.type_ == PropertyPathType.FLOAT:
+    if old.type_ in (PropertyPathType.FLOAT, PropertyPathType.QUANTITY):
+        # Note: For QUANTITY types, we compare only the numeric value, not the unit string.
+        # This is correct because:
+        # 1. FreeCAD normalizes quantities to base units internally (e.g., all lengths in mm)
+        # 2. The unit field in PropertyPathValue is display metadata added by our code,
+        #    not extracted from FreeCAD's internal representation
+        # 3. Comparing units would cause false positives when users change display preferences
+        #    (e.g., switching from mm to cm view without changing actual dimensions)
         return float_values_equal(float(old.value), float(new.value), precision)
     return old.value == new.value
 
