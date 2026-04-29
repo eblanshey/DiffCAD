@@ -344,6 +344,31 @@ class _RecomputeActiveDocumentCommand:
         container._freecad_port.try_recompute_active_document()
 
 
+class _OpenDiffWindowCommand:
+    """Command to open or focus the diff window."""
+
+    def GetResources(self) -> dict[str, str]:
+        """Return FreeCAD command metadata for UI integration."""
+        return {
+            "MenuText": "Open Diff Window",
+            "ToolTip": "Open diff view",
+            "Pixmap": os.path.join(ICONPATH, "Logo.svg"),
+        }
+
+    def IsActive(self) -> bool:
+        """Return whether the command should be enabled."""
+        return True
+
+    def Activated(self) -> None:
+        """FreeCAD calls this when user clicks toolbar button."""
+        import FreeCADGui as Gui  # pylint: disable=import-error
+
+        # Get the Diff workbench instance and show/create the diff panel
+        workbench = Gui.getWorkbench("DiffWorkbench")
+        if workbench is not None:
+            workbench.create_or_show_diff_panel()
+
+
 def register_commands() -> None:
     """Register the Diff Workbench commands with FreeCAD."""
     import FreeCADGui as Gui  # pylint: disable=import-error
@@ -356,3 +381,4 @@ def register_commands() -> None:
     Gui.addCommand("DiffOpenAllDocumentsInRepository", _OpenAllDocumentsInRepositoryCommand())
     Gui.addCommand("DiffRecomputeAllOpenDocuments", _RecomputeAllOpenDocumentsCommand())
     Gui.addCommand("DiffRecomputeActiveDocument", _RecomputeActiveDocumentCommand())
+    Gui.addCommand("DiffOpenDiffWindow", _OpenDiffWindowCommand())

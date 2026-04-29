@@ -41,6 +41,7 @@ if Gui is not None:
 
         Icon = os.path.join(ICONPATH, "Logo.svg")
         toolbox = [
+            "DiffOpenDiffWindow",
             "DiffRefreshRepository",
             "DiffRecomputeActiveDocument",
             "DiffRecomputeAllOpenDocuments",
@@ -127,7 +128,10 @@ if Gui is not None:
         def Activated(self) -> None:
             """Called when user switches to this workbench."""
             Log.info("Workbench diff_wb activated.")
+            self.create_or_show_diff_panel()
 
+        def create_or_show_diff_panel(self) -> None:
+            """Create the diff panel if it doesn't exist, or show/focus it if it does."""
             # Create subwindow if it doesn't exist (was closed or never created)
             if self._subwindow is None:
                 self._create_diff_panel()
