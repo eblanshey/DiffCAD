@@ -30,7 +30,7 @@ class TestFindActiveGitRepositoryActionSuccess:
         # Create a mock document with FileName
         mock_doc = MagicMock()
         mock_doc.FileName = "/home/user/my_project/src/file.FCStd"
-        fake_freecad_port._active_document = mock_doc
+        fake_freecad_port._open_documents = [mock_doc]
 
         git_service = GitService(fake_git_port)
         action = FindActiveGitRepositoryAction(fake_freecad_port, git_service)
@@ -55,7 +55,7 @@ class TestFindActiveGitRepositoryActionSuccess:
 
         mock_doc = MagicMock()
         mock_doc.FileName = "/home/user/workbench/freecad/diff_wb/application/actions/file.FCStd"
-        fake_freecad_port._active_document = mock_doc
+        fake_freecad_port._open_documents = [mock_doc]
 
         git_service = GitService(fake_git_port)
         action = FindActiveGitRepositoryAction(fake_freecad_port, git_service)
@@ -77,7 +77,7 @@ class TestFindActiveGitRepositoryActionSuccess:
 
         mock_doc = MagicMock()
         mock_doc.FileName = "/home/user/my-project_v2.0/src/main.FCStd"
-        fake_freecad_port._active_document = mock_doc
+        fake_freecad_port._open_documents = [mock_doc]
 
         git_service = GitService(fake_git_port)
         action = FindActiveGitRepositoryAction(fake_freecad_port, git_service)
@@ -92,12 +92,12 @@ class TestFindActiveGitRepositoryActionSuccess:
 
 
 class TestFindActiveGitRepositoryActionFailureNoDocument:
-    """Tests for failure when no active document exists."""
+    """Tests for failure when no documents are open."""
 
-    def test_execute_fails_when_no_active_document(self) -> None:
-        """Test that action fails when FreeCAD has no active document."""
+    def test_execute_fails_when_no_documents_open(self) -> None:
+        """Test that action fails when FreeCAD has no open documents."""
         # Setup
-        fake_freecad_port = FakeFreeCadPort(active_document=None)
+        fake_freecad_port = FakeFreeCadPort(open_documents=[])
         fake_git_port = FakeGitPort()
         git_service = GitService(fake_git_port)
         action = FindActiveGitRepositoryAction(fake_freecad_port, git_service)
@@ -108,11 +108,11 @@ class TestFindActiveGitRepositoryActionFailureNoDocument:
         # Assert
         assert result.is_success is False
         assert result.data is None
-        assert result.message == "No active document"
+        assert result.message == "No documents are open"
 
     def test_execute_returns_failure_result_object(self) -> None:
         """Test that failure returns proper Result object structure."""
-        fake_freecad_port = FakeFreeCadPort(active_document=None)
+        fake_freecad_port = FakeFreeCadPort(open_documents=[])
         fake_git_port = FakeGitPort()
         git_service = GitService(fake_git_port)
         action = FindActiveGitRepositoryAction(fake_freecad_port, git_service)
@@ -125,18 +125,26 @@ class TestFindActiveGitRepositoryActionFailureNoDocument:
         assert result.message is not None
 
 
-class TestFindActiveGitRepositoryActionFailureUnsavedDocument:
-    """Tests for failure when document is not saved."""
+class TestFindActiveGitRepositoryActionUnsavedDocumentHandling:
+    """Tests for handling unsaved documents (they should be skipped)."""
 
-    def test_execute_fails_when_document_has_no_filename(self) -> None:
-        """Test that action fails when document has no FileName attribute."""
+    def test_execute_skips_unsaved_document_and_finds_saved_one(self) -> None:
+        """Test that action skips unsaved documents and finds a saved one."""
         # Setup
         fake_freecad_port = FakeFreeCadPort()
         fake_git_port = FakeGitPort()
+        fake_git_port.add_git_repo("/home/user/saved_project")
 
-        # Create a mock document without FileName attribute
-        mock_doc = MagicMock(spec=[])  # Empty spec means no attributes
-        fake_freecad_port._active_document = mock_doc
+        # Create unsaved document (empty FileName)
+        unsaved_doc = MagicMock()
+        unsaved_doc.FileName = ""
+
+        # Create saved document in git repo
+        saved_doc = MagicMock()
+        saved_doc.FileName = "/home/user/saved_project/file.FCStd"
+
+        # Both documents open, but only saved one should be checked
+        fake_freecad_port._open_documents = [unsaved_doc, saved_doc]
 
         git_service = GitService(fake_git_port)
         action = FindActiveGitRepositoryAction(fake_freecad_port, git_service)
@@ -144,20 +152,23 @@ class TestFindActiveGitRepositoryActionFailureUnsavedDocument:
         # Execute
         result = action.execute()
 
-        # Assert
-        assert result.is_success is False
-        assert result.data is None
-        assert result.message == "Document has no file path (unsaved)"
+        # Assert - should succeed by finding the saved document
+        assert result.is_success is True
+        assert result.data.name == "saved_project"
+        assert result.data.absolute_path == "/home/user/saved_project"
 
-    def test_execute_fails_when_filename_is_empty_string(self) -> None:
-        """Test that action fails when FileName is empty string."""
+    def test_execute_skips_all_unsaved_documents_then_fails(self) -> None:
+        """Test that action fails when all documents are unsaved."""
         # Setup
         fake_freecad_port = FakeFreeCadPort()
         fake_git_port = FakeGitPort()
 
-        mock_doc = MagicMock()
-        mock_doc.FileName = ""
-        fake_freecad_port._active_document = mock_doc
+        # All documents are unsaved
+        unsaved_doc1 = MagicMock()
+        unsaved_doc1.FileName = ""
+        unsaved_doc2 = MagicMock()
+        unsaved_doc2.FileName = ""
+        fake_freecad_port._open_documents = [unsaved_doc1, unsaved_doc2]
 
         git_service = GitService(fake_git_port)
         action = FindActiveGitRepositoryAction(fake_freecad_port, git_service)
@@ -165,31 +176,9 @@ class TestFindActiveGitRepositoryActionFailureUnsavedDocument:
         # Execute
         result = action.execute()
 
-        # Assert
+        # Assert - should fail after skipping all unsaved docs
         assert result.is_success is False
-        assert result.data is None
-        assert result.message == "Document is not saved"
-
-    def test_execute_fails_when_filename_is_none(self) -> None:
-        """Test that action fails when FileName is None."""
-        # Setup
-        fake_freecad_port = FakeFreeCadPort()
-        fake_git_port = FakeGitPort()
-
-        mock_doc = MagicMock()
-        mock_doc.FileName = None
-        fake_freecad_port._active_document = mock_doc
-
-        git_service = GitService(fake_git_port)
-        action = FindActiveGitRepositoryAction(fake_freecad_port, git_service)
-
-        # Execute
-        result = action.execute()
-
-        # Assert
-        assert result.is_success is False
-        assert result.data is None
-        assert result.message == "Document is not saved"
+        assert result.message == "No git repository found for open documents"
 
 
 class TestFindActiveGitRepositoryActionFailureNoGitRepo:
@@ -204,7 +193,7 @@ class TestFindActiveGitRepositoryActionFailureNoGitRepo:
 
         mock_doc = MagicMock()
         mock_doc.FileName = "/tmp/unsaved_project/file.FCStd"
-        fake_freecad_port._active_document = mock_doc
+        fake_freecad_port._open_documents = [mock_doc]
 
         git_service = GitService(fake_git_port)
         action = FindActiveGitRepositoryAction(fake_freecad_port, git_service)
@@ -224,7 +213,7 @@ class TestFindActiveGitRepositoryActionFailureNoGitRepo:
 
         mock_doc = MagicMock()
         mock_doc.FileName = "/tmp/random_file.FCStd"
-        fake_freecad_port._active_document = mock_doc
+        fake_freecad_port._open_documents = [mock_doc]
 
         git_service = GitService(fake_git_port)
         action = FindActiveGitRepositoryAction(fake_freecad_port, git_service)
@@ -240,7 +229,7 @@ class TestFindActiveGitRepositoryActionDependencies:
 
     def test_action_accepts_freecad_port_dependency(self) -> None:
         """Test that action can be initialized with FreeCadPort."""
-        fake_freecad_port = FakeFreeCadPort()
+        fake_freecad_port = FakeFreeCadPort(open_documents=[])
         fake_git_port = FakeGitPort()
         git_service = GitService(fake_git_port)
 
@@ -250,7 +239,7 @@ class TestFindActiveGitRepositoryActionDependencies:
 
     def test_action_accepts_git_service_dependency(self) -> None:
         """Test that action can be initialized with GitService."""
-        fake_freecad_port = FakeFreeCadPort()
+        fake_freecad_port = FakeFreeCadPort(open_documents=[])
         fake_git_port = FakeGitPort()
         git_service = GitService(fake_git_port)
 
@@ -260,7 +249,7 @@ class TestFindActiveGitRepositoryActionDependencies:
 
     def test_action_dependencies_are_stored_correctly(self) -> None:
         """Test that both dependencies are stored and accessible."""
-        fake_freecad_port = FakeFreeCadPort()
+        fake_freecad_port = FakeFreeCadPort(open_documents=[])
         fake_git_port = FakeGitPort()
         git_service = GitService(fake_git_port)
 
@@ -281,7 +270,7 @@ class TestFindActiveGitRepositoryActionWorkflow:
 
         mock_doc = MagicMock()
         mock_doc.FileName = "/home/user/project/main.FCStd"
-        fake_freecad_port._active_document = mock_doc
+        fake_freecad_port._open_documents = [mock_doc]
 
         git_service = GitService(fake_git_port)
         action = FindActiveGitRepositoryAction(fake_freecad_port, git_service)
@@ -292,24 +281,28 @@ class TestFindActiveGitRepositoryActionWorkflow:
         assert result.data.name == "project"
         assert result.data.absolute_path == "/home/user/project"
 
-    def test_workflow_handles_multiple_documents_scenario(self) -> None:
-        """Test workflow simulating multiple open documents (uses active)."""
+    def test_workflow_finds_first_valid_repo_from_multiple_documents(self) -> None:
+        """Test workflow with multiple documents - finds first one in a git repo."""
         fake_freecad_port = FakeFreeCadPort()
         fake_git_port = FakeGitPort()
         fake_git_port.add_git_repo("/home/user/repo_a")
         fake_git_port.add_git_repo("/home/user/repo_b")
 
-        # Simulate active document from repo_a
-        mock_doc = MagicMock()
-        mock_doc.FileName = "/home/user/repo_a/file.FCStd"
-        fake_freecad_port._active_document = mock_doc
+        # Multiple documents from different repos
+        doc_from_repo_a = MagicMock()
+        doc_from_repo_a.FileName = "/home/user/repo_a/file.FCStd"
+
+        doc_from_repo_b = MagicMock()
+        doc_from_repo_b.FileName = "/home/user/repo_b/other.FCStd"
+
+        fake_freecad_port._open_documents = [doc_from_repo_a, doc_from_repo_b]
 
         git_service = GitService(fake_git_port)
         action = FindActiveGitRepositoryAction(fake_freecad_port, git_service)
 
         result = action.execute()
 
-        # Should find repo_a since that's where the active document is
+        # Should find the first document's repo (repo_a)
         assert result.is_success is True
         assert result.data.name == "repo_a"
 
@@ -324,7 +317,7 @@ class TestFindActiveGitRepositoryActionWorkflow:
 
             mock_doc = MagicMock()
             mock_doc.FileName = "C:/Users/Project/src/file.FCStd"
-            fake_freecad_port._active_document = mock_doc
+            fake_freecad_port._open_documents = [mock_doc]
 
             git_service = GitService(fake_git_port)
             action = FindActiveGitRepositoryAction(fake_freecad_port, git_service)
@@ -344,7 +337,7 @@ class TestFindActiveGitRepositoryActionEdgeCases:
 
         mock_doc = MagicMock()
         mock_doc.FileName = "."
-        fake_freecad_port._active_document = mock_doc
+        fake_freecad_port._open_documents = [mock_doc]
 
         git_service = GitService(fake_git_port)
         action = FindActiveGitRepositoryAction(fake_freecad_port, git_service)
@@ -362,7 +355,7 @@ class TestFindActiveGitRepositoryActionEdgeCases:
 
         mock_doc = MagicMock()
         mock_doc.FileName = "/home/user/MyProject/file.FCStd"
-        fake_freecad_port._active_document = mock_doc
+        fake_freecad_port._open_documents = [mock_doc]
 
         git_service = GitService(fake_git_port)
         action = FindActiveGitRepositoryAction(fake_freecad_port, git_service)

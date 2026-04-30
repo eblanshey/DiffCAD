@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
 # File responsibility: This module provides the FindActiveGitRepositoryAction class
 # which is responsible for finding the active git repository from open FreeCAD documents.
-# It uses FreeCadPort to get the active document and GitService to find the repository.
+# It iterates through all open documents, skipping unsaved ones, and uses GitService
+# to find the first document that is in a git repository.
 """Application action for finding active git repository."""
 
 from ...domain.freecad_ports import FreeCadPort
@@ -14,9 +15,10 @@ class FindActiveGitRepositoryAction:
     """Find git repository from open FreeCAD documents.
 
     This action determines the active git repository by:
-    1. Getting the active document from FreeCAD
-    2. Extracting the document's file path
-    3. Using GitService to find the git repository containing that path
+    1. Getting all open documents from FreeCAD
+    2. Iterating through them, skipping unsaved documents
+    3. Using GitService to find the git repository for each saved document
+    4. Returning the first repository found
 
     Attributes:
         _freecad_port: The FreeCadPort instance for FreeCAD operations.
@@ -40,27 +42,30 @@ class FindActiveGitRepositoryAction:
     def execute(self) -> Result:
         """Find active git repository from open documents.
 
+        Iterates through all open documents, skipping unsaved ones,
+        and returns the first document that is in a git repository.
+
         Returns:
             Result with GitRepository if found, or failure result with error message.
         """
-        # 1. Get active document from FreeCadPort
-        doc = self._freecad_port.get_active_document()
-        if doc is None:
-            return Result.failure("No active document")
+        # Get all open documents
+        docs = self._freecad_port.get_all_open_documents()
+        if not docs:
+            return Result.failure("No documents are open")
 
-        # 2. Try to get document file path
-        try:
+        # Iterate through all documents, skipping unsaved ones
+        for doc in docs:
             doc_path = doc.FileName  # FreeCAD documents have FileName property
-        except AttributeError:
-            return Result.failure("Document has no file path (unsaved)")
 
-        if not doc_path:
-            return Result.failure("Document is not saved")
+            # Skip unsaved documents (empty FileName)
+            if not doc_path:
+                Log.debug("Skipping unsaved document")
+                continue
 
-        # 3. Use GitService to find repository
-        repo = self._git_service.get_repository(doc_path)
-        if repo is None:
-            return Result.failure("No git repository found for open documents")
+            # Try to find git repository for this document
+            repo = self._git_service.get_repository(doc_path)
+            if repo is not None:
+                Log.info(f"Git repository detected: {repo.name} ({repo.absolute_path})")
+                return Result.success(repo)
 
-        Log.info(f"Git repository detected: {repo.name} ({repo.absolute_path})")
-        return Result.success(repo)
+        return Result.failure("No git repository found for open documents")

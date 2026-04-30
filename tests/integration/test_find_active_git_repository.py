@@ -88,6 +88,10 @@ class TestFindActiveGitRepositoryAction:
             git_service=git_service,
         )
 
+        # Close all existing documents to ensure only unsaved doc is open
+        for doc_name in list(freecad_app.listDocuments().keys()):
+            freecad_app.closeDocument(doc_name)
+
         # Create a new unsaved document
         doc = freecad_app.newDocument("UnsavedTestDoc")
 
@@ -97,7 +101,7 @@ class TestFindActiveGitRepositoryAction:
         # Verify failure - unsaved documents have empty FileName
         assert not result.is_success
         message_lower = result.message.lower() if result.message else ""
-        assert "not saved" in message_lower or "no file path" in message_lower
+        assert "no git repository found" in message_lower
 
         # Clean up
         freecad_app.closeDocument(doc.Name)
@@ -139,4 +143,4 @@ class TestFindActiveGitRepositoryAction:
         # Verify failure
         assert not result.is_success
         message_lower = result.message.lower() if result.message else ""
-        assert "no active document" in message_lower
+        assert "no documents are open" in message_lower
