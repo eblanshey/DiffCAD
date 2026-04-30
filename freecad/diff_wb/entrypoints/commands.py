@@ -158,13 +158,11 @@ class _CommitCommand:
 
     def Activated(self) -> None:
         """FreeCAD calls this when user clicks toolbar button."""
-        from PySide6.QtWidgets import QInputDialog, QMessageBox
+        from PySide6.QtWidgets import QMessageBox
 
         from .._container import get_container
         from ..ui.registry import ui_registry
         from ..ui.translation_strings import (
-            COMMIT_DIALOG_PROMPT,
-            COMMIT_DIALOG_TITLE,
             COMMIT_EMPTY_MESSAGE,
             COMMIT_EMPTY_MESSAGE_TITLE,
             COMMIT_FAILED_TITLE,
@@ -197,18 +195,13 @@ class _CommitCommand:
             )
             return
 
-        # Show commit dialog
-        message, ok = QInputDialog.getText(
-            None,  # type: ignore[arg-type]
-            container.translate("Commit", COMMIT_DIALOG_TITLE),
-            container.translate("Commit", COMMIT_DIALOG_PROMPT),
-            text="",
-        )
+        # Show commit dialog with multi-line text area
+        message = self._show_commit_dialog(container)
 
-        if not ok:
+        if message is None:
             return
 
-        if not message or not message.strip():
+        if not message.strip():
             QMessageBox.warning(
                 None,  # type: ignore[arg-type]
                 container.translate("Commit", COMMIT_EMPTY_MESSAGE_TITLE),
@@ -229,6 +222,76 @@ class _CommitCommand:
                 container.translate("Commit", COMMIT_FAILED_TITLE),
                 result.message or "Git commit failed",
             )
+
+    def _show_commit_dialog(self, container) -> str | None:
+        """Show the commit dialog and return the message or None if cancelled.
+
+        Args:
+            container: The application container.
+
+        Returns:
+            The commit message string if user confirmed, None if cancelled.
+        """
+        from PySide6.QtWidgets import (
+            QDialog,
+            QHBoxLayout,
+            QPlainTextEdit,
+            QPushButton,
+            QVBoxLayout,
+        )
+
+        from ..ui.translation_strings import (
+            COMMIT_DIALOG_PLACEHOLDER,
+            COMMIT_DIALOG_PROMPT,
+            COMMIT_DIALOG_TITLE,
+            DIALOG_CANCEL,
+            DIALOG_OK,
+        )
+
+        dialog = QDialog(None)  # type: ignore[arg-type]
+        dialog.setWindowTitle(container.translate("Commit", COMMIT_DIALOG_TITLE))
+
+        # Enable resize grip in bottom-right corner
+        dialog.setSizeGripEnabled(True)
+
+        # Create layout with text area and buttons
+        layout = QVBoxLayout(dialog)
+
+        # Add label
+        from PySide6.QtWidgets import QLabel
+
+        label = QLabel(container.translate("Commit", COMMIT_DIALOG_PROMPT))
+        layout.addWidget(label)
+
+        # Create a multi-line text editor that can resize vertically
+        from PySide6.QtWidgets import QSizePolicy
+
+        text_edit = QPlainTextEdit(dialog)
+        text_edit.setPlaceholderText(container.translate("Commit", COMMIT_DIALOG_PLACEHOLDER))
+        text_edit.setTabStopDistance(40)  # Tab spacing in pixels
+        text_edit.setMinimumHeight(100)  # Minimum height for initial usability
+        # Allow the text edit to expand vertically when dialog is resized
+        text_edit.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        layout.addWidget(text_edit)
+
+        # Add OK and Cancel buttons
+        button_layout = QHBoxLayout()
+        ok_button = QPushButton(container.translate("Common", DIALOG_OK))
+        cancel_button = QPushButton(container.translate("Common", DIALOG_CANCEL))
+
+        ok_button.clicked.connect(dialog.accept)
+        cancel_button.clicked.connect(dialog.reject)
+
+        button_layout.addStretch()
+        button_layout.addWidget(ok_button)
+        button_layout.addWidget(cancel_button)
+        layout.addLayout(button_layout)
+
+        # Make the dialog resizable with a reasonable size
+        dialog.resize(500, 300)
+
+        ok = dialog.exec() == 1  # QDialog.Accepted = 1
+        return text_edit.toPlainText() if ok else None
 
 
 class _RefreshRepositoryCommand:

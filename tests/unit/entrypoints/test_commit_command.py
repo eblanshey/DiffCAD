@@ -16,14 +16,12 @@ class TestCommitCommand:
     """Tests for _CommitCommand."""
 
     @patch("PySide6.QtWidgets.QMessageBox")
-    @patch("PySide6.QtWidgets.QInputDialog")
     @patch("freecad.diff_wb.ui.registry.ui_registry")
     @patch("freecad.diff_wb._container.get_container")
     def test_commit_command_successful_commit(
         self,
         mock_get_container: Mock,
         mock_ui_registry: Mock,
-        mock_input_dialog: Mock,
         mock_message_box: Mock,
     ) -> None:
         """Happy path: user enters message, commit succeeds, refresh is triggered."""
@@ -43,13 +41,11 @@ class TestCommitCommand:
         mock_presenter = MagicMock()
         mock_ui_registry.git_repository_presenter = mock_presenter
 
-        mock_input_dialog.getText.return_value = ("Add new feature", True)
-        mock_action.execute.return_value = Result.success(True)
-
         command = _CommitCommand()
 
         # Execute
-        command.Activated()
+        with patch.object(command, "_show_commit_dialog", return_value="Add new feature"):
+            command.Activated()
 
         # Verify
         mock_action.execute.assert_called_once_with(mock_repo, "Add new feature")
@@ -58,14 +54,12 @@ class TestCommitCommand:
         mock_message_box.critical.assert_not_called()
 
     @patch("PySide6.QtWidgets.QMessageBox")
-    @patch("PySide6.QtWidgets.QInputDialog")
     @patch("freecad.diff_wb.ui.registry.ui_registry")
     @patch("freecad.diff_wb._container.get_container")
     def test_commit_command_no_repository(
         self,
         mock_get_container: Mock,
         mock_ui_registry: Mock,
-        mock_input_dialog: Mock,
         mock_message_box: Mock,
     ) -> None:
         """When no git repository detected, shows warning and doesn't proceed."""
@@ -82,7 +76,6 @@ class TestCommitCommand:
         command.Activated()
 
         # Verify
-        mock_input_dialog.getText.assert_not_called()
         mock_message_box.warning.assert_called_once()
         call_args = mock_message_box.warning.call_args
         assert call_args[0][1] == "No Repository"
@@ -90,14 +83,12 @@ class TestCommitCommand:
         mock_message_box.critical.assert_not_called()
 
     @patch("PySide6.QtWidgets.QMessageBox")
-    @patch("PySide6.QtWidgets.QInputDialog")
     @patch("freecad.diff_wb.ui.registry.ui_registry")
     @patch("freecad.diff_wb._container.get_container")
     def test_commit_command_user_cancelled(
         self,
         mock_get_container: Mock,
         mock_ui_registry: Mock,
-        mock_input_dialog: Mock,
         mock_message_box: Mock,
     ) -> None:
         """When user cancels the dialog, no action is taken."""
@@ -109,26 +100,23 @@ class TestCommitCommand:
         mock_repo = MagicMock(spec=GitRepository)
         mock_ui_registry.ui_state.git_repository = mock_repo
 
-        mock_input_dialog.getText.return_value = ("", False)  # User cancelled
-
         command = _CommitCommand()
 
         # Execute
-        command.Activated()
+        with patch.object(command, "_show_commit_dialog", return_value=None):
+            command.Activated()
 
         # Verify
         mock_message_box.warning.assert_not_called()
         mock_message_box.critical.assert_not_called()
 
     @patch("PySide6.QtWidgets.QMessageBox")
-    @patch("PySide6.QtWidgets.QInputDialog")
     @patch("freecad.diff_wb.ui.registry.ui_registry")
     @patch("freecad.diff_wb._container.get_container")
     def test_commit_command_empty_message(
         self,
         mock_get_container: Mock,
         mock_ui_registry: Mock,
-        mock_input_dialog: Mock,
         mock_message_box: Mock,
     ) -> None:
         """When user enters empty message, shows warning and doesn't commit."""
@@ -140,12 +128,11 @@ class TestCommitCommand:
         mock_repo = MagicMock(spec=GitRepository)
         mock_ui_registry.ui_state.git_repository = mock_repo
 
-        mock_input_dialog.getText.return_value = ("", True)  # User confirmed empty
-
         command = _CommitCommand()
 
         # Execute
-        command.Activated()
+        with patch.object(command, "_show_commit_dialog", return_value=""):
+            command.Activated()
 
         # Verify
         mock_message_box.warning.assert_called_once()
@@ -155,14 +142,12 @@ class TestCommitCommand:
         mock_message_box.critical.assert_not_called()
 
     @patch("PySide6.QtWidgets.QMessageBox")
-    @patch("PySide6.QtWidgets.QInputDialog")
     @patch("freecad.diff_wb.ui.registry.ui_registry")
     @patch("freecad.diff_wb._container.get_container")
     def test_commit_command_whitespace_only_message(
         self,
         mock_get_container: Mock,
         mock_ui_registry: Mock,
-        mock_input_dialog: Mock,
         mock_message_box: Mock,
     ) -> None:
         """When user enters whitespace-only message, shows warning and doesn't commit."""
@@ -174,12 +159,11 @@ class TestCommitCommand:
         mock_repo = MagicMock(spec=GitRepository)
         mock_ui_registry.ui_state.git_repository = mock_repo
 
-        mock_input_dialog.getText.return_value = ("   \t  ", True)  # Whitespace only
-
         command = _CommitCommand()
 
         # Execute
-        command.Activated()
+        with patch.object(command, "_show_commit_dialog", return_value="   \t  "):
+            command.Activated()
 
         # Verify
         mock_message_box.warning.assert_called_once()
@@ -188,14 +172,12 @@ class TestCommitCommand:
         mock_message_box.critical.assert_not_called()
 
     @patch("PySide6.QtWidgets.QMessageBox")
-    @patch("PySide6.QtWidgets.QInputDialog")
     @patch("freecad.diff_wb.ui.registry.ui_registry")
     @patch("freecad.diff_wb._container.get_container")
     def test_commit_command_failed_commit(
         self,
         mock_get_container: Mock,
         mock_ui_registry: Mock,
-        mock_input_dialog: Mock,
         mock_message_box: Mock,
     ) -> None:
         """When commit fails, shows critical error with message."""
@@ -210,13 +192,13 @@ class TestCommitCommand:
         mock_repo = MagicMock(spec=GitRepository)
         mock_ui_registry.ui_state.git_repository = mock_repo
 
-        mock_input_dialog.getText.return_value = ("Add new feature", True)
         mock_action.execute.return_value = Result.failure("Git commit failed")
 
         command = _CommitCommand()
 
         # Execute
-        command.Activated()
+        with patch.object(command, "_show_commit_dialog", return_value="Add new feature"):
+            command.Activated()
 
         # Verify
         mock_message_box.critical.assert_called_once()
@@ -226,14 +208,12 @@ class TestCommitCommand:
         mock_message_box.warning.assert_not_called()
 
     @patch("PySide6.QtWidgets.QMessageBox")
-    @patch("PySide6.QtWidgets.QInputDialog")
     @patch("freecad.diff_wb.ui.registry.ui_registry")
     @patch("freecad.diff_wb._container.get_container")
     def test_commit_command_failed_commit_with_custom_message(
         self,
         mock_get_container: Mock,
         mock_ui_registry: Mock,
-        mock_input_dialog: Mock,
         mock_message_box: Mock,
     ) -> None:
         """When commit fails with a specific message, shows that message."""
@@ -248,13 +228,13 @@ class TestCommitCommand:
         mock_repo = MagicMock(spec=GitRepository)
         mock_ui_registry.ui_state.git_repository = mock_repo
 
-        mock_input_dialog.getText.return_value = ("Add new feature", True)
         mock_action.execute.return_value = Result.failure("No staged files")
 
         command = _CommitCommand()
 
         # Execute
-        command.Activated()
+        with patch.object(command, "_show_commit_dialog", return_value="Add new feature"):
+            command.Activated()
 
         # Verify
         mock_message_box.critical.assert_called_once()
@@ -262,14 +242,12 @@ class TestCommitCommand:
         assert call_args[0][2] == "No staged files"
 
     @patch("PySide6.QtWidgets.QMessageBox")
-    @patch("PySide6.QtWidgets.QInputDialog")
     @patch("freecad.diff_wb.ui.registry.ui_registry")
     @patch("freecad.diff_wb._container.get_container")
     def test_commit_command_no_staged_files(
         self,
         mock_get_container: Mock,
         mock_ui_registry: Mock,
-        mock_input_dialog: Mock,
         mock_message_box: Mock,
     ) -> None:
         """When there are no staged files, shows info message and doesn't proceed."""
@@ -288,7 +266,6 @@ class TestCommitCommand:
         command.Activated()
 
         # Verify - no dialog shown, no commit attempted
-        mock_input_dialog.getText.assert_not_called()
         mock_message_box.information.assert_called_once()
         call_args = mock_message_box.information.call_args
         assert call_args[0][1] == "No Staged Files"
@@ -324,14 +301,12 @@ class TestCommitCommand:
         assert result is True
 
     @patch("PySide6.QtWidgets.QMessageBox")
-    @patch("PySide6.QtWidgets.QInputDialog")
     @patch("freecad.diff_wb.ui.registry.ui_registry")
     @patch("freecad.diff_wb._container.get_container")
     def test_commit_command_trims_message_before_sending(
         self,
         mock_get_container: Mock,
         mock_ui_registry: Mock,
-        mock_input_dialog: Mock,
         mock_message_box: Mock,
     ) -> None:
         """Verifies message is stripped before being sent to action."""
@@ -346,12 +321,11 @@ class TestCommitCommand:
         mock_repo = MagicMock(spec=GitRepository)
         mock_ui_registry.ui_state.git_repository = mock_repo
 
-        mock_input_dialog.getText.return_value = ("  Add feature with spaces  ", True)
-
         command = _CommitCommand()
 
         # Execute
-        command.Activated()
+        with patch.object(command, "_show_commit_dialog", return_value="  Add feature with spaces  "):
+            command.Activated()
 
         # Verify - message should be trimmed
         mock_action.execute.assert_called_once()

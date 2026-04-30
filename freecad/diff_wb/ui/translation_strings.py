@@ -86,6 +86,18 @@ ERROR_NO_DOCUMENT = "No active document available"
 No placeholders. This is a static message.
 """
 
+DIALOG_OK = "OK"
+"""Generic OK button label for dialogs.
+
+No placeholders. This is a static label.
+"""
+
+DIALOG_CANCEL = "Cancel"
+"""Generic Cancel button label for dialogs.
+
+No placeholders. This is a static label.
+"""
+
 # ============================================================================
 # GIT REPOSITORY STRINGS
 # ============================================================================
@@ -176,6 +188,12 @@ COMMIT_FAILED_TITLE = "Commit Failed"
 No placeholders. This is a static message.
 """
 
+COMMIT_DIALOG_PLACEHOLDER = "Enter commit message (subject and optional body)..."
+"""Placeholder text for the commit message text area.
+
+No placeholders. This is a static message shown in the empty text field.
+"""
+
 # ============================================================================
 # OPEN ALL REPOSITORY DOCUMENTS STRINGS
 # ============================================================================
@@ -239,6 +257,9 @@ __all__ = [
     "COMMIT_EMPTY_MESSAGE_TITLE",
     "COMMIT_EMPTY_MESSAGE",
     "COMMIT_FAILED_TITLE",
+    "COMMIT_DIALOG_PLACEHOLDER",
+    "DIALOG_OK",
+    "DIALOG_CANCEL",
     # Open All Documents
     "OPEN_ALL_DOCUMENTS_NO_REPOSITORY_TITLE",
     "OPEN_ALL_DOCUMENTS_NO_REPOSITORY_MESSAGE",
