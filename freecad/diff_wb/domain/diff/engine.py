@@ -126,7 +126,7 @@ class DiffEngine:
         # Handle None case: use same snapshot for both
         # This triggers the "same snapshot" warning in DiffResult.__post_init__
         if old is None:
-            Log.warning(
+            Log.info(
                 f"No previous snapshot provided for '{new.document_name}'. "
                 "Comparing snapshot against itself - this will show no changes."
             )
