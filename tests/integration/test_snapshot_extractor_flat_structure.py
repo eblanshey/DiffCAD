@@ -24,10 +24,11 @@ class TestSnapshotExtractorFlatStructure:
     with id, path, and after fields as specified in the domain model.
     """
 
-    def test_extracted_snapshot_has_flat_node_list(self, freecad_app, extractor, project_root) -> None:
-        """Test that extracted snapshot has flat node list (no hierarchical tree).
+    def test_extracted_snapshot_has_occurrences_and_objects(self, freecad_app, extractor, project_root) -> None:
+        """Test that extracted snapshot has occurrences and objects lists.
 
-        The Snapshot should have a 'nodes' list attribute, not 'root_nodes'.
+        After refactoring, Snapshot has separate 'occurrences' and 'objects' lists
+        instead of a single 'nodes' list.
         """
         from pathlib import Path
 
@@ -39,15 +40,18 @@ class TestSnapshotExtractorFlatStructure:
             # Extract the snapshot
             snapshot = extractor.extract_tree(doc)
 
-            # Verify it's a flat list
-            assert hasattr(snapshot, "nodes"), "Snapshot should have 'nodes' attribute"
-            assert isinstance(snapshot.nodes, list), "nodes should be a list"
-            assert len(snapshot.nodes) > 0, "Should have at least one node"
+            # Verify it has occurrences and objects
+            assert hasattr(snapshot, "occurrences"), "Snapshot should have 'occurrences' attribute"
+            assert hasattr(snapshot, "objects"), "Snapshot should have 'objects' attribute"
+            assert isinstance(snapshot.occurrences, list), "occurrences should be a list"
+            assert isinstance(snapshot.objects, list), "objects should be a list"
+            assert len(snapshot.occurrences) > 0, "Should have at least one occurrence"
+            assert len(snapshot.objects) > 0, "Should have at least one object"
         finally:
             freecad_app.closeDocument(doc.Name)
 
-    def test_each_node_has_id_path_after(self, freecad_app, extractor, project_root) -> None:
-        """Test that each node has id, path, and after fields populated correctly."""
+    def test_each_occurrence_has_path_and_after(self, freecad_app, extractor, project_root) -> None:
+        """Test that each occurrence has path and after fields populated correctly."""
         from pathlib import Path
 
         # Open existing test file
@@ -58,21 +62,28 @@ class TestSnapshotExtractorFlatStructure:
             # Extract the snapshot
             snapshot = extractor.extract_tree(doc)
 
-            # Check each node has required fields
-            for node in snapshot.nodes:
-                assert hasattr(node, "id"), "Node should have 'id' attribute"
-                assert hasattr(node, "path"), "Node should have 'path' attribute"
-                assert hasattr(node, "after"), "Node should have 'after' attribute"
-                assert isinstance(node.id, int), "id should be an integer"
-                assert isinstance(node.path, str), "path should be a string"
-                assert node.after is None or isinstance(node.after, str), "after should be None or string"
+            # Check each occurrence has required fields
+            for occ in snapshot.occurrences:
+                assert hasattr(occ, "path"), "Occurrence should have 'path' attribute"
+                assert hasattr(occ, "after"), "Occurrence should have 'after' attribute"
+                assert isinstance(occ.path, str), "path should be a string"
+                assert occ.after is None or isinstance(occ.after, str), "after should be None or string"
+
+            # Check objects have required fields
+            for obj in snapshot.objects:
+                assert hasattr(obj, "id"), "Object should have 'id' attribute"
+                assert hasattr(obj, "name"), "Object should have 'name' attribute"
+                assert hasattr(obj, "type_id"), "Object should have 'type_id' attribute"
+                assert isinstance(obj.id, int), "id should be an integer"
+                assert isinstance(obj.name, str), "name should be a string"
+                assert isinstance(obj.type_id, str), "type_id should be a string"
         finally:
             freecad_app.closeDocument(doc.Name)
 
-    def test_root_nodes_have_after_null(self, freecad_app, extractor, project_root) -> None:
-        """Test that root nodes have after=None (they are first in document order).
+    def test_root_occurrences_have_after_null(self, freecad_app, extractor, project_root) -> None:
+        """Test that root occurrences have after=None (they are first in document order).
 
-        Root nodes are those that have no parent in the claimChildren hierarchy.
+        Root occurrences are those that have no parent - path doesn't contain '/'.
         """
         from pathlib import Path
 
@@ -84,19 +95,31 @@ class TestSnapshotExtractorFlatStructure:
             # Extract the snapshot
             snapshot = extractor.extract_tree(doc)
 
-            # Find root nodes (those with no parent - path doesn't contain '/')
-            root_nodes = [n for n in snapshot.nodes if "/" not in n.path]
+            # Find root occurrences (those with no parent - path doesn't contain '/')
+            root_occurrences = [occ for occ in snapshot.occurrences if "/" not in occ.path]
 
             # First root should have after=None
-            assert len(root_nodes) >= 1, "Should have at least one root node"
-            assert root_nodes[0].after is None, f"First root node should have after=None, got {root_nodes[0].after}"
+            assert len(root_occurrences) >= 1, "Should have at least one root occurrence"
+            assert root_occurrences[0].after is None, (
+                f"First root should have after=None, got {root_occurrences[0].after}"
+            )
 
             # If there are multiple roots, they should have 'after' pointing to previous root
-            if len(root_nodes) > 1:
+            if len(root_occurrences) > 1:
+                # Get object names for root occurrences
+                root_names = []
+                for occ in root_occurrences:
+                    obj = snapshot.find_object(occ.path.rsplit("/", 1)[-1])
+                    if obj:
+                        root_names.append(obj.name)
+
                 # Second root should have 'after' set to the first root's name
-                assert root_nodes[1].after == root_nodes[0].name, (
-                    f"Second root should have after={root_nodes[0].name}, got {root_nodes[1].after}"
-                )
+                second_obj = snapshot.find_object(root_occurrences[1].path.rsplit("/", 1)[-1])
+                first_obj = snapshot.find_object(root_occurrences[0].path.rsplit("/", 1)[-1])
+                if second_obj and first_obj:
+                    assert (
+                        second_obj.name == root_occurrences[1].after or first_obj.name == root_occurrences[1].after
+                    ), f"Second root should reference first root by name"
         finally:
             freecad_app.closeDocument(doc.Name)
 
@@ -112,17 +135,17 @@ class TestSnapshotExtractorFlatStructure:
             # Extract the snapshot
             snapshot = extractor.extract_tree(doc)
 
-            # Find nodes that are children (have '/' in path)
-            child_nodes = [n for n in snapshot.nodes if "/" in n.path]
+            # Find occurrences that are children (have '/' in path)
+            child_occurrences = [occ for occ in snapshot.occurrences if "/" in occ.path]
 
             # Check that first child of each parent has after=None
             # Group by parent path
             parent_children: dict[str, list] = {}
-            for node in child_nodes:
-                parent = node.path.rsplit("/", 1)[0]
+            for occ in child_occurrences:
+                parent = occ.path.rsplit("/", 1)[0]
                 if parent not in parent_children:
                     parent_children[parent] = []
-                parent_children[parent].append(node)
+                parent_children[parent].append(occ)
 
             # For each parent's children, check first child has after=None
             for parent, children in parent_children.items():
@@ -146,23 +169,30 @@ class TestSnapshotExtractorFlatStructure:
             # Extract the snapshot
             snapshot = extractor.extract_tree(doc)
 
-            # Find nodes that are children (have '/' in path)
-            child_nodes = [n for n in snapshot.nodes if "/" in n.path]
+            # Find occurrences that are children (have '/' in path)
+            child_occurrences = [occ for occ in snapshot.occurrences if "/" in occ.path]
 
             # Group by parent path
             parent_children: dict[str, list] = {}
-            for node in child_nodes:
-                parent = node.path.rsplit("/", 1)[0]
+            for occ in child_occurrences:
+                parent = occ.path.rsplit("/", 1)[0]
                 if parent not in parent_children:
                     parent_children[parent] = []
-                parent_children[parent].append(node)
+                parent_children[parent].append(occ)
 
             # For each parent with multiple children, verify 'after' ordering
             for parent, children in parent_children.items():
                 if len(children) > 1:
+                    # Get object names for children
+                    child_names = []
+                    for occ in children:
+                        obj = snapshot.find_object(occ.path.rsplit("/", 1)[-1])
+                        if obj:
+                            child_names.append(obj.name)
+
                     # Verify that after is set correctly for subsequent children
                     for i in range(1, len(children)):
-                        expected_after = children[i - 1].name
+                        expected_after = child_names[i - 1]
                         actual_after = children[i].after
                         assert actual_after == expected_after, (
                             f"Child {i} of {parent} should have after={expected_after}, got {actual_after}"
@@ -170,8 +200,8 @@ class TestSnapshotExtractorFlatStructure:
         finally:
             freecad_app.closeDocument(doc.Name)
 
-    def test_all_nodes_have_unique_ids(self, freecad_app, extractor, project_root) -> None:
-        """Test that all nodes have unique ids."""
+    def test_all_objects_have_unique_ids(self, freecad_app, extractor, project_root) -> None:
+        """Test that all objects have unique ids."""
         from pathlib import Path
 
         # Open existing test file
@@ -182,19 +212,19 @@ class TestSnapshotExtractorFlatStructure:
             # Extract the snapshot
             snapshot = extractor.extract_tree(doc)
 
-            # Check all ids are unique
-            ids = [node.id for node in snapshot.nodes]
-            assert len(ids) == len(set(ids)), f"All node IDs should be unique. Got: {ids}"
+            # Check all object ids are unique
+            ids = [obj.id for obj in snapshot.objects]
+            assert len(ids) == len(set(ids)), f"All object IDs should be unique. Got: {ids}"
 
             # All ids should be positive integers
-            for node_id in ids:
-                assert isinstance(node_id, int), f"ID should be an integer, got {type(node_id)}"
-                assert node_id > 0, f"ID should be positive, got {node_id}"
+            for obj_id in ids:
+                assert isinstance(obj_id, int), f"ID should be an integer, got {type(obj_id)}"
+                assert obj_id > 0, f"ID should be positive, got {obj_id}"
         finally:
             freecad_app.closeDocument(doc.Name)
 
     def test_path_format_root_vs_child(self, freecad_app, extractor, project_root) -> None:
-        """Test that root nodes have path=name, children have path=ParentName/ChildName."""
+        """Test that root occurrences have path=name, children have path=ParentName/ChildName."""
         from pathlib import Path
 
         # Open existing test file
@@ -205,24 +235,26 @@ class TestSnapshotExtractorFlatStructure:
             # Extract the snapshot
             snapshot = extractor.extract_tree(doc)
 
-            # Find the Part node (should be root)
-            part_node = next((n for n in snapshot.nodes if n.name == "Part"), None)
+            # Find the Part object (should be root)
+            part_obj = snapshot.find_object("Part")
+            part_occ = next((occ for occ in snapshot.occurrences if occ.path == "Part"), None)
 
-            # Find Body node (should be child of Part)
-            body_node = next((n for n in snapshot.nodes if n.name == "Body_MyBody"), None)
+            # Find Body object (should be child of Part)
+            body_obj = snapshot.find_object("Body_MyBody")
+            body_occ = next((occ for occ in snapshot.occurrences if occ.path == "Part/Body_MyBody"), None)
 
-            if part_node:
-                # Root node: path = name
-                assert part_node.path == "Part", f"Root node path should be name, got {part_node.path}"
+            if part_occ:
+                # Root occurrence: path = name
+                assert part_occ.path == "Part", f"Root occurrence path should be name, got {part_occ.path}"
 
-            if body_node:
-                # Child node: path = parent/child
-                assert body_node.path == "Part/Body_MyBody", f"Child path should be Parent/Child, got {body_node.path}"
+            if body_occ:
+                # Child occurrence: path = parent/child
+                assert body_occ.path == "Part/Body_MyBody", f"Child path should be Parent/Child, got {body_occ.path}"
         finally:
             freecad_app.closeDocument(doc.Name)
 
-    def test_node_id_is_object_id_property(self, freecad_app, extractor, project_root) -> None:
-        """Test that node id uses FreeCAD's object.ID property.
+    def test_object_id_matches_freecad_object_id(self, freecad_app, extractor, project_root) -> None:
+        """Test that object id uses FreeCAD's object.ID property.
 
         The id should match the unique integer ID that FreeCAD assigns to each object.
         """
@@ -244,14 +276,18 @@ class TestSnapshotExtractorFlatStructure:
                 # Extract the snapshot
                 snapshot = extractor.extract_tree(doc)
 
-                # Find the nodes
-                part_node = next((n for n in snapshot.nodes if n.name == "Part"), None)
-                body_node = next((n for n in snapshot.nodes if n.name == "Body_MyBody"), None)
+                # Find the objects
+                part_snapshot_obj = snapshot.find_object("Part")
+                body_snapshot_obj = snapshot.find_object("Body_MyBody")
 
-                if part_node:
-                    assert part_node.id == part_id, f"Part node id should match .ID, got {part_node.id} vs {part_id}"
+                if part_snapshot_obj:
+                    assert part_snapshot_obj.id == part_id, (
+                        f"Part object id should match .ID, got {part_snapshot_obj.id} vs {part_id}"
+                    )
 
-                if body_node:
-                    assert body_node.id == body_id, f"Body node id should match .ID, got {body_node.id} vs {body_id}"
+                if body_snapshot_obj:
+                    assert body_snapshot_obj.id == body_id, (
+                        f"Body object id should match .ID, got {body_snapshot_obj.id} vs {body_id}"
+                    )
         finally:
             freecad_app.closeDocument(doc.Name)

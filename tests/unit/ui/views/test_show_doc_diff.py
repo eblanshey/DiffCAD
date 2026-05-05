@@ -685,11 +685,11 @@ class TestShowDiffTreesWarningDisplay:
 
         labels = container.findChildren(QLabel)
         assert labels
-        assert not any(label.text() == "Cannot find old snapshots. Diff cannot be generated." for label in labels)
+        assert not any(label.text() == "Cannot find old snapshot. Diff cannot be generated." for label in labels)
 
         # Warning tooltip is shown on the icon label when icon assets are available.
         # In headless/unit environments icon loading may be unavailable, so keep this
         # assertion conditional.
         tooltip_values = [label.toolTip() for label in labels]
         if any(tooltip_values):
-            assert "Cannot find old snapshots. Diff cannot be generated." in tooltip_values
+            assert "Cannot find old snapshot. Diff cannot be generated." in tooltip_values

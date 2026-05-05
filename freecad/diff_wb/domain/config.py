@@ -14,7 +14,7 @@ EXCLUDED_TYPES = [
 # Property names to exclude from diff comparison
 # These properties often change without meaningful semantic differences
 # Auto-excluded properties (always excluded, even if user manually sets them)
-AUTO_EXCLUDED_PROPERTIES = [
+EXCLUDED_PROPERTIES = [
     # Timestamp/change tracking
     "TimeStamp",
     "LastModified",
@@ -32,11 +32,6 @@ AUTO_EXCLUDED_PROPERTIES = [
 
 # Configurable float precision for comparison and display (matching FreeCAD's lowPrec)
 FLOAT_PRECISION = 2
-
-# Additional properties to exclude (can be overridden by user configuration)
-EXCLUDED_PROPERTIES = [
-    *AUTO_EXCLUDED_PROPERTIES,
-]
 
 # Type-specific property exclusions
 # Maps FreeCAD type IDs to lists of property names to exclude for that type only.

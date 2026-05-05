@@ -39,62 +39,35 @@ class TestPropertyViewerPhase6:
         doc = freecad_app.open(str(doc_path))
 
         try:
-            # Create a simple port that wraps the document
-            class TestPort:
-                def get_active_document(self):
-                    return doc
-
-                def get_object(self, doc, name):
-                    return doc.getObject(name)
-
-                def try_recompute_active_document(self):
-                    pass
-
-                def log(self, text):
-                    pass
-
-                def warn(self, text):
-                    pass
-
-                def message(self, text):
-                    pass
-
-                def info(self, message):
-                    pass
-
-                def error(self, text):
-                    pass
-
-            port = TestPort()
+            # Extract directly with document
             extractor = SnapshotExtractor()
-            result = extractor.extract_tree(port)
+            result = extractor.extract_tree(doc)
+
+            # Build node lookup from occurrences
+            from collections import defaultdict
+
+            nodes_by_name = defaultdict(list)
+            for occ in result.occurrences:
+                obj = result.find_object(occ.path.rsplit("/", 1)[-1])
+                if obj:
+                    nodes_by_name[obj.name].append((occ, obj))
 
             # Find a TechDraw dimension (has SavedGeometry)
-            for node in result.nodes:
-                if node.type_id.startswith("TechDraw::DrawViewDimension"):
-                    # Check properties - SavedGeometry should NOT be in the list
-                    prop_names = list(node.properties.keys())
-                    assert "SavedGeometry" not in prop_names, (
-                        f"SavedGeometry should be hidden but found in {prop_names}"
-                    )
-                    # Label should be visible
-                    assert "Label" in prop_names, "Label should be visible"
-                    return
-
-            # If no dimension found, try another approach - check any object
-            # with PropertiesList that includes SavedGeometry
-            for obj in doc.Objects:
-                if hasattr(obj, "PropertiesList") and "SavedGeometry" in obj.PropertiesList:
-                    # Check that our extracted properties don't include SavedGeometry
-                    for node in result.nodes:
-                        if node.name == obj.Name:
-                            prop_names = list(node.properties.keys())
-                            assert "SavedGeometry" not in prop_names, f"SavedGeometry should be hidden for {obj.Name}"
-                    return
+            for obj_name, occurrences in nodes_by_name.items():
+                for occ, node in occurrences:
+                    if node.type_id.startswith("TechDraw::DrawViewDimension"):
+                        # Check properties - SavedGeometry should NOT be in the list
+                        prop_names = list(node.properties.keys())
+                        assert "SavedGeometry" not in prop_names, (
+                            f"SavedGeometry should be hidden but found in {prop_names}"
+                        )
+                        # Label should be visible
+                        assert "Label" in prop_names, "Label should be visible"
+                        return
 
             # If we get here without finding SavedGeometry, that's also fine
             # (the document structure may have changed)
-            print("Note: No object with SavedGeometry found in document - test skipped")
+            print("Note: No TechDraw dimension found in document - test skipped")
 
         finally:
             freecad_app.closeDocument(doc.Name)
@@ -113,55 +86,40 @@ class TestPropertyViewerPhase6:
         doc = freecad_app.open(str(doc_path))
 
         try:
-            # Create a simple port that wraps the document
-            class TestPort:
-                def get_active_document(self):
-                    return doc
-
-                def get_object(self, doc, name):
-                    return doc.getObject(name)
-
-                def try_recompute_active_document(self):
-                    pass
-
-                def log(self, text):
-                    pass
-
-                def warn(self, text):
-                    pass
-
-                def message(self, text):
-                    pass
-
-                def info(self, message):
-                    pass
-
-                def error(self, text):
-                    pass
-
-            port = TestPort()
+            # Extract directly with document
             extractor = SnapshotExtractor()
-            result = extractor.extract_tree(port)
+            result = extractor.extract_tree(doc)
+
+            # Build node lookup from occurrences
+            from collections import defaultdict
+
+            nodes_by_name = defaultdict(list)
+            for occ in result.occurrences:
+                obj = result.find_object(occ.path.rsplit("/", 1)[-1])
+                if obj:
+                    nodes_by_name[obj.name].append((occ, obj))
 
             # Check that properties have groups
-            for node in result.nodes:
-                for prop_name, prop in node.properties.items():
-                    # Each property should have a group
-                    assert hasattr(prop, "group"), f"Property {prop_name} should have group"
-                    assert isinstance(prop.group, str), "Group should be string"
-                    # Group should not be empty (empty should map to "Base")
-                    if prop.group == "":
-                        pytest.fail(f"Property {prop_name} has empty group - should map to Base")
+            for obj_name, occurrences in nodes_by_name.items():
+                for occ, node in occurrences:
+                    for prop_name, prop in node.properties.items():
+                        # Each property should have a group
+                        assert hasattr(prop, "group"), f"Property {prop_name} should have group"
+                        assert isinstance(prop.group, str), "Group should be string"
+                        # Group should not be empty (empty should map to "Base")
+                        if prop.group == "":
+                            pytest.fail(f"Property {prop_name} has empty group - should map to Base")
 
             # Find a PartDesign::Pad to check its property groups
-            for node in result.nodes:
-                if node.type_id == "PartDesign::Pad":
-                    # Should have properties like "Length" in "Side1" group
-                    has_side1 = any(prop.group == "Side1" for prop in node.properties.values())
-                    has_base = any(prop.group == "Base" for prop in node.properties.values())
-                    assert has_side1, "PartDesign::Pad should have properties in Side1 group"
-                    assert has_base, "PartDesign::Pad should have properties in Base group"
-                    return
+            for obj_name, occurrences in nodes_by_name.items():
+                for occ, node in occurrences:
+                    if node.type_id == "PartDesign::Pad":
+                        # Should have properties like "Length" in "Side1" group
+                        has_side1 = any(prop.group == "Side1" for prop in node.properties.values())
+                        has_base = any(prop.group == "Base" for prop in node.properties.values())
+                        assert has_side1, "PartDesign::Pad should have properties in Side1 group"
+                        assert has_base, "PartDesign::Pad should have properties in Base group"
+                        return
 
             print("Note: No PartDesign::Pad found - test may be limited")
 
@@ -281,14 +239,26 @@ class TestPropertyViewerPhase6:
             extractor = SnapshotExtractor()
             result = extractor.extract_tree(doc)
 
+            # Build node lookup from occurrences
+            from collections import defaultdict
+
+            nodes_by_name = defaultdict(list)
+            for occ in result.occurrences:
+                obj = result.find_object(occ.path.rsplit("/", 1)[-1])
+                if obj:
+                    nodes_by_name[obj.name].append((occ, obj))
+
             # Create DiffPanelView
             panel = DiffPanelView()
 
             # Get properties from first node with properties
             test_node = None
-            for node in result.nodes:
-                if node.properties:
-                    test_node = node
+            for obj_name, occurrences in nodes_by_name.items():
+                for occ, node in occurrences:
+                    if node.properties:
+                        test_node = node
+                        break
+                if test_node:
                     break
 
             if test_node is None:
@@ -347,10 +317,20 @@ class TestPropertyViewerPhase6:
             extractor = SnapshotExtractor()
             result = extractor.extract_tree(doc)
 
+            # Build node lookup from occurrences
+            from collections import defaultdict
+
+            nodes_by_name = defaultdict(list)
+            for occ in result.occurrences:
+                obj = result.find_object(occ.path.rsplit("/", 1)[-1])
+                if obj:
+                    nodes_by_name[obj.name].append((occ, obj))
+
             # Track which object types we've seen
             object_types = set()
-            for node in result.nodes:
-                object_types.add(node.type_id)
+            for obj_name, occurrences in nodes_by_name.items():
+                for occ, node in occurrences:
+                    object_types.add(node.type_id)
 
             # Document should have various object types
             assert len(object_types) > 0, "Should have extracted some object types"
