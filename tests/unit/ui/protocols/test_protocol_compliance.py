@@ -208,6 +208,12 @@ class TestProtocolValidationUtility:
             def set_history_selection_callback(self, callback: Callable[[object], None]) -> None:
                 pass
 
+            def set_history_scroll_bottom_callback(self, callback: Callable[[], None]) -> None:
+                pass
+
+            def append_commits(self, commits: list[Any]) -> None:
+                pass
+
             def set_add_button_callback(self, callback: Callable[[str], None]) -> None:
                 pass
 

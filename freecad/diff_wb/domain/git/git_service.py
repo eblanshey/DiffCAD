@@ -52,17 +52,18 @@ class GitService:
         name = os.path.basename(git_root)
         return GitRepository(name=name, absolute_path=git_root)
 
-    def get_commits(self, repo: GitRepository, limit: int = 20) -> list[GitCommit]:
+    def get_commits(self, repo: GitRepository, limit: int = 20, skip: int = 0) -> list[GitCommit]:
         """Get recent commits from git repository.
 
         Args:
             repo: GitRepository to get commits from.
             limit: Maximum number of commits to return.
+            skip: Number of newest commits to skip before returning results.
 
         Returns:
             List of GitCommit objects in DESC order.
         """
-        return self._git_port.get_commits(repo.absolute_path, limit)
+        return self._git_port.get_commits(repo.absolute_path, limit, skip)
 
     def get_eligible_docs(self, repo: GitRepository, documents: list[DocumentLike]) -> list[DocumentLike]:
         """Filter documents to those within the git repository.

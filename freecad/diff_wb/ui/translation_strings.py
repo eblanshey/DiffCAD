@@ -133,6 +133,15 @@ HISTORY_LABEL = "History"
 No placeholders. This is a static label.
 """
 
+HISTORY_WORKING_TREE_LABEL = "Working Tree"
+"""Label for the synthetic history row representing current working tree."""
+
+HISTORY_STAGING_LABEL = "Staging"
+"""Label for the synthetic history row representing current staging area."""
+
+REFRESH_REPOSITORY_TOOLTIP = "Refresh Git Repository and Commits"
+"""Tooltip for repository refresh button."""
+
 # ============================================================================
 # COMMIT STRINGS
 # ============================================================================
@@ -256,6 +265,9 @@ __all__ = [
     "REPOSITORY_INFO_TEMPLATE",
     "REPOSITORY_NO_REPO_MESSAGE",
     "HISTORY_LABEL",
+    "HISTORY_WORKING_TREE_LABEL",
+    "HISTORY_STAGING_LABEL",
+    "REFRESH_REPOSITORY_TOOLTIP",
     # Commit
     "COMMIT_NO_REPOSITORY_TITLE",
     "COMMIT_NO_REPOSITORY_MESSAGE",

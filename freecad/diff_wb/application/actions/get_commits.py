@@ -23,15 +23,16 @@ class GetCommitsAction:
         """
         self._git_service = git_service
 
-    def execute(self, repo: GitRepository, limit: int = 20) -> Result:
+    def execute(self, repo: GitRepository, limit: int = 20, skip: int = 0) -> Result:
         """Get recent commits.
 
         Args:
             repo: GitRepository to get commits from. Must be a valid repository.
             limit: Maximum number of commits to return (default 20).
+            skip: Number of newest commits to skip before returning results.
 
         Returns:
             Result with list of GitCommit on success, or failure result.
         """
-        commits: list[GitCommit] = self._git_service.get_commits(repo, limit)
+        commits: list[GitCommit] = self._git_service.get_commits(repo, limit, skip)
         return Result.success(commits)

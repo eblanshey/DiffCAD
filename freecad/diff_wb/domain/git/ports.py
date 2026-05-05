@@ -42,12 +42,13 @@ class GitPort(Protocol):
         """
         ...
 
-    def get_commits(self, path: str, limit: int = 20) -> list[GitCommit]:
+    def get_commits(self, path: str, limit: int = 20, skip: int = 0) -> list[GitCommit]:
         """Get recent commits from git repository.
 
         Args:
             path: Absolute path to git repository root.
             limit: Maximum number of commits to return (default 20 for MVP).
+            skip: Number of newest commits to skip before returning results.
 
         Returns:
             List of GitCommit objects in DESC order (newest first).

@@ -174,6 +174,32 @@ class TestGetCommitsActionLimitParameter:
         assert result.is_success is True
         assert len(result.data) <= 20
 
+    def test_execute_passes_skip_to_service(self) -> None:
+        """Test that skip parameter is passed correctly to service."""
+        fake_git_port = FakeGitPort()
+        fake_git_port.add_git_repo("/home/user/test_project")
+        fake_git_port.set_commits(
+            "/home/user/test_project",
+            [
+                GitCommit(
+                    id=str(i),
+                    message=f"Commit {i}",
+                    author="Author",
+                    timestamp=datetime.fromisoformat("2024-01-01T00:00:00"),
+                )
+                for i in range(5)
+            ],
+        )
+
+        git_service = GitService(fake_git_port)
+        repo = GitRepository(name="test_project", absolute_path="/home/user/test_project")
+        action = GetCommitsAction(git_service)
+
+        result = action.execute(repo, limit=2, skip=2)
+
+        assert result.is_success is True
+        assert len(result.data) == 2
+
 
 class TestGetCommitsActionEmptyCommits:
     """Tests for empty commit list scenarios."""

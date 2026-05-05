@@ -83,7 +83,7 @@ class GitPortAdapter(GitPort):
         except (subprocess.TimeoutExpired, FileNotFoundError, NotADirectoryError, OSError):
             return None
 
-    def get_commits(self, path: str, limit: int = 20) -> list[GitCommit]:
+    def get_commits(self, path: str, limit: int = 20, skip: int = 0) -> list[GitCommit]:
         """Get recent commits using git CLI.
 
         Uses 'git log' with null-byte separators to handle multiline messages
@@ -100,38 +100,12 @@ class GitPortAdapter(GitPort):
         Args:
             path: Absolute path to git repository root.
             limit: Maximum number of commits to return (default 20).
+            skip: Number of newest commits to skip before returning results.
 
         Returns:
             List of GitCommit objects in DESC order (newest first).
         """
-        # Normalize path: if path is a file, use its parent directory as cwd
-        cwd_path = path
-        if path and os.path.isfile(path):
-            cwd_path = os.path.dirname(path)
-
-        try:
-            result = self._run_git(
-                ["log", f"-n{limit}", "--format=%H%x00%B%x00%an%x00%aI%x00"],
-                cwd=cwd_path,
-                timeout=10,
-            )
-            if result is None:
-                return []
-
-            if result.returncode != 0:
-                Log.warning(f"Git log failed with return code {result.returncode}: {result.stderr.strip()}")
-                return []
-        except subprocess.TimeoutExpired:
-            Log.warning(f"Git log command timed out for path: {path}")
-            return []
-        except FileNotFoundError:
-            Log.warning("Git command not found - git may not be installed or not in PATH")
-            return []
-        except (NotADirectoryError, OSError) as e:
-            Log.warning(f"Git error for path {path}: {e}")
-            return []
-
-        output = result.stdout.strip()
+        output = self._get_commits_output(path=path, limit=limit, skip=skip)
         if not output:
             return []
 
@@ -164,6 +138,38 @@ class GitPortAdapter(GitPort):
                 )
 
         return commits
+
+    def _get_commits_output(self, path: str, limit: int, skip: int) -> str:
+        """Run git log command and return stripped output."""
+        cwd_path = path
+        if path and os.path.isfile(path):
+            cwd_path = os.path.dirname(path)
+
+        log_args = ["log"]
+        if skip > 0:
+            log_args.append(f"--skip={skip}")
+        log_args.extend([f"-n{limit}", "--format=%H%x00%B%x00%an%x00%aI%x00"])
+
+        try:
+            result = self._run_git(log_args, cwd=cwd_path, timeout=10)
+        except subprocess.TimeoutExpired:
+            Log.warning(f"Git log command timed out for path: {path}")
+            return ""
+        except FileNotFoundError:
+            Log.warning("Git command not found - git may not be installed or not in PATH")
+            return ""
+        except (NotADirectoryError, OSError) as e:
+            Log.warning(f"Git error for path {path}: {e}")
+            return ""
+
+        if result is None:
+            return ""
+
+        if result.returncode != 0:
+            Log.warning(f"Git log failed with return code {result.returncode}: {result.stderr.strip()}")
+            return ""
+
+        return result.stdout.strip()
 
     def is_path_in_repository(self, git_root: str, path: str) -> bool:
         """Check if a path is within the git repository.

@@ -147,6 +147,7 @@ For large or long-lived CAD repositories, also consider Git LFS for `.FCStd` fil
 
 - [ ] Unstage documents from inside DiffCAD
 - [ ] Initialize new git repositories from inside DiffCAD
+- [ ] Move/rename snapshots when FCStd file is moved/renamed
 - [ ] Visual part diffs
 - [ ] Manual snapshot mode for simple projects without git
 

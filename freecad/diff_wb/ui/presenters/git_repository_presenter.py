@@ -3,6 +3,7 @@
 """Git repository presenter for UI layer."""
 
 from collections.abc import Callable
+from time import monotonic
 
 from freecad.diff_wb.application.actions.find_active_git_repository import (
     FindActiveGitRepositoryAction,
@@ -51,7 +52,15 @@ class GitRepositoryPresenter:
         self._get_commits_action = get_commits_action
         self._ui_state = ui_state
         self._clear_doc_diffs = clear_doc_diffs
+        self._page_size = 20
+        self._loaded_commit_count = 0
+        self._has_more_commits = False
+        self._is_loading_commits = False
+        self._active_repo_path: str | None = None
+        self._last_scroll_load_ts = 0.0
+        self._scroll_load_interval_seconds = 0.2
         self._view.set_refresh_callback(self.on_refresh_clicked)
+        self._view.set_history_scroll_bottom_callback(self.on_history_scroll_near_bottom)
 
     def on_workbench_activated(self) -> None:
         """Detect and display git repository when workbench activates.
@@ -86,31 +95,90 @@ class GitRepositoryPresenter:
             repo = result.data
             self._ui_state.git_repository = repo
             self._view.show_repository(repo)
+            self._reset_commit_pagination(repo)
 
             # After detecting repository, load commits
             if repo is not None:
-                self._load_commits(repo)
+                self._load_initial_commits(repo)
         else:
             self._ui_state.git_repository = None
+            self._reset_commit_pagination(None)
             self._view.show_repository(None)
             self._view.show_commits([])
             self._clear_doc_diffs()
             Log.info(f"Git detection failed: {result.message}")
 
-    def _load_commits(self, repo: GitRepository) -> None:
-        """Load and display commits for the repository.
+    def _load_initial_commits(self, repo: GitRepository) -> None:
+        """Load first commit page and replace list content.
 
         Args:
             repo: The GitRepository to load commits from.
         """
+        if self._is_loading_commits:
+            return
+        self._is_loading_commits = True
         result = self._get_commits_action.execute(repo)
+        self._is_loading_commits = False
 
         if result.is_success:
             commits = result.data
+            self._loaded_commit_count = len(commits)
+            self._has_more_commits = len(commits) == self._page_size
             self._clear_doc_diffs()
             self._view.show_commits(commits)
         else:
+            self._loaded_commit_count = 0
+            self._has_more_commits = False
             self._clear_doc_diffs()
             # Show empty list on failure
             self._view.show_commits([])
             Log.warning(f"Failed to load commits: {result.message}")
+
+    def _load_commits(self, repo: GitRepository) -> None:
+        """Backward-compatible wrapper for tests and callers."""
+        self._load_initial_commits(repo)
+
+    def on_history_scroll_near_bottom(self) -> None:
+        """Load next commit page when history scroll reaches bottom area."""
+        now = monotonic()
+        if now - self._last_scroll_load_ts < self._scroll_load_interval_seconds:
+            return
+
+        repo = self._ui_state.git_repository
+        if repo is None:
+            return
+        if self._active_repo_path != repo.absolute_path:
+            return
+        if self._is_loading_commits or not self._has_more_commits:
+            return
+
+        self._last_scroll_load_ts = now
+        self._is_loading_commits = True
+        result = self._get_commits_action.execute(
+            repo,
+            limit=self._page_size,
+            skip=self._loaded_commit_count,
+        )
+        self._is_loading_commits = False
+
+        if not result.is_success:
+            self._has_more_commits = False
+            Log.warning(f"Failed to load more commits: {result.message}")
+            return
+
+        commits = result.data
+        if not commits:
+            self._has_more_commits = False
+            return
+
+        self._view.append_commits(commits)
+        self._loaded_commit_count += len(commits)
+        self._has_more_commits = len(commits) == self._page_size
+
+    def _reset_commit_pagination(self, repo: GitRepository | None) -> None:
+        """Reset pagination state for current repository."""
+        self._loaded_commit_count = 0
+        self._has_more_commits = repo is not None
+        self._is_loading_commits = False
+        self._active_repo_path = repo.absolute_path if repo is not None else None
+        self._last_scroll_load_ts = 0.0

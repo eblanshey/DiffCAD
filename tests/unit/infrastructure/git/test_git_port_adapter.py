@@ -335,6 +335,28 @@ class TestGitPortAdapterGetCommits:
                 timeout=10,
             )
 
+    def test_get_commits_skip_parameter(self) -> None:
+        """Test that skip parameter is passed correctly to git log."""
+        mock_result = subprocess.CompletedProcess(
+            args=["git", "log", "--skip=10", "-n5", "--format=%H%x00%B%x00%an%x00%aI%x00"],
+            returncode=0,
+            stdout="hash1\x00Commit 1\x00Author\x002024-01-01T10:00:00+00:00\x00",
+            stderr="",
+        )
+
+        with patch.object(subprocess, "run", return_value=mock_result) as mock_run:
+            self.adapter.get_commits("/path/to/repo", limit=5, skip=10)
+
+            mock_run.assert_called_once_with(
+                ["git", "log", "--skip=10", "-n5", "--format=%H%x00%B%x00%an%x00%aI%x00"],
+                cwd="/path/to/repo",
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                timeout=10,
+            )
+
     def test_get_commits_empty_repository(self) -> None:
         """Test handling of empty repository (no commits)."""
         mock_result = subprocess.CompletedProcess(

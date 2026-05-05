@@ -321,6 +321,25 @@ class TestGitPortGetCommits:
         result_zero = fake_port.get_commits("/home/user/my_project", limit=0)
         assert result_zero == []
 
+    def test_get_commits_skip_parameter_works_correctly(self) -> None:
+        """Test that skip parameter returns next page of commits."""
+        fake_port = FakeGitPort()
+        fake_port.add_git_repo("/home/user/my_project")
+
+        for i in range(5):
+            fake_port.add_commit(
+                root_path="/home/user/my_project",
+                commit_id=f"commit{i}",
+                message=f"Commit {i}",
+                author=f"Author {i}",
+                timestamp=f"2024-01-{i + 1:02d}T00:00:00Z",
+            )
+
+        result = fake_port.get_commits("/home/user/my_project", limit=2, skip=2)
+        assert len(result) == 2
+        assert result[0].id == "commit2"
+        assert result[1].id == "commit1"
+
     def test_get_commits_returns_commits_in_desc_order_newest_first(self) -> None:
         """Test that get_commits returns commits in DESC order (newest first)."""
         fake_port = FakeGitPort()

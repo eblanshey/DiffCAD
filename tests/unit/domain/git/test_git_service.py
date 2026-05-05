@@ -457,6 +457,29 @@ class TestGitServiceGetCommitsLimitParameter:
         result = service.get_commits(repo=repo)
         assert len(result) == 20
 
+    def test_get_commits_respects_skip_parameter(self) -> None:
+        """Test that get_commits respects skip for pagination."""
+        fake_port = FakeGitPort()
+        fake_port.add_git_repo("/home/user/my_project")
+
+        for i in range(5):
+            fake_port.add_commit(
+                root_path="/home/user/my_project",
+                commit_id=f"commit{i}",
+                message=f"Commit {i}",
+                author=f"Author {i}",
+                timestamp=f"2024-01-{i + 1:02d}T00:00:00Z",
+            )
+        service = GitService(git_port=fake_port)
+
+        repo = service.get_repository("/home/user/my_project")
+        assert repo is not None
+
+        result = service.get_commits(repo=repo, limit=2, skip=2)
+        assert len(result) == 2
+        assert result[0].id == "commit2"
+        assert result[1].id == "commit1"
+
 
 class TestGitServiceGetCommitsDESCOrder:
     """Tests for GitService.get_commits() DESC order."""

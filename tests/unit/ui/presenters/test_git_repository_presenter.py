@@ -233,6 +233,7 @@ class TestGitRepositoryPresenter:
 
         # Assert
         mock_view.set_refresh_callback.assert_called_once_with(presenter.on_refresh_clicked)
+        mock_view.set_history_scroll_bottom_callback.assert_called_once_with(presenter.on_history_scroll_near_bottom)
 
     def test_on_workbench_activated_delegates_to_refresh_repository_and_commits(
         self,
@@ -347,3 +348,59 @@ class TestCommitLoading:
         # Assert
         mock_get_commits_action.execute.assert_called_once_with(repo)
         mock_view.show_commits.assert_called_once()
+
+    def test_on_history_scroll_near_bottom_loads_next_page(self, presenter: GitRepositoryPresenter) -> None:
+        """Scroll near bottom loads next commit page with skip offset."""
+        repo = GitRepository(name="test_project", absolute_path="/home/user/test_project")
+        presenter._ui_state.git_repository = repo
+        presenter._active_repo_path = repo.absolute_path
+        presenter._loaded_commit_count = 20
+        presenter._has_more_commits = True
+
+        commits = [
+            GitCommit(
+                id="z9y8x7w",
+                message="Older commit",
+                author="Dev",
+                timestamp=datetime.fromisoformat("2024-01-10T10:30:00+00:00"),
+            )
+        ]
+        result = MagicMock()
+        result.is_success = True
+        result.data = commits
+        presenter._get_commits_action.execute.return_value = result
+
+        presenter.on_history_scroll_near_bottom()
+
+        presenter._get_commits_action.execute.assert_called_once_with(repo, limit=20, skip=20)
+        presenter._view.append_commits.assert_called_once_with(commits)
+
+    def test_on_history_scroll_near_bottom_skips_when_no_more(self, presenter: GitRepositoryPresenter) -> None:
+        """Scroll near bottom does nothing when no further pages exist."""
+        repo = GitRepository(name="test_project", absolute_path="/home/user/test_project")
+        presenter._ui_state.git_repository = repo
+        presenter._active_repo_path = repo.absolute_path
+        presenter._has_more_commits = False
+
+        presenter.on_history_scroll_near_bottom()
+
+        presenter._get_commits_action.execute.assert_not_called()
+
+    def test_on_history_scroll_near_bottom_throttles_rapid_calls(self, presenter: GitRepositoryPresenter) -> None:
+        """Rapid bottom-scroll callbacks are throttled to one load call."""
+        repo = GitRepository(name="test_project", absolute_path="/home/user/test_project")
+        presenter._ui_state.git_repository = repo
+        presenter._active_repo_path = repo.absolute_path
+        presenter._loaded_commit_count = 20
+        presenter._has_more_commits = True
+
+        result = MagicMock()
+        result.is_success = True
+        result.data = []
+        presenter._get_commits_action.execute.return_value = result
+
+        with patch("freecad.diff_wb.ui.presenters.git_repository_presenter.monotonic", return_value=10.0):
+            presenter.on_history_scroll_near_bottom()
+            presenter.on_history_scroll_near_bottom()
+
+        presenter._get_commits_action.execute.assert_called_once_with(repo, limit=20, skip=20)

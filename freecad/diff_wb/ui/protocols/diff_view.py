@@ -17,7 +17,7 @@ Translation Strategy for Summary:
 from collections.abc import Callable
 from typing import Protocol
 
-from ...domain.git.models import GitRepository
+from ...domain.git.models import GitCommit, GitRepository
 from ..presenters.presentation_models import (
     DiffTreePresentation,
     NodePresentation,
@@ -108,6 +108,20 @@ class DiffView(Protocol):
 
         Args:
             callback: A callable that receives HistorySelection with item_kind and commit_hash
+        """
+
+    def set_history_scroll_bottom_callback(self, callback: Callable[[], None]) -> None:
+        """Set callback fired when history list scroll reaches bottom area.
+
+        Args:
+            callback: A no-argument callable for infinite-scroll loading.
+        """
+
+    def append_commits(self, commits: list[GitCommit]) -> None:
+        """Append commit rows to existing history list without clearing it.
+
+        Args:
+            commits: Commit rows to append after existing items.
         """
 
     def show_doc_diffs(self, diffs: list[DiffTreePresentation]) -> None:

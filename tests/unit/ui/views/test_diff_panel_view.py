@@ -1000,6 +1000,49 @@ class TestHistorySelectionCallback:
         panel.history_list.itemClicked.emit(item)
 
 
+class TestHistoryInfiniteScroll:
+    """Tests for history infinite scroll support."""
+
+    def test_append_commits_keeps_special_rows(self, panel) -> None:  # type: ignore[no-untyped-def]
+        """append_commits() appends without clearing existing Working Tree/Staging rows."""
+        from freecad.diff_wb.domain.git.models import GitCommit
+
+        panel.show_commits([])
+        commits = [
+            GitCommit(
+                id="abc1234",
+                message="Older commit",
+                author="Author",
+                timestamp=datetime.fromisoformat("2024-01-01T10:00:00+00:00"),
+            )
+        ]
+
+        panel.append_commits(commits)
+
+        assert panel.history_list.count() == 3
+        assert _history_row_text(panel, 0) == "Working Tree"
+        assert _history_row_text(panel, 1) == "Staging"
+        assert "Older commit" in _history_row_text(panel, 2)
+
+    def test_scroll_bottom_callback_fires_near_bottom(self, panel) -> None:  # type: ignore[no-untyped-def]
+        """Bottom-scroll callback fires when scrollbar enters bottom threshold."""
+        from unittest.mock import MagicMock, patch
+
+        fired = {"count": 0}
+
+        def on_bottom() -> None:
+            fired["count"] += 1
+
+        panel.set_history_scroll_bottom_callback(on_bottom)
+
+        mock_scrollbar = MagicMock()
+        mock_scrollbar.maximum.return_value = 100
+        with patch.object(panel.history_list, "verticalScrollBar", return_value=mock_scrollbar):
+            panel._on_history_scrollbar_value_changed(90)
+
+        assert fired["count"] >= 1
+
+
 class TestDiffPanelViewRuntimePrecision:
     """Tests for DiffPanelView using runtime precision from settings."""
 

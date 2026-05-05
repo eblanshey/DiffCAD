@@ -147,7 +147,7 @@ class FakeGitPort:
 
         return None
 
-    def get_commits(self, path: str, limit: int = 20) -> list[GitCommit]:
+    def get_commits(self, path: str, limit: int = 20, skip: int = 0) -> list[GitCommit]:
         """Get recent commits from the fake git repository.
 
         This implementation returns the configured commits sorted by timestamp
@@ -156,6 +156,7 @@ class FakeGitPort:
         Args:
             path: Starting path (file or directory) to check.
             limit: Maximum number of commits to return (default 20).
+            skip: Number of newest commits to skip before returning results.
 
         Returns:
             List of GitCommit objects sorted by timestamp in DESC order (newest first).
@@ -169,9 +170,9 @@ class FakeGitPort:
         # Get all commits for this repository
         all_commits = self._commits[git_root]
 
-        # Sort by timestamp in DESC order (newest first) and apply the limit
+        # Sort by timestamp in DESC order (newest first), apply skip then limit
         sorted_commits = sorted(all_commits, key=lambda c: c.timestamp, reverse=True)
-        return sorted_commits[:limit]
+        return sorted_commits[skip : skip + limit]
 
     def is_path_in_repository(self, git_root: str, path: str) -> bool:
         """Check if a path is within the git repository.

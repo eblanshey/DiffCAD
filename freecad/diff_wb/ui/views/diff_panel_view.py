@@ -41,6 +41,9 @@ from ..presenters.presentation_models import (
 from ..translation_strings import (
     DIFF_SUMMARY_CHANGED_LABEL,
     HISTORY_LABEL,
+    HISTORY_STAGING_LABEL,
+    HISTORY_WORKING_TREE_LABEL,
+    REFRESH_REPOSITORY_TOOLTIP,
     REPOSITORY_INFO_TEMPLATE,
     REPOSITORY_NO_REPO_MESSAGE,
     STAGE_ALL_LABEL,
@@ -258,11 +261,13 @@ class DiffPanelView(QWidget):
         self._settings_repo = settings_repo
         self._default_precision = DEFAULT_FLOAT_PRECISION
         self._on_history_selection_callback: Callable[[HistorySelection], None] | None = None
+        self._on_history_scroll_bottom_callback: Callable[[], None] | None = None
         self._on_refresh_callback: Callable[[], None] | None = None
         self._on_add_button_callback: Callable[[str], None] | None = None
         self._on_stage_all_callback: Callable[[], None] | None = None
         self._on_node_selection_callback: Callable[[str, str], None] | None = None
         self._current_selection: HistorySelection | None = None
+        self._history_scroll_bottom_armed = True
         # Track stage buttons by git_path for runtime updates
         self._stage_buttons: dict[str, QPushButton] = {}
         # Create the delegate for property value double-click editing (for copying)
@@ -308,7 +313,8 @@ class DiffPanelView(QWidget):
         self._refresh_button = QPushButton()
         self._refresh_button.setIcon(_REFRESH_ICON)
         self._refresh_button.setIconSize(QSize(24, 24))
-        self._refresh_button.setToolTip("Refresh Git Repository and Commits")
+        refresh_tooltip = QCoreApplication.translate("DiffView", REFRESH_REPOSITORY_TOOLTIP)
+        self._refresh_button.setToolTip(refresh_tooltip)
         # Create header layout with repository label on left and refresh button on right
         repository_header_layout = QHBoxLayout()
         repository_header_layout.setContentsMargins(0, 0, 0, 0)
@@ -455,7 +461,10 @@ class DiffPanelView(QWidget):
         # These are always present, even if no commits are provided
 
         # Add "Working Tree" item
-        working_tree_item = QListWidgetItem("Working Tree")
+        working_tree_text = QCoreApplication.translate("DiffView", HISTORY_WORKING_TREE_LABEL)
+        staging_text = QCoreApplication.translate("DiffView", HISTORY_STAGING_LABEL)
+
+        working_tree_item = QListWidgetItem(working_tree_text)
         working_tree_item.setData(Qt.ItemDataRole.TextAlignmentRole, Qt.AlignmentFlag.AlignCenter)
         working_tree_item.setData(
             Qt.ItemDataRole.UserRole,
@@ -464,20 +473,20 @@ class DiffPanelView(QWidget):
         self.history_list.addItem(working_tree_item)
         self.history_list.setItemWidget(
             working_tree_item,
-            _HistoryListItemWidget(centered_text="Working Tree"),
+            _HistoryListItemWidget(centered_text=working_tree_text),
         )
         working_tree_item.setText("")
         working_tree_item.setSizeHint(self.history_list.itemWidget(working_tree_item).sizeHint())
 
         # Add "Staging" item
-        staging_item = QListWidgetItem("Staging")
+        staging_item = QListWidgetItem(staging_text)
         staging_item.setData(Qt.ItemDataRole.TextAlignmentRole, Qt.AlignmentFlag.AlignCenter)
         staging_item.setData(
             Qt.ItemDataRole.UserRole,
             HistorySelection(item_kind="STAGING", commit_hash=None),
         )
         self.history_list.addItem(staging_item)
-        self.history_list.setItemWidget(staging_item, _HistoryListItemWidget(centered_text="Staging"))
+        self.history_list.setItemWidget(staging_item, _HistoryListItemWidget(centered_text=staging_text))
         staging_item.setText("")
         staging_item.setSizeHint(self.history_list.itemWidget(staging_item).sizeHint())
 
@@ -490,8 +499,30 @@ class DiffPanelView(QWidget):
         # using git log which returns commits in DESC order by default. No additional sorting needed.
         sorted_commits = commits
 
-        # Add each commit to the list
-        for commit in sorted_commits:
+        self.append_commits(sorted_commits)
+
+        # Restore previous user selection if possible; otherwise leave history unselected.
+        self._restore_history_selection(previous_selection)
+
+    def set_history_selection_callback(self, callback: Callable[[HistorySelection], None]) -> None:
+        """Set the callback for history list selection.
+
+        Args:
+            callback: A callable that receives HistorySelection with item_kind and commit_hash
+        """
+        self._on_history_selection_callback = callback
+        # Connect to item clicked signal for immediate response
+        self.history_list.itemClicked.connect(self._on_item_clicked)
+
+    def set_history_scroll_bottom_callback(self, callback: Callable[[], None]) -> None:
+        """Set callback invoked when history list is near scroll bottom."""
+        self._on_history_scroll_bottom_callback = callback
+        self._history_scroll_bottom_armed = True
+        self.history_list.verticalScrollBar().valueChanged.connect(self._on_history_scrollbar_value_changed)
+
+    def append_commits(self, commits: list[GitCommit]) -> None:
+        """Append commit entries after existing history rows."""
+        for commit in commits:
             # Truncate hash to 7 characters for display
             short_hash = commit.id[:7] if len(commit.id) >= 7 else commit.id
 
@@ -530,19 +561,6 @@ class DiffPanelView(QWidget):
             )
             self.history_list.setItemWidget(item, commit_widget)
             item.setSizeHint(commit_widget.sizeHint())
-
-        # Restore previous user selection if possible; otherwise leave history unselected.
-        self._restore_history_selection(previous_selection)
-
-    def set_history_selection_callback(self, callback: Callable[[HistorySelection], None]) -> None:
-        """Set the callback for history list selection.
-
-        Args:
-            callback: A callable that receives HistorySelection with item_kind and commit_hash
-        """
-        self._on_history_selection_callback = callback
-        # Connect to item clicked signal for immediate response
-        self.history_list.itemClicked.connect(self._on_item_clicked)
 
     def set_add_button_callback(self, callback: Callable[[str], None]) -> None:
         """Set the callback for when the '+ Stage' button is clicked.
@@ -626,6 +644,25 @@ class DiffPanelView(QWidget):
             self._current_selection = item_data
             if self._on_history_selection_callback is not None:
                 self._on_history_selection_callback(item_data)
+
+    def _on_history_scrollbar_value_changed(self, value: int) -> None:
+        """Notify callback when history scrollbar is near bottom."""
+        if self._on_history_scroll_bottom_callback is None:
+            return
+
+        scrollbar = self.history_list.verticalScrollBar()
+        maximum = scrollbar.maximum()
+        if maximum <= 0:
+            return
+
+        # Re-arm once user scrolls out of bottom area.
+        if value <= int(maximum * 0.7):
+            self._history_scroll_bottom_armed = True
+
+        # Fire near bottom (last ~15% of scroll range), once until re-armed.
+        if self._history_scroll_bottom_armed and value >= int(maximum * 0.85):
+            self._history_scroll_bottom_armed = False
+            self._on_history_scroll_bottom_callback()
 
     def _select_history_item(self, selection: HistorySelection) -> bool:
         """Select a history item by ``HistorySelection`` and trigger callback.

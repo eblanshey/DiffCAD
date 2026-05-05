@@ -3,7 +3,7 @@
 from collections.abc import Callable
 from typing import Any
 
-from freecad.diff_wb.domain.git.models import GitRepository
+from freecad.diff_wb.domain.git.models import GitCommit, GitRepository
 from freecad.diff_wb.ui.presenters.presentation_models import (
     DiffTreePresentation,
     NodePresentation,
@@ -23,6 +23,7 @@ class FakeDiffView:
         self._last_call: dict[str, Any] | None = None
         self._refresh_callback: Callable[[], None] | None = None
         self._history_selection_callback: Callable[[Any], None] | None = None
+        self._history_scroll_bottom_callback: Callable[[], None] | None = None
         self._add_button_callback: Callable[[str], None] | None = None
         self._stage_all_callback: Callable[[], None] | None = None
         self._current_selection: Any = None
@@ -85,6 +86,15 @@ class FakeDiffView:
         """
         self._record_call("set_history_selection_callback", callback=callback)
         self._history_selection_callback = callback
+
+    def set_history_scroll_bottom_callback(self, callback: Callable[[], None]) -> None:
+        """Capture bottom-scroll callback registration for infinite scroll."""
+        self._record_call("set_history_scroll_bottom_callback", callback=callback)
+        self._history_scroll_bottom_callback = callback
+
+    def append_commits(self, commits: list[GitCommit]) -> None:
+        """Capture append commits call for incremental history loading."""
+        self._record_call("append_commits", commits=commits)
 
     def set_add_button_callback(self, callback: Callable[[str], None]) -> None:
         """Capture add button callback registration instead of connecting to button.
