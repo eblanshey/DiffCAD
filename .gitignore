@@ -89,3 +89,9 @@ github_token.txt
 AGENTS.md
 
 # other
+
+# Opencode AI configuration
+.opencode/
+
+# Pi directory
+.pi/
