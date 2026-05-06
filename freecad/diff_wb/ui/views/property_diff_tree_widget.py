@@ -47,23 +47,34 @@ def _camelcase_to_spaces(name: str) -> str:
     for i in range(1, len(name)):
         char = name[i]
         prev_char = name[i - 1]
-        if char.isupper():
-            if prev_char.islower():
-                result.append(" ")
-            elif upper_sequence_start >= 0 and i + 1 < len(name) and name[i + 1].islower():
-                result.append(" ")
-                upper_sequence_start = -1
-            upper_sequence_start = i
-        elif char.islower():
-            upper_sequence_start = -1
-        elif char.isdigit():
-            if prev_char.isalpha():
-                result.append(" ")
-            upper_sequence_start = -1
-        else:
-            upper_sequence_start = -1
+        should_insert_space = _should_insert_space_before_char(char, prev_char, upper_sequence_start, i, name)
+        if should_insert_space:
+            result.append(" ")
+        upper_sequence_start = _update_upper_sequence_start(char, upper_sequence_start, i, name)
         result.append(char)
     return "".join(result)
+
+
+def _should_insert_space_before_char(
+    char: str, prev_char: str, upper_sequence_start: int, index: int, name: str
+) -> bool:
+    """Determine if a space should be inserted before the current character."""
+    if char.isupper():
+        if prev_char.islower():
+            return True
+        if upper_sequence_start >= 0 and index + 1 < len(name) and name[index + 1].islower():
+            return True
+    elif char.isdigit():
+        if prev_char.isalpha():
+            return True
+    return False
+
+
+def _update_upper_sequence_start(char: str, upper_sequence_start: int, index: int, name: str) -> int:
+    """Update the upper sequence start position based on current character."""
+    if char.isupper():
+        return index
+    return -1
 
 
 class _PropertyValueDelegate(QStyledItemDelegate):

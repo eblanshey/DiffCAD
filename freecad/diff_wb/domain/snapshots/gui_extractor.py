@@ -348,7 +348,7 @@ def _extract_property_value(obj: object, prop_name: str) -> Property | None:
         return None
 
 
-def _is_property_hidden(obj: object, prop_name: str) -> tuple[bool, str]:  # noqa: C901
+def _is_property_hidden(obj: object, prop_name: str) -> tuple[bool, str]:
     """Check if a property should be hidden from the property editor.
 
     This function replicates FreeCAD's property visibility logic to ensure
@@ -378,7 +378,21 @@ def _is_property_hidden(obj: object, prop_name: str) -> tuple[bool, str]:  # noq
     Returns:
         Tuple of (is_hidden, reason_for_hiding)
     """
-    # Check 1: getEditorMode() returns ['Hidden']
+    checks = [
+        _check_editor_mode_hidden,
+        _check_property_status_hidden,
+        _check_type_hidden,
+        _check_no_editor_type,
+    ]
+    for check in checks:
+        is_hidden, reason = check(obj, prop_name)
+        if is_hidden:
+            return is_hidden, reason
+    return False, ""
+
+
+def _check_editor_mode_hidden(obj: object, prop_name: str) -> tuple[bool, str]:
+    """Check 1: getEditorMode() returns ['Hidden']."""
     get_editor_mode = getattr(obj, "getEditorMode", None)
     if get_editor_mode is not None:
         try:
@@ -387,21 +401,26 @@ def _is_property_hidden(obj: object, prop_name: str) -> tuple[bool, str]:  # noq
                 return True, "editor_mode_hidden"
         except FREECAD_ACCESS_ERRORS as e:
             Log.exception(f"Failed to get editor mode for {prop_name}: {e}")
+    return False, ""
 
-    # Check 2: getPropertyStatus() contains "Hidden" string or integer 26
-    # From FreeCAD source (src/App/PropertyContainerPyImp.cpp line 311-356):
-    # getPropertyStatus() returns a Py::List where each set bit in the property's
-    # status bitmask is converted to either:
-    #   - A string name if the bit has a named entry in statusMap (bits 1-13)
-    #     Examples: "Hidden" (bit 3), "Output" (bit 7), "Transient" (bit 4)
-    #   - An integer if the bit has no named entry (bits 14-31)
-    #     Examples: 23 (PropNoRecompute), 24 (PropReadOnly), 26 (PropHidden), 27 (PropOutput)
-    # The function iterates through bits 1-31 and appends to the list if that bit is set.
-    # To detect hidden properties, we check for:
-    #   - String "Hidden" (bit 3) - runtime status hiding via testStatus(Property::Hidden)
-    #   - Integer 26 (PropHidden) - compile-time type flag Prop_Hidden (bit 4) mirrored to bit 26
-    # Both are checked by FreeCAD's PropertyView::isPropertyHidden() (src/Gui/PropertyView.cpp:245):
-    #   (prop->getType() & App::Prop_Hidden) || prop->testStatus(App::Property::Hidden)
+
+def _check_property_status_hidden(obj: object, prop_name: str) -> tuple[bool, str]:
+    """Check 2: getPropertyStatus() contains 'Hidden' string or integer 26.
+
+    From FreeCAD source (src/App/PropertyContainerPyImp.cpp line 311-356):
+    getPropertyStatus() returns a Py::List where each set bit in the property's
+    status bitmask is converted to either:
+      - A string name if the bit has a named entry in statusMap (bits 1-13)
+        Examples: "Hidden" (bit 3), "Output" (bit 7), "Transient" (bit 4)
+      - An integer if the bit has no named entry (bits 14-31)
+        Examples: 23 (PropNoRecompute), 24 (PropReadOnly), 26 (PropHidden), 27 (PropOutput)
+    The function iterates through bits 1-31 and appends to the list if that bit is set.
+    To detect hidden properties, we check for:
+      - String "Hidden" (bit 3) - runtime status hiding via testStatus(Property::Hidden)
+      - Integer 26 (PropHidden) - compile-time type flag Prop_Hidden (bit 4) mirrored to bit 26
+    Both are checked by FreeCAD's PropertyView::isPropertyHidden() (src/Gui/PropertyView.cpp:245):
+      (prop->getType() & App::Prop_Hidden) || prop->testStatus(App::Property::Hidden)
+    """
     get_property_status = getattr(obj, "getPropertyStatus", None)
     if get_property_status is not None:
         try:
@@ -410,8 +429,11 @@ def _is_property_hidden(obj: object, prop_name: str) -> tuple[bool, str]:  # noq
                 return True, "prop_hidden_bit"
         except FREECAD_ACCESS_ERRORS as e:
             Log.exception(f"Failed to get property status for {prop_name}: {e}")
+    return False, ""
 
-    # Check 3: getTypeOfProperty() returns a list containing 'Hidden'
+
+def _check_type_hidden(obj: object, prop_name: str) -> tuple[bool, str]:
+    """Check 3: getTypeOfProperty() returns a list containing 'Hidden'."""
     get_type_of_property = getattr(obj, "getTypeOfProperty", None)
     if get_type_of_property is not None:
         try:
@@ -420,11 +442,16 @@ def _is_property_hidden(obj: object, prop_name: str) -> tuple[bool, str]:  # noq
                 return True, "type_hidden"
         except FREECAD_ACCESS_ERRORS as e:
             Log.exception(f"Failed to get type of property {prop_name}: {e}")
+    return False, ""
 
-    # Check 4: Property type has no editor (workaround for missing getEditorName())
-    # In FreeCAD C++, properties are hidden if getEditorName() returns ""
-    # Since this method isn't available in Python, we check the TypeId against
-    # NO_EDITOR_PROPERTY_TYPES which contains all property types without editors
+
+def _check_no_editor_type(obj: object, prop_name: str) -> tuple[bool, str]:
+    """Check 4: Property type has no editor (workaround for missing getEditorName()).
+
+    In FreeCAD C++, properties are hidden if getEditorName() returns ""
+    Since this method isn't available in Python, we check the TypeId against
+    NO_EDITOR_PROPERTY_TYPES which contains all property types without editors
+    """
     get_type_id = getattr(obj, "getTypeIdOfProperty", None)
     if get_type_id is not None:
         try:
@@ -433,7 +460,6 @@ def _is_property_hidden(obj: object, prop_name: str) -> tuple[bool, str]:  # noq
                 return True, f"{type_id.lower()}_no_editor"
         except FREECAD_ACCESS_ERRORS as e:
             Log.exception(f"Failed to get type ID of property {prop_name}: {e}")
-
     return False, ""
 
 
@@ -510,45 +536,55 @@ def _build_occurrence_list_bfs(
     from .models import SnapshotOccurrence
 
     occurrences: list[SnapshotOccurrence] = []
-    # queue item: (object, occurrence path, previous sibling occurrence path, ancestor object names)
-    # `ancestors` prevents infinite loops when claimChildren() graph contains cycles.
+    queue = _initialize_bfs_queue(child_to_parents_map, name_to_obj_map)
+
+    while queue:
+        obj, path, after, ancestors = queue.pop(0)
+        obj_name = getattr(obj, "Name", None)
+        if obj_name is None:
+            continue
+
+        occurrences.append(SnapshotOccurrence(path=path, after=after))
+        _enqueue_children(obj_name, path, ancestors, parent_to_child_map, name_to_obj_map, queue)
+
+    return occurrences
+
+
+def _initialize_bfs_queue(
+    child_to_parents_map: dict[str, set[str]],
+    name_to_obj_map: dict[str, DocumentObjectLike],
+) -> list[tuple[DocumentObjectLike, str, str | None, tuple[str, ...]]]:
+    """Initialize BFS queue with root objects."""
     queue: list[tuple[DocumentObjectLike, str, str | None, tuple[str, ...]]] = []
-
-    # Find roots (objects not in parent_map) and add to queue
-    root_names: list[str] = [name for name in name_to_obj_map if name not in child_to_parents_map]
-
-    # Add roots to queue with their "after" value
+    root_names = [name for name in name_to_obj_map if name not in child_to_parents_map]
     for i, name in enumerate(root_names):
         obj = name_to_obj_map.get(name)
         if obj:
             after = root_names[i - 1] if i > 0 else None
             queue.append((obj, name, after, (name,)))
+    return queue
 
-    # Process queue (BFS)
-    while queue:
-        obj, path, after, ancestors = queue.pop(0)
-        obj_name: str | None = getattr(obj, "Name", None)
-        # Skip objects without Name attribute - they are invalid
-        if obj_name is None:
+
+def _enqueue_children(
+    obj_name: str,
+    path: str,
+    ancestors: tuple[str, ...],
+    parent_to_child_map: dict[str, list[str]],
+    name_to_obj_map: dict[str, DocumentObjectLike],
+    queue: list[tuple[DocumentObjectLike, str, str | None, tuple[str, ...]]],
+) -> None:
+    """Enqueue children of the current object for BFS processing."""
+    children_names = parent_to_child_map.get(obj_name, [])
+    previous_child_path: str | None = None
+    for child_name in children_names:
+        if child_name in ancestors:
             continue
-
-        occurrences.append(SnapshotOccurrence(path=path, after=after))
-
-        # Get children using O(1) lookup from parent_to_child_map
-        children_names = parent_to_child_map.get(obj_name, [])
-        previous_child_path: str | None = None
-        for child_name in children_names:
-            # Cycle guard: skip child if it already appears on current ancestry chain.
-            if child_name in ancestors:
-                continue
-            child_obj = name_to_obj_map.get(child_name)
-            if child_obj:
-                child_path = f"{path}/{child_name}"
-                child_after = previous_child_path
-                queue.append((child_obj, child_path, child_after, (*ancestors, child_name)))
-                previous_child_path = child_path
-
-    return occurrences
+        child_obj = name_to_obj_map.get(child_name)
+        if child_obj:
+            child_path = f"{path}/{child_name}"
+            child_after = previous_child_path
+            queue.append((child_obj, child_path, child_after, (*ancestors, child_name)))
+            previous_child_path = child_path
 
 
 def _bool_attr(obj: DocumentObjectLike, attr_name: str) -> bool:

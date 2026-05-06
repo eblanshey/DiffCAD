@@ -7,7 +7,7 @@ name = "freecad.diff_workbench"
 version = "0.1.0"
 description = "A FreeCAD workbench for comparing document snapshots"
 readme = "README.md"
-license = {file = "LICENSE-CODE"}
+license = {file = "LICENSE"}
 authors = [
     { name = "FreeCAD Community", email = "community@freecad.org" }
 ]

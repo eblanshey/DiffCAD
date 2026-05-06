@@ -21,6 +21,7 @@
   - Similarly, NO backwards-compatibility code is allowed ANYWHERE, unless explicitly approved by the user.
 - All english words and phrases must use translations via the translation_strings.py file. Logs don't require translation.
 - Read the `docs/Architecture.md` guidelines when planning new features.
+- Do not remove useful line comments when refactoring
 
 Terse like caveman. Technical substance exact. Only fluff die.
 Drop: articles, filler (just/really/basically), pleasantries, hedging.

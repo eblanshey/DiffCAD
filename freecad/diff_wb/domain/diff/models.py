@@ -307,28 +307,30 @@ class PropertyDiff:
 
     def __post_init__(self) -> None:
         """Calculate state and path_diffs from flattened path maps."""
+        path_diffs = self._build_path_diffs()
+        object.__setattr__(self, "path_diffs", path_diffs)
+        state = self._compute_state(path_diffs)
+        object.__setattr__(self, "state", state)
+
+    def _build_path_diffs(self) -> list[PropertyPathDiff]:
+        """Build path-level diffs from old/new property values."""
         old_paths = _flatten_data_path(self.old_value.value) if self.old_value else {}
         new_paths = _flatten_data_path(self.new_value.value) if self.new_value else {}
-
         all_paths = sorted(set(old_paths) | set(new_paths), key=_path_sort_key)
-        diffs = [
+        return [
             PropertyPathDiff(path=p, old_value=old_paths.get(p), new_value=new_paths.get(p), precision=self.precision)
             for p in all_paths
         ]
-        object.__setattr__(self, "path_diffs", diffs)
 
+    def _compute_state(self, path_diffs: list[PropertyPathDiff]) -> DiffState:
+        """Compute the overall diff state from path diffs."""
         if self.old_value is None:
-            object.__setattr__(self, "state", DiffState.ADDED if self.new_value is not None else DiffState.UNCHANGED)
-            return
+            return DiffState.ADDED if self.new_value is not None else DiffState.UNCHANGED
         if self.new_value is None:
-            object.__setattr__(self, "state", DiffState.DELETED)
-            return
-
-        has_value_change = any(d.value_state != DiffState.UNCHANGED for d in diffs)
-        has_expr_change = any(d.expression_state != DiffState.UNCHANGED for d in diffs)
-        object.__setattr__(
-            self, "state", DiffState.MODIFIED if (has_value_change or has_expr_change) else DiffState.UNCHANGED
-        )
+            return DiffState.DELETED
+        has_value_change = any(d.value_state != DiffState.UNCHANGED for d in path_diffs)
+        has_expr_change = any(d.expression_state != DiffState.UNCHANGED for d in path_diffs)
+        return DiffState.MODIFIED if (has_value_change or has_expr_change) else DiffState.UNCHANGED
 
     def __str__(self) -> str:
         if self.state == DiffState.ADDED:
