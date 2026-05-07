@@ -319,10 +319,13 @@ def _get_property_group(obj: object, prop_name: str) -> str:
     Returns:
         The group name, or "Base" if empty or not available
     """
-    get_group = getattr(obj, "getGroupOfProperty", None)
-    if get_group is not None:
-        group = get_group(prop_name)
+    try:
+        group = obj.getGroupOfProperty(prop_name)  # type: ignore[attr-defined]
         return group if group else "Base"
+    except FREECAD_ACCESS_ERRORS as e:
+        Log.warning(f"Failed to get property group for {prop_name}: {e}")
+    except AttributeError as e:
+        Log.warning(f"Missing getGroupOfProperty for {prop_name}: {e}")
     return "Base"
 
 
@@ -395,14 +398,14 @@ def _is_property_hidden(obj: object, prop_name: str) -> tuple[bool, str]:
 
 def _check_editor_mode_hidden(obj: object, prop_name: str) -> tuple[bool, str]:
     """Check 1: getEditorMode() returns ['Hidden']."""
-    get_editor_mode = getattr(obj, "getEditorMode", None)
-    if get_editor_mode is not None:
-        try:
-            editor_mode = get_editor_mode(prop_name)
-            if isinstance(editor_mode, list) and "Hidden" in editor_mode:
-                return True, "editor_mode_hidden"
-        except FREECAD_ACCESS_ERRORS as e:
-            Log.exception(f"Failed to get editor mode for {prop_name}: {e}")
+    try:
+        editor_mode = obj.getEditorMode(prop_name)  # type: ignore[attr-defined]
+        if isinstance(editor_mode, list) and "Hidden" in editor_mode:
+            return True, "editor_mode_hidden"
+    except FREECAD_ACCESS_ERRORS as e:
+        Log.warning(f"Failed to get editor mode for {prop_name}: {e}")
+    except AttributeError as e:
+        Log.warning(f"Missing getEditorMode for {prop_name}: {e}")
     return False, ""
 
 
@@ -423,27 +426,27 @@ def _check_property_status_hidden(obj: object, prop_name: str) -> tuple[bool, st
     Both are checked by FreeCAD's PropertyView::isPropertyHidden() (src/Gui/PropertyView.cpp:245):
       (prop->getType() & App::Prop_Hidden) || prop->testStatus(App::Property::Hidden)
     """
-    get_property_status = getattr(obj, "getPropertyStatus", None)
-    if get_property_status is not None:
-        try:
-            status = get_property_status(prop_name)
-            if isinstance(status, list) and ("Hidden" in status or 26 in status):
-                return True, "prop_hidden_bit"
-        except FREECAD_ACCESS_ERRORS as e:
-            Log.exception(f"Failed to get property status for {prop_name}: {e}")
+    try:
+        status = obj.getPropertyStatus(prop_name)  # type: ignore[attr-defined]
+        if isinstance(status, list) and ("Hidden" in status or 26 in status):
+            return True, "prop_hidden_bit"
+    except FREECAD_ACCESS_ERRORS as e:
+        Log.warning(f"Failed to get property status for {prop_name}: {e}")
+    except AttributeError as e:
+        Log.warning(f"Missing getPropertyStatus for {prop_name}: {e}")
     return False, ""
 
 
 def _check_type_hidden(obj: object, prop_name: str) -> tuple[bool, str]:
     """Check 3: getTypeOfProperty() returns a list containing 'Hidden'."""
-    get_type_of_property = getattr(obj, "getTypeOfProperty", None)
-    if get_type_of_property is not None:
-        try:
-            prop_types = get_type_of_property(prop_name)
-            if isinstance(prop_types, list) and "Hidden" in prop_types:
-                return True, "type_hidden"
-        except FREECAD_ACCESS_ERRORS as e:
-            Log.exception(f"Failed to get type of property {prop_name}: {e}")
+    try:
+        prop_types = obj.getTypeOfProperty(prop_name)  # type: ignore[attr-defined]
+        if isinstance(prop_types, list) and "Hidden" in prop_types:
+            return True, "type_hidden"
+    except FREECAD_ACCESS_ERRORS as e:
+        Log.warning(f"Failed to get type of property {prop_name}: {e}")
+    except AttributeError as e:
+        Log.warning(f"Missing getTypeOfProperty for {prop_name}: {e}")
     return False, ""
 
 
@@ -454,14 +457,14 @@ def _check_no_editor_type(obj: object, prop_name: str) -> tuple[bool, str]:
     Since this method isn't available in Python, we check the TypeId against
     NO_EDITOR_PROPERTY_TYPES which contains all property types without editors
     """
-    get_type_id = getattr(obj, "getTypeIdOfProperty", None)
-    if get_type_id is not None:
-        try:
-            type_id = get_type_id(prop_name)
-            if isinstance(type_id, str) and type_id in _ALL_NO_EDITOR_TYPES:
-                return True, f"{type_id.lower()}_no_editor"
-        except FREECAD_ACCESS_ERRORS as e:
-            Log.exception(f"Failed to get type ID of property {prop_name}: {e}")
+    try:
+        type_id = obj.getTypeIdOfProperty(prop_name)  # type: ignore[attr-defined]
+        if isinstance(type_id, str) and type_id in _ALL_NO_EDITOR_TYPES:
+            return True, f"{type_id.lower()}_no_editor"
+    except FREECAD_ACCESS_ERRORS as e:
+        Log.warning(f"Failed to get type ID of property {prop_name}: {e}")
+    except AttributeError as e:
+        Log.warning(f"Missing getTypeIdOfProperty for {prop_name}: {e}")
     return False, ""
 
 
@@ -503,14 +506,13 @@ def _include_spreadsheet_cells_with_aliases(obj: object, properties: dict[str, P
     if not _is_spreadsheet_sheet(obj):
         return
 
-    get_non_empty_cells = getattr(obj, "getNonEmptyCells", None)
-    if not callable(get_non_empty_cells):
-        return
-
     try:
-        non_empty_cells = get_non_empty_cells()
+        non_empty_cells = obj.getNonEmptyCells()  # type: ignore[attr-defined]
     except FREECAD_ACCESS_ERRORS as e:
-        Log.exception(f"Failed to list spreadsheet non-empty cells: {e}")
+        Log.warning(f"Failed to list spreadsheet non-empty cells: {e}")
+        return
+    except AttributeError as e:
+        Log.warning(f"Missing getNonEmptyCells on spreadsheet object: {e}")
         return
 
     for cell_name in non_empty_cells:
@@ -536,13 +538,13 @@ def _is_spreadsheet_sheet(obj: object) -> bool:
 
 def _get_spreadsheet_alias(obj: object, cell_name: str) -> str | None:
     """Return alias text for a spreadsheet cell when present."""
-    get_alias = getattr(obj, "getAlias", None)
-    if not callable(get_alias):
-        return None
     try:
-        alias = get_alias(cell_name)
+        alias = obj.getAlias(cell_name)  # type: ignore[attr-defined]
     except FREECAD_ACCESS_ERRORS as e:
-        Log.exception(f"Failed to read alias for {cell_name}: {e}")
+        Log.warning(f"Failed to read alias for {cell_name}: {e}")
+        return None
+    except AttributeError as e:
+        Log.warning(f"Missing getAlias for spreadsheet cell {cell_name}: {e}")
         return None
     if isinstance(alias, str) and alias:
         return alias
