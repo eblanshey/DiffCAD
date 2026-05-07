@@ -486,6 +486,42 @@ class TestGitPortAdapterGetCommits:
 
             assert commits == []
 
+    def test_get_commits_non_zero_exit_code_logs_warning(self) -> None:
+        """Test non-zero git log errors are logged when unexpected."""
+        mock_result = subprocess.CompletedProcess(
+            args=["git", "log", "-n20", "--format=%H%x00%B%x00%an%x00%aI%x00"],
+            returncode=128,
+            stdout="",
+            stderr="fatal: not a git repository",
+        )
+
+        with (
+            patch.object(subprocess, "run", return_value=mock_result),
+            patch.object(Log, "warning") as mock_warning,
+        ):
+            commits = self.adapter.get_commits("/path/to/repo")
+
+        assert commits == []
+        mock_warning.assert_called_once_with("Git log failed with return code 128: fatal: not a git repository")
+
+    def test_get_commits_no_commits_yet_does_not_log_warning(self) -> None:
+        """Test unborn-branch git log error is treated as expected and not logged."""
+        mock_result = subprocess.CompletedProcess(
+            args=["git", "log", "-n20", "--format=%H%x00%B%x00%an%x00%aI%x00"],
+            returncode=128,
+            stdout="",
+            stderr="fatal: your current branch 'master' does not have any commits yet",
+        )
+
+        with (
+            patch.object(subprocess, "run", return_value=mock_result),
+            patch.object(Log, "warning") as mock_warning,
+        ):
+            commits = self.adapter.get_commits("/path/to/repo")
+
+        assert commits == []
+        mock_warning.assert_not_called()
+
     @patch.object(os.path, "dirname", return_value="/parent/directory")
     @patch.object(os.path, "isfile", return_value=True)
     def test_get_commits_with_file_path(

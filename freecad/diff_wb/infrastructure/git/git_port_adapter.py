@@ -125,6 +125,11 @@ class GitPortAdapter(GitPort):
         normalized_stderr = stderr.lower()
         return "not a git repository" in normalized_stderr
 
+    def _is_no_commits_yet_error(self, stderr: str) -> bool:
+        """Return True when git log fails because repository has no commits yet."""
+        normalized_stderr = stderr.lower()
+        return "does not have any commits yet" in normalized_stderr
+
     def get_commits(self, path: str, limit: int = 20, skip: int = 0) -> list[GitCommit]:
         """Get recent commits using git CLI.
 
@@ -208,7 +213,8 @@ class GitPortAdapter(GitPort):
             return ""
 
         if result.returncode != 0:
-            Log.warning(f"Git log failed with return code {result.returncode}: {result.stderr.strip()}")
+            if not self._is_no_commits_yet_error(result.stderr):
+                Log.warning(f"Git log failed with return code {result.returncode}: {result.stderr.strip()}")
             return ""
 
         return result.stdout.strip()
