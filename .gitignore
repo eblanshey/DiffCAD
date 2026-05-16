@@ -63,6 +63,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+.direnv/
 
 # mkdocs documentation
 /site

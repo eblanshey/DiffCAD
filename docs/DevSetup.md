@@ -44,15 +44,17 @@ Inside the Nix shell, run `uv sync` to set up the Python virtual environment, th
 To automatically enter the Nix shell when opening the project directory, use `direnv`:
 
 1. In your `configuration.nix`:
-   ```nix
-   programs.direnv.enable = true;
-   programs.direnv.nix-direnv.enable = true;
-   ```
+    ```nix
+    programs.direnv.enable = true;
+    programs.direnv.nix-direnv.enable = true;
+    ```
 
 2. Allow direnv in the repository root:
-   ```bash
-   direnv allow
-   ```
+    ```bash
+    direnv allow
+    ```
+
+The `.envrc` file checks if Nix is installed before loading the shell. If Nix is not available, direnv does nothing (no error).
 
 For VSCode users, install the "direnv" extension by Martin Koehler (search for "direnv" in the extensions panel) to have VSCode automatically load the Nix environment.
 
@@ -128,7 +130,13 @@ Verify the runtime:
 ./run_with_freecad.sh python -c "import FreeCAD; print(FreeCAD.Version())"
 ```
 
-Run integration tests directly:
+Integration tests rely on the FreeCAD python environment. `pytest` isn't installed there, so run:
+
+```bash
+./run_with_freecad.sh pip install pytest
+```
+
+Now run integration tests directly:
 
 ```bash
 ./run_integration_tests.sh

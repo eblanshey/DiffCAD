@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Wrapper script to run Python scripts with FreeCAD AppImage bindings
 # The FreeCAD AppImage should be extracted to a directory and set to the $FREECAD_ROOT env variable.
 
