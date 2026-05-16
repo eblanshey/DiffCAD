@@ -194,7 +194,7 @@ class TestGitPortAdapter:
             # Empty string stripped is still empty string
             assert result == ""
 
-    def test_run_git_suppresses_windows_console_window(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_run_git_suppresses_windows_console_window(self) -> None:
         """Test Windows git commands run without opening a console window."""
 
         class FakeStartupInfo:
@@ -204,12 +204,6 @@ class TestGitPortAdapter:
                 self.dwFlags = 0
                 self.wShowWindow = 1
 
-        monkeypatch.setattr(os, "name", "nt")
-        monkeypatch.setattr(subprocess, "CREATE_NO_WINDOW", 0x08000000, raising=False)
-        monkeypatch.setattr(subprocess, "STARTF_USESHOWWINDOW", 1, raising=False)
-        monkeypatch.setattr(subprocess, "SW_HIDE", 0, raising=False)
-        monkeypatch.setattr(subprocess, "STARTUPINFO", FakeStartupInfo, raising=False)
-
         mock_result = subprocess.CompletedProcess(
             args=["git", "rev-parse", "--show-toplevel"],
             returncode=0,
@@ -217,7 +211,14 @@ class TestGitPortAdapter:
             stderr="",
         )
 
-        with patch.object(subprocess, "run", return_value=mock_result) as mock_run:
+        with (
+            patch.object(os, "name", "nt"),
+            patch.object(subprocess, "CREATE_NO_WINDOW", 0x08000000, create=True),
+            patch.object(subprocess, "STARTF_USESHOWWINDOW", 1, create=True),
+            patch.object(subprocess, "SW_HIDE", 0, create=True),
+            patch.object(subprocess, "STARTUPINFO", FakeStartupInfo, create=True),
+            patch.object(subprocess, "run", return_value=mock_result) as mock_run,
+        ):
             result = self.adapter.find_top_level_git_path("C:/repo")
 
         assert result == "C:/repo"

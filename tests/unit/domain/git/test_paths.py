@@ -2,6 +2,8 @@
 # File responsibility: Unit tests for Git path normalization helpers.
 """Unit tests for Git path helpers."""
 
+from unittest.mock import patch
+
 import pytest
 
 from freecad.diff_wb.domain.git.paths import git_path_name, is_fcstd_path, relative_git_path, to_git_path
@@ -12,14 +14,13 @@ def test_to_git_path_normalizes_windows_separators() -> None:
     assert to_git_path("assemblies\\sub\\Widget.FCStd") == "assemblies/sub/Widget.FCStd"
 
 
-def test_relative_git_path_normalizes_os_relative_path(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_relative_git_path_normalizes_os_relative_path() -> None:
     """Test relative paths are normalized after OS relpath computation."""
-    monkeypatch.setattr(
-        "freecad.diff_wb.domain.git.paths.os.path.relpath",
+    with patch(
+        "freecad.diff_wb.domain.git.paths.relpath",
         lambda path, root: "assemblies\\sub\\Widget.FCStd",
-    )
-
-    assert relative_git_path("C:\\repo\\assemblies\\sub\\Widget.FCStd", "C:\\repo") == "assemblies/sub/Widget.FCStd"
+    ):
+        assert relative_git_path("C:\\repo\\assemblies\\sub\\Widget.FCStd", "C:\\repo") == "assemblies/sub/Widget.FCStd"
 
 
 def test_git_path_name_handles_windows_and_trailing_separator() -> None:

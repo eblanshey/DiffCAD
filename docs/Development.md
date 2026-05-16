@@ -226,6 +226,12 @@ Skipped tests should not remain in the suite long-term. If a unit test needs Fre
 
 Use `@pytest.mark.parametrize` to keep edge-case coverage concise. When multiple tests differ only in input values or expected outputs, consolidate them into a single parametrized test. This reduces file size, prevents repetitive failures, and makes the test suite easier to scan.
 
+### Mocking Guidelines
+
+When patching standard library modules (`subprocess`, `os`, `pathlib`) in unit tests, use `unittest.mock.patch` context managers instead of `pytest.monkeypatch.setattr`. Context managers limit the scope of patches and prevent global state from leaking into IDE pytest hooks.
+
+For application-specific modules, `monkeypatch` is appropriate and convenient.
+
 ### Unit Tests
 
 Location: `tests/unit/`

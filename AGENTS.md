@@ -57,6 +57,8 @@ Write only meaningful, long-term tests. Avoid "dumb tests" that serve no purpose
 
 **Parametrized consolidation:** Use `@pytest.mark.parametrize` when multiple tests differ only in input/output values. Keeps edge coverage concise and reduces repetitive failures.
 
+**Mocking stdlib modules:** Use `unittest.mock.patch` context managers instead of `monkeypatch.setattr` when patching standard library modules (`subprocess`, `os`, `pathlib`). This prevents global state from leaking into IDE pytest hooks. `monkeypatch` is fine for application-specific modules.
+
 ## Type Information
 
 FreeCAD type stubs are installed via `uv` at `.venv/lib/python3.12/site-packages/`. Check these `.pyi` files before assuming FreeCAD API behavior or when implementing FreeCAD integration code.

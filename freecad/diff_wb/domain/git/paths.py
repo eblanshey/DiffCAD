@@ -3,7 +3,7 @@
 # across operating systems while preserving Git's POSIX-style path convention.
 """Git path normalization helpers."""
 
-import os
+from os.path import relpath
 from pathlib import PurePosixPath
 
 
@@ -14,7 +14,7 @@ def to_git_path(path: str) -> str:
 
 def relative_git_path(path: str, root: str) -> str:
     """Return a repository-relative Git path for an OS filesystem path."""
-    return to_git_path(os.path.relpath(path, root))
+    return to_git_path(relpath(path, root))
 
 
 def git_path_name(path: str) -> str:

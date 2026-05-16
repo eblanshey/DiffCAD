@@ -29,6 +29,33 @@ uv sync
 
 This creates or updates the local `.venv` and installs development tools declared in `pyproject.toml`, including `ruff`, `mypy`, `pytest`, `radon`, `freecad-stubs`, and `taskfile-help`.
 
+### Nix / NixOS
+
+On Nix or NixOS, run `nix-shell` in the repository root to enter an environment with all required dependencies (including Qt libraries like libGL) and tools (`uv`, `python311`, `go-task`):
+
+```bash
+nix-shell
+```
+
+Inside the Nix shell, run `uv sync` to set up the Python virtual environment, then follow the "Link Into FreeCAD's Mod Directory" section to connect the workbench to FreeCAD.
+
+#### Using direnv for Convenience
+
+To automatically enter the Nix shell when opening the project directory, use `direnv`:
+
+1. In your `configuration.nix`:
+   ```nix
+   programs.direnv.enable = true;
+   programs.direnv.nix-direnv.enable = true;
+   ```
+
+2. Allow direnv in the repository root:
+   ```bash
+   direnv allow
+   ```
+
+For VSCode users, install the "direnv" extension by Martin Koehler (search for "direnv" in the extensions panel) to have VSCode automatically load the Nix environment.
+
 ## Link Into FreeCAD's Mod Directory
 
 Create a symlink from FreeCAD's `Mod` directory to this checkout. FreeCAD will load the workbench from the live source tree, so code changes are picked up after restarting FreeCAD.
