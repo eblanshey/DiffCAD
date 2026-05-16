@@ -84,14 +84,7 @@ When upgrading from an existing Addon Manager installation:
 
 ### Git Setup (Absolute Beginner)
 
-Don't be intimidated if you've never used Git before! If you have never used the command line, follow these steps exactly.
-
-1. Install Git from <https://git-scm.com/install>, then run installer with default options.
-2. Open terminal (`PowerShell` or `Command Prompt` on Windows, `Terminal` on macOS/Linux).
-3. Set identity, which will be used for your commits (savepoints): `git config --global user.name "Your Name"` and `git config --global user.email "you@example.com"`.
-4. Confirm setup: `git --version`
-
-From here on you can use the workbench for all operations.
+Simply install Git from <https://git-scm.com/install>, then run installer with default options.
 
 ## First Run
 
