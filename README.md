@@ -70,6 +70,18 @@ DiffCAD is not yet available in the official FreeCAD Addon Manager repository. U
 6. Search for **DiffCAD** and install it.
 7. Restart FreeCAD.
 
+### Upgrading
+
+When upgrading from an existing Addon Manager installation:
+
+1. Open **Tools > Addon Manager**.
+2. Uninstall **DiffCAD**.
+3. Close FreeCAD.
+4. Reopen FreeCAD.
+5. Open **Tools > Addon Manager**.
+6. Install **DiffCAD** again.
+7. Restart FreeCAD.
+
 ### Git Setup (Absolute Beginner)
 
 Don't be intimidated if you've never used Git before! If you have never used the command line, follow these steps exactly.
