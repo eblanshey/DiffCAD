@@ -8,10 +8,7 @@
 - All python module's `__init__.py` MUST have a comment at the top explaining the responsibility of the whole module, in format: Module responsibility: [responsibility here]
 - If you are asked to copy or move a file, prefer to use the cp or mv commands.
 - Run `task check` to run linters and formatters
-- Run `task test` to run unit tests.
-- Run `task test:integration` to run integration tests (runs tests with `./run_integration_tests.sh` instead of `uv`)
-  - If you get a large number of skipped tests, it's because you didn't run it correctly!
-- Integration tests use FreeCAD's Python 3.11 interpreter (not system Python 3.12) to avoid version incompatibility.
+- Run `task test` to run all tests (includes unit and integration). Integration tests use FreeCAD's Python 3.11 interpreter through `./run_integration_tests.sh`. If you get a large number of skipped tests, it's because you didn't run it correctly!
 - When asked to update or fix documentation or any markdown files, do not make the changes in a way that indicates something has changed. E.g. do not write "Update: we now want to do X". Write it in a way that flows naturally as if it's the first version written.
 - Use the `Log` static methods from `utils.py` for logging throughout the codebase.
 - Do not write comments that reference bugs that were fixed (unless explicitly asked to), as such comments are useless long-term.

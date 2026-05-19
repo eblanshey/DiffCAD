@@ -15,14 +15,14 @@ tasks:
       - task --list --sort none
     silent: true
 
-  quality:check:
+  check:
     desc: Run all code quality checks
     summary: Runs ruff, mypy, docstring check, and complexity analysis
     cmds:
-      - task: quality:check:ruff
-      - task: quality:check:mypy
-      - task: quality:check:docstrings
-      - task: quality:check:complexity
+      - task: quality:ruff
+      - task: quality:mypy
+      - task: quality:docstrings
+      - task: quality:complexity
 
   quality:fix:
     desc: Fix all auto-fixable issues
@@ -31,26 +31,26 @@ tasks:
       - "{{.UV}} run ruff check --fix {{.CLI_ARGS | default .SRC}}"
       - "{{.UV}} run ruff format {{.CLI_ARGS | default .SRC}}"
 
-  quality:check:ruff:
+  quality:ruff:
     desc: Run ruff linting checks
     summary: Checks code style, imports, and common issues
     cmds:
       - "{{.UV}} run ruff check {{.CLI_ARGS | default .SRC}}"
 
-  quality:check:mypy:
+  quality:mypy:
     desc: Run type checking with mypy
     summary: Validates type hints and catches type errors
     cmds:
       - "{{.UV}} run mypy {{.CLI_ARGS | default \"freecad tests\"}}"
 
-  quality:check:docstrings:
+  quality:docstrings:
     desc: Check that modules and public objects have docstrings
     summary: Runs the docstring checker on the source directory
     cmds:
       - echo "Checking docstrings..."
       - "{{.UV}} run python scripts/check_docstrs.py {{.SRC}}"
 
-  quality:check:complexity:
+  quality:complexity:
     desc: Analyze code complexity with radon
     summary: Reports cyclomatic complexity for functions/classes with grade B or worse
     silent: true
@@ -64,7 +64,7 @@ tasks:
             echo "$OUTPUT"
           fi
 
-  test:all:
+  test:
     desc: Run unit and integration tests
     cmds:
       - task: test:unit

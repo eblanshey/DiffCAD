@@ -85,25 +85,17 @@ During development, restart FreeCAD after changing Python files. Resource files,
 
 ## Run Local Checks
 
-Run all code quality checks:
+Run all checks:
 
 ```bash
-task quality:check
+task check
 ```
 
-Run unit tests:
+Run tests (includes unit and integration):
 
 ```bash
-task test:unit
+task test
 ```
-
-Run integration tests:
-
-```bash
-task test:integration
-```
-
-Integration tests must run through `task test:integration` or `./run_integration_tests.sh` so they use FreeCAD's Python runtime. If many integration tests are skipped, they were probably not run through the correct script.
 
 ## Linux FreeCAD AppImage Runtime
 
@@ -167,6 +159,6 @@ FreeCAD type stubs are installed in the local `uv` environment under `.venv/lib/
 | FreeCAD does not show the workbench | Check that the symlink exists under FreeCAD's active `Mod` directory and points to the repository root. Restart FreeCAD. |
 | `FREECAD_ROOT environment variable is not set` | Export `FREECAD_ROOT` to the extracted AppImage `squashfs-root` path. |
 | `FreeCAD Python not found` | Check that `$FREECAD_ROOT/usr/bin/python` exists. Re-extract the AppImage if needed. |
-| Many integration tests are skipped | Run `task test:integration` or `./run_integration_tests.sh`, not plain `pytest`. |
+| Many integration tests are skipped | Run `task test` or `./run_integration_tests.sh`, not plain `pytest`. |
 | Import errors for local tools | Run `uv sync` from the repository root. |
 | FreeCAD loads stale behavior | Restart FreeCAD. Python modules are cached for the lifetime of the FreeCAD process. |

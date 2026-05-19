@@ -4,25 +4,17 @@ This guide describes how to make maintainable changes to DiffCAD. For environmen
 
 ## Required Checks
 
-Run code quality checks before submitting changes:
+Run all checks before submitting changes:
 
 ```bash
-task quality:check
+task check
 ```
 
-Run unit tests:
+Run tests (includes unit and integration):
 
 ```bash
-task test:unit
+task test
 ```
-
-Run integration tests when behavior touches FreeCAD, git workflows, snapshots, preferences, or workbench activation:
-
-```bash
-task test:integration
-```
-
-Integration tests use FreeCAD's Python runtime through `./run_integration_tests.sh`. Do not use plain `pytest tests/integration` unless you are deliberately debugging collection behavior outside FreeCAD.
 
 ## Project Layout
 
@@ -238,25 +230,11 @@ Location: `tests/unit/`
 
 Use unit tests for fast feedback on pure behavior. Unit tests should not require FreeCAD to be running. Follow the ownership rules above: domain algorithms, application orchestration, infrastructure adapters (without real subprocess or git), and UI presenter logic with fakes.
 
-Run unit tests with:
+Run tests (includes unit and integration):
 
 ```bash
-task test:unit
+task test
 ```
-
-### Integration Tests
-
-Location: `tests/integration/`
-
-Use integration tests when behavior depends on real FreeCAD APIs, document structure, Qt runtime, workbench activation, or end-to-end wiring. Integration tests carry runtime cost and should justify it by covering behavior that cannot be tested with fakes.
-
-Run integration tests with:
-
-```bash
-task test:integration
-```
-
-Integration tests use FreeCAD's Python 3.11 interpreter through `./run_integration_tests.sh`. Do not run `pytest tests/integration` directly unless debugging collection behavior outside the FreeCAD runtime.
 
 ## Common Contributor Tasks
 
