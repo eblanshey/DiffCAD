@@ -210,6 +210,8 @@ Each behavior should have one owning layer. Duplicate tests across layers create
 - **UI tests** own observable presenter/view behavior, state updates, and callback wiring. Do not test private Qt styling details unless styling is an explicit product contract.
 - **Integration tests** own behavior that requires real FreeCAD, Qt runtime, real document structure, workbench activation, or real runtime wiring.
 
+Integration tests run with FreeCAD's Python interpreter and real App runtime. In CLI/headless runs where `FreeCADGui` is unavailable, integration fixtures provide a `GuiLike` mock adapter that implements the required port surface (`getDocument()`, `isModified()`, `getViewProvider()`) against real App documents. This keeps integration coverage stable without requiring a full interactive GUI session.
+
 ### Skipped Tests
 
 Skipped tests should not remain in the suite long-term. If a unit test needs FreeCAD or Qt runtime, move useful coverage to integration tests and delete the skipped version. Debug-only or permanently skipped files provide no value and should be removed.

@@ -91,25 +91,40 @@ def freecad_app() -> Any:
 
 
 @pytest.fixture
-def freecad_gui(freecad_app: Any) -> object | None:
-    """Import and return the FreeCAD GUI module.
-
-    Args:
-        freecad_app: FreeCAD application module.
+def freecad_gui(freecad_app: Any) -> object:
+    """Return mock GUI port for integration tests.
 
     Returns:
-        FreeCADGui module or None if not available.
+        GUI module-like object implementing getDocument().
     """
-    try:
-        import FreeCADGui
 
-        return FreeCADGui
-    except ImportError:
-        return None
+    class _GuiDocumentAdapter:
+        def __init__(self, doc: Any) -> None:
+            self._doc = doc
+
+        def isModified(self) -> bool:
+            return False
+
+        def getViewProvider(self, obj: object) -> object | None:
+            if hasattr(obj, "ViewObject"):
+                return getattr(obj, "ViewObject")
+            return None
+
+    class _GuiAdapter:
+        def __init__(self, app: Any) -> None:
+            self._app = app
+
+        def getDocument(self, doc_name: str) -> _GuiDocumentAdapter | None:
+            doc = self._app.getDocument(doc_name)
+            if doc is None:
+                return None
+            return _GuiDocumentAdapter(doc)
+
+    return _GuiAdapter(freecad_app)
 
 
 @pytest.fixture
-def freecad_context(freecad_app: Any) -> FreeCadContext:
+def freecad_context(freecad_app: Any, freecad_gui: Any) -> FreeCadContext:
     """Create a FreeCAD runtime context for testing.
 
     Args:
@@ -120,7 +135,7 @@ def freecad_context(freecad_app: Any) -> FreeCadContext:
     """
     from freecad.diff_wb.domain.freecad_ports import FreeCadContext
 
-    return FreeCadContext(app=freecad_app)
+    return FreeCadContext(app=freecad_app, gui=freecad_gui)
 
 
 @pytest.fixture
@@ -169,14 +184,9 @@ def initialized_workbench(project_root: Path) -> Any:
     Raises:
         pytest.skip: If FreeCADGui.Workbench is not available (headless mode).
     """
-    # First import Gui (it adds Mod directories to sys.path)
-    try:
-        import FreeCADGui as Gui
-    except ImportError:
-        pytest.skip("FreeCADGui not available - cannot initialize workbench")
-
+    Gui = sys.modules.get("FreeCADGui")
     if Gui is None:
-        pytest.skip("FreeCADGui is None - cannot initialize workbench")
+        pytest.skip("FreeCADGui module not loaded - cannot initialize workbench")
 
     # Check if full GUI is available (Gui.Workbench must exist)
     # Note: Gui.Workbench is only available when FreeCAD runs with a real display

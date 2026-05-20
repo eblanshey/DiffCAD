@@ -11,7 +11,7 @@ from freecad.diff_wb.domain.git.models import GitRepository
 
 def test_container_returns_wired_application_container() -> None:
     """create_application_container returns an ApplicationContainer with key public actions."""
-    ctx = FreeCadContext(app=None)  # type: ignore[arg-type]
+    ctx = FreeCadContext(app=None, gui=object())  # type: ignore[arg-type]
     container = create_application_container(ctx)
 
     assert isinstance(container, ApplicationContainer)
@@ -27,7 +27,7 @@ def test_container_returns_wired_application_container() -> None:
 
 def test_get_commits_action_executes_through_container() -> None:
     """GetCommitsAction executes successfully through the container."""
-    ctx = FreeCadContext(app=None)  # type: ignore[arg-type]
+    ctx = FreeCadContext(app=None, gui=object())  # type: ignore[arg-type]
     container = create_application_container(ctx)
 
     repo = GitRepository(name="test_project", absolute_path="/tmp/test_project")

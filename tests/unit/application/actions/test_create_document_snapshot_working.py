@@ -48,7 +48,7 @@ class TestCreateDocumentSnapshotForWorkingTreeActionSuccess:
         fake_git_port.add_git_repo("/home/user/my_project")
 
         git_service = GitService(fake_git_port)
-        extractor = SnapshotExtractor()
+        extractor = SnapshotExtractor(gui=MagicMock())
 
         repo = GitRepository(name="my_project", absolute_path="/home/user/my_project")
         action = CreateDocumentSnapshotForWorkingTreeAction(git_service, extractor)
@@ -71,7 +71,7 @@ class TestCreateDocumentSnapshotForWorkingTreeActionSuccess:
         fake_git_port.add_git_repo("/home/user/my_project")
 
         git_service = GitService(fake_git_port)
-        extractor = SnapshotExtractor()
+        extractor = SnapshotExtractor(gui=MagicMock())
 
         repo = GitRepository(name="my_project", absolute_path="/home/user/my_project")
         action = CreateDocumentSnapshotForWorkingTreeAction(git_service, extractor)
@@ -90,7 +90,7 @@ class TestCreateDocumentSnapshotForWorkingTreeActionSuccess:
 
         git_service = MagicMock(spec=GitService)
         git_service.get_eligible_docs.return_value = [doc]
-        extractor = SnapshotExtractor()
+        extractor = SnapshotExtractor(gui=MagicMock())
 
         repo = GitRepository(name="repo", absolute_path="C:\\repo")
         action = CreateDocumentSnapshotForWorkingTreeAction(git_service, extractor)
@@ -111,7 +111,7 @@ class TestCreateDocumentSnapshotForWorkingTreeActionSuccess:
         fake_git_port.add_git_repo("/home/user/my_project")
 
         git_service = GitService(fake_git_port)
-        extractor = SnapshotExtractor()
+        extractor = SnapshotExtractor(gui=MagicMock())
 
         repo = GitRepository(name="my_project", absolute_path="/home/user/my_project")
         action = CreateDocumentSnapshotForWorkingTreeAction(git_service, extractor)
@@ -138,7 +138,7 @@ class TestCreateDocumentSnapshotForWorkingTreeActionFailure:
         fake_git_port.add_git_repo("/home/user/my_project")
 
         git_service = GitService(fake_git_port)
-        extractor = SnapshotExtractor()
+        extractor = SnapshotExtractor(gui=MagicMock())
 
         repo = GitRepository(name="my_project", absolute_path="/home/user/my_project")
         action = CreateDocumentSnapshotForWorkingTreeAction(git_service, extractor)
@@ -160,7 +160,7 @@ class TestCreateDocumentSnapshotForWorkingTreeActionFailure:
         fake_git_port.add_git_repo("/home/user/my_project")
 
         git_service = GitService(fake_git_port)
-        extractor = SnapshotExtractor()
+        extractor = SnapshotExtractor(gui=MagicMock())
 
         repo = GitRepository(name="my_project", absolute_path="/home/user/my_project")
         action = CreateDocumentSnapshotForWorkingTreeAction(git_service, extractor)
@@ -186,7 +186,7 @@ class TestCreateDocumentSnapshotForWorkingTreeActionGitPath:
         fake_git_port.add_git_repo("/home/user/project")
 
         git_service = GitService(fake_git_port)
-        extractor = SnapshotExtractor()
+        extractor = SnapshotExtractor(gui=MagicMock())
 
         repo = GitRepository(name="project", absolute_path="/home/user/project")
         action = CreateDocumentSnapshotForWorkingTreeAction(git_service, extractor)
@@ -208,7 +208,7 @@ class TestCreateDocumentSnapshotForWorkingTreeActionGitPath:
         fake_git_port.add_git_repo("/home/user/project")
 
         git_service = GitService(fake_git_port)
-        extractor = SnapshotExtractor()
+        extractor = SnapshotExtractor(gui=MagicMock())
 
         repo = GitRepository(name="project", absolute_path="/home/user/project")
         action = CreateDocumentSnapshotForWorkingTreeAction(git_service, extractor)

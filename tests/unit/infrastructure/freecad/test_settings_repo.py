@@ -60,9 +60,14 @@ class _FakeApp:
         return self._group
 
 
+class _FakeGui:
+    def getDocument(self, doc_name: str) -> None:
+        return None
+
+
 def _make_repo() -> tuple[FreeCADSettingsRepository, _FakeParamGet]:
     group = _FakeParamGet()
-    ctx = FreeCadContext(app=_FakeApp(group))  # type: ignore[arg-type]
+    ctx = FreeCadContext(app=_FakeApp(group), gui=_FakeGui())  # type: ignore[arg-type]
     return FreeCADSettingsRepository(ctx), group
 
 

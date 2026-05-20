@@ -181,7 +181,7 @@ class TestStageDocumentsActionStaging:
             result = action.execute(repo, [snapshot])
 
         assert result.is_success is True
-        freecad_port.save_document.assert_called_once_with(mock_doc)
+        freecad_port.save_document_if_modified.assert_called_once_with(mock_doc)
 
 
 class TestStageDocumentsActionSuccess:
@@ -257,7 +257,7 @@ class TestStageDocumentsActionFailure:
             git_service.stage_files.assert_not_called()
 
     def test_stage_documents_returns_failure_on_save_error(self) -> None:
-        """Test that Result.failure is returned when save_document raises."""
+        """Test that Result.failure is returned when conditional save raises."""
         git_service = MagicMock(spec=GitService)
         freecad_port = MagicMock(spec=FreeCadPort)
 
@@ -265,7 +265,7 @@ class TestStageDocumentsActionFailure:
         mock_doc.FileName = "/tmp/test_repo/mydoc.FCStd"
         freecad_port.get_all_open_documents.return_value = [mock_doc]
         git_service.get_eligible_docs.return_value = [mock_doc]
-        freecad_port.save_document.side_effect = Exception("save failed")
+        freecad_port.save_document_if_modified.side_effect = Exception("save failed")
 
         action = StageDocumentsAction(git_service=git_service, freecad_port=freecad_port)
         repo = GitRepository(name="test_repo", absolute_path="/tmp/test_repo")

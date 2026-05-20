@@ -8,12 +8,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Protocol
-
-
-if TYPE_CHECKING:
-    import FreeCAD  # noqa: F401
-    import FreeCADGui  # noqa: F401
+from typing import Protocol
 
 
 class DocumentObjectLike(Protocol):
@@ -42,6 +37,7 @@ class DocumentLike(Protocol):
     """Minimal Protocol for FreeCAD document operations."""
 
     FileName: str  # Path to the document file (empty string if unsaved)
+    Name: str
     Objects: list[DocumentObjectLike]
 
     def getObject(self, name: str) -> DocumentObjectLike | None: ...
@@ -71,6 +67,19 @@ class AppLike(Protocol):
     def Qt(self) -> QtModule: ...
 
 
+class GuiDocumentLike(Protocol):
+    """Minimal Protocol for FreeCAD GUI document operations."""
+
+    def isModified(self) -> bool: ...
+    def getViewProvider(self, obj: object) -> object | None: ...
+
+
+class GuiLike(Protocol):
+    """Minimal Protocol for the FreeCAD GUI module."""
+
+    def getDocument(self, doc_name: str) -> GuiDocumentLike | None: ...
+
+
 @dataclass(frozen=True)
 class FreeCadContext:
     """Bundle of runtime bindings for the Diff Workbench.
@@ -80,9 +89,11 @@ class FreeCadContext:
 
     Attributes:
         app: The FreeCAD application module (AppLike protocol)
+        gui: The FreeCAD GUI module (GuiLike protocol)
     """
 
     app: AppLike
+    gui: GuiLike
 
 
 class FreeCadPort(Protocol):
@@ -115,6 +126,10 @@ class FreeCadPort(Protocol):
 
     def save_document(self, doc: DocumentLike) -> None:
         """Persist an open document to disk."""
+        ...
+
+    def save_document_if_modified(self, doc: DocumentLike) -> bool:
+        """Persist an open document only when GUI marks it modified."""
         ...
 
     def try_recompute_active_document(self) -> None:
@@ -159,4 +174,6 @@ __all__ = [
     "ConsoleLike",
     "QtModule",
     "AppLike",
+    "GuiLike",
+    "GuiDocumentLike",
 ]

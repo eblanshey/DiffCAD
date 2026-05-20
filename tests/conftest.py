@@ -64,11 +64,11 @@ def mock_freecad_app() -> AppLike:
 
 
 @pytest.fixture
-def mock_freecad_gui() -> object | None:
+def mock_freecad_gui() -> object:
     """Create a mock FreeCAD GUI object for testing.
 
     Returns:
-        Mock FreeCAD GUI object with minimal interface for testing, or None.
+        Mock FreeCAD GUI object with minimal interface for testing.
     """
 
     class MockMainWindow:
@@ -77,6 +77,10 @@ def mock_freecad_gui() -> object | None:
 
     class MockGui:
         @staticmethod
+        def getDocument(doc_name: str) -> object | None:
+            return None
+
+        @staticmethod
         def getMainWindow() -> MockMainWindow:
             return MockMainWindow()
 
@@ -84,7 +88,7 @@ def mock_freecad_gui() -> object | None:
 
 
 @pytest.fixture
-def freecad_context(mock_freecad_app: AppLike, mock_freecad_gui: object | None) -> FreeCadContext:
+def freecad_context(mock_freecad_app: AppLike, mock_freecad_gui: object) -> FreeCadContext:
     """Create a FreeCAD context with mocked app and gui.
 
     Args:

@@ -143,7 +143,7 @@ def create_application_container(ctx: FreeCadContext) -> ApplicationContainer:
     settings_repo = FreeCADSettingsRepository(ctx)
 
     # Create domain services
-    extractor = SnapshotExtractor()
+    extractor = SnapshotExtractor(gui=ctx.gui)
     diff_engine = DiffEngine(settings_repo=settings_repo)
 
     # Create git detection components

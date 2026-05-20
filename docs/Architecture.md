@@ -130,7 +130,7 @@ The domain layer contains core workbench concepts and contracts.
 - `config.py` contains default diff settings such as exclusions and float precision.
 - `freecad_ports.py` defines minimal FreeCAD-facing protocols used by domain/application code.
 
-Most domain code is pure Python. `domain/snapshots/gui_extractor.py` is a deliberate boundary exception: it imports `FreeCADGui` inside an isolated helper to match FreeCAD's visual tree through `claimChildren()`. Tests patch that boundary. If GUI extraction grows more complex, introduce a dedicated GUI port instead of spreading FreeCAD imports through the domain.
+Most domain code is pure Python. `domain/snapshots/gui_extractor.py` extracts FreeCAD's visual tree through `claimChildren()` using injected `GuiLike` from `FreeCadContext`, so domain services avoid direct `FreeCADGui` imports while still matching runtime GUI behavior.
 
 ### Infrastructure Layer
 
@@ -317,7 +317,7 @@ Direct file imports are acceptable when a symbol is not part of a package API or
 
 ## Known Tradeoffs
 
-- `SnapshotExtractor` currently reaches into `FreeCADGui` from the domain package to use `claimChildren()`. This keeps extraction behavior aligned with FreeCAD's visual tree, but it is an architectural exception that should stay isolated.
+- `SnapshotExtractor` uses injected `GuiLike` to access GUI documents and `claimChildren()` behavior. This keeps extraction aligned with FreeCAD's visual tree without domain-level `FreeCADGui` imports.
 - `ApplicationContainer` exposes small `log()` and `translate()` helpers for entry points. Core code should prefer `Log` and view-level translation patterns.
 - Some FreeCAD APIs are difficult to type precisely. Protocols in `domain/freecad_ports.py` intentionally model only the behavior DiffCAD uses.
 

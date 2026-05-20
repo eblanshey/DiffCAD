@@ -18,6 +18,10 @@ from freecad.diff_wb.domain.snapshots.models import Snapshot
 from freecad.diff_wb.domain.tree.property import Property
 
 
+def _extractor() -> SnapshotExtractor:
+    return SnapshotExtractor(gui=MagicMock())
+
+
 class _ProjectedNode(TypedDict):
     id: int
     name: str
@@ -293,7 +297,7 @@ class TestSnapshotExtractor:
         mock_doc.Objects = []
         mock_doc.Name = "EmptyDocument"
 
-        extractor = SnapshotExtractor()
+        extractor = _extractor()
         result = extractor.extract_tree(mock_doc)
 
         assert isinstance(result, Snapshot)
@@ -316,7 +320,7 @@ class TestSnapshotExtractor:
 
         mock_doc.Objects = [root_obj]
 
-        extractor = SnapshotExtractor()
+        extractor = _extractor()
 
         # Patch _init_gui_and_get_doc to return None (GUI unavailable)
         with patch("freecad.diff_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
@@ -376,7 +380,7 @@ class TestSnapshotExtractor:
 
         mock_gui_doc.getViewProvider = mock_get_view_provider
 
-        extractor = SnapshotExtractor()
+        extractor = _extractor()
 
         # Patch _init_gui_and_get_doc to return our mock gui_doc
         with patch("freecad.diff_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
@@ -398,7 +402,7 @@ class TestSnapshotExtractor:
         mock_doc = MagicMock()
         mock_doc.Name = ""  # Empty string simulates no name
 
-        extractor = SnapshotExtractor()
+        extractor = _extractor()
 
         # Patch _init_gui_and_get_doc to return None (GUI unavailable)
         with patch("freecad.diff_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
@@ -427,7 +431,7 @@ class TestSnapshotExtractor:
 
         mock_doc.Objects = [obj]
 
-        extractor = SnapshotExtractor()
+        extractor = _extractor()
 
         # Patch _init_gui_and_get_doc to return None (GUI unavailable)
         with patch("freecad.diff_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
@@ -460,7 +464,7 @@ class TestSnapshotExtractor:
 
         mock_doc.Objects = [obj]
 
-        extractor = SnapshotExtractor()
+        extractor = _extractor()
 
         # Patch _init_gui_and_get_doc to return None (GUI unavailable)
         with patch("freecad.diff_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
@@ -543,7 +547,7 @@ class TestSnapshotExtractor:
 
         mock_gui_doc.getViewProvider = mock_get_view_provider
 
-        extractor = SnapshotExtractor()
+        extractor = _extractor()
 
         # Patch _init_gui_and_get_doc to return our mock gui_doc
         with patch("freecad.diff_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
@@ -624,7 +628,7 @@ class TestSnapshotExtractor:
 
         mock_gui_doc.getViewProvider = mock_get_view_provider
 
-        extractor = SnapshotExtractor()
+        extractor = _extractor()
 
         # Patch _init_gui_and_get_doc to return our mock gui_doc
         with patch("freecad.diff_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
@@ -706,7 +710,7 @@ class TestSnapshotExtractor:
 
         mock_gui_doc.getViewProvider = mock_get_view_provider
 
-        extractor = SnapshotExtractor()
+        extractor = _extractor()
 
         # Patch _init_gui_and_get_doc to return our mock gui_doc
         with patch("freecad.diff_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
@@ -754,7 +758,7 @@ class TestSnapshotExtractor:
 
         mock_doc.Objects = [obj]
 
-        extractor = SnapshotExtractor()
+        extractor = _extractor()
 
         # Patch _init_gui_and_get_doc to return None (GUI unavailable)
         with patch("freecad.diff_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
@@ -793,7 +797,7 @@ class TestSnapshotExtractor:
 
         mock_doc.Objects = [sheet]
 
-        extractor = SnapshotExtractor()
+        extractor = _extractor()
         with patch("freecad.diff_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
             mock_init_gui.return_value = None
             result = extractor.extract_tree(mock_doc)
@@ -841,7 +845,7 @@ class TestSnapshotExtractor:
 
         mock_doc.Objects = [obj]
 
-        extractor = SnapshotExtractor()
+        extractor = _extractor()
 
         # Patch _init_gui_and_get_doc to return None (GUI unavailable)
         with patch("freecad.diff_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
@@ -890,7 +894,7 @@ class TestSnapshotExtractor:
 
         mock_doc.Objects = [obj]
 
-        extractor = SnapshotExtractor()
+        extractor = _extractor()
 
         # Patch _init_gui_and_get_doc to return None (GUI unavailable)
         with patch("freecad.diff_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
@@ -937,7 +941,7 @@ class TestSnapshotExtractor:
 
         mock_doc.Objects = [obj]
 
-        extractor = SnapshotExtractor()
+        extractor = _extractor()
 
         # Patch _init_gui_and_get_doc to return None (GUI unavailable)
         with patch("freecad.diff_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
@@ -1004,7 +1008,7 @@ class TestSnapshotExtractor:
 
         mock_gui_doc.getViewProvider = mock_get_view_provider
 
-        extractor = SnapshotExtractor()
+        extractor = _extractor()
 
         with patch("freecad.diff_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
             mock_init_gui.return_value = mock_gui_doc
@@ -1048,7 +1052,7 @@ class TestSnapshotExtractor:
 
         mock_doc.Objects = [parent_obj, child_obj]
 
-        extractor = SnapshotExtractor()
+        extractor = _extractor()
 
         # Patch _init_gui_and_get_doc to raise GuiNotAvailableError
         with patch("freecad.diff_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
@@ -1089,7 +1093,7 @@ class TestSnapshotExtractor:
         mock_gui_doc = MagicMock()
         mock_gui_doc.getViewProvider = lambda obj: parent_obj.ViewObject
 
-        extractor = SnapshotExtractor()
+        extractor = _extractor()
 
         with patch("freecad.diff_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
             mock_init_gui.return_value = mock_gui_doc
@@ -1153,7 +1157,7 @@ class TestSnapshotExtractor:
 
         mock_gui_doc.getViewProvider = mock_get_view_provider
 
-        extractor = SnapshotExtractor()
+        extractor = _extractor()
 
         with patch("freecad.diff_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
             mock_init_gui.return_value = mock_gui_doc
@@ -1194,7 +1198,7 @@ class TestSnapshotExtractor:
         mock_gui_doc = MagicMock()
         mock_gui_doc.getViewProvider = lambda obj: obj.ViewObject
 
-        extractor = SnapshotExtractor()
+        extractor = _extractor()
         with patch("freecad.diff_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
             mock_init_gui.return_value = mock_gui_doc
             result = extractor.extract_tree(mock_doc)
@@ -1234,7 +1238,7 @@ class TestSnapshotExtractor:
         mock_gui_doc = MagicMock()
         mock_gui_doc.getViewProvider = lambda obj: obj.ViewObject
 
-        extractor = SnapshotExtractor()
+        extractor = _extractor()
         with patch("freecad.diff_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
             mock_init_gui.return_value = mock_gui_doc
             result = extractor.extract_tree(mock_doc)
@@ -1281,7 +1285,7 @@ class TestSnapshotExtractor:
 
         mock_doc.Objects = [valid_obj, invalid_obj]
 
-        extractor = SnapshotExtractor()
+        extractor = _extractor()
 
         # Patch _init_gui_and_get_doc to return None (GUI unavailable)
         with patch("freecad.diff_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:

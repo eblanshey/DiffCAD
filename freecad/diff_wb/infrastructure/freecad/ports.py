@@ -19,6 +19,7 @@ from ...domain.freecad_ports import (
     FreeCadContext,
     FreeCadPort,
 )
+from ...utils import Log
 
 
 def get_freecad_runtime_context() -> FreeCadContext:
@@ -31,8 +32,9 @@ def get_freecad_runtime_context() -> FreeCadContext:
         FreeCadContext with real FreeCAD module
     """
     import FreeCAD as App
+    import FreeCADGui as Gui
 
-    return FreeCadContext(app=App)  # type: ignore[arg-type]
+    return FreeCadContext(app=App, gui=Gui)  # type: ignore[arg-type]
 
 
 class FreeCadPortAdapter:
@@ -61,6 +63,32 @@ class FreeCadPortAdapter:
 
     def save_document(self, doc: DocumentLike) -> None:
         doc.save()
+
+    def _get_gui_doc_modified(self, doc: DocumentLike) -> bool:
+        doc_name = getattr(doc, "Name", "")
+        if not doc_name:
+            return False
+        try:
+            gui_doc = self._ctx.gui.getDocument(doc_name)
+        except (AttributeError, RuntimeError, ReferenceError, ValueError, TypeError) as exc:
+            Log.warning(f"Failed to get GUI document '{doc_name}': {exc}")
+            return False
+        if gui_doc is None:
+            return False
+        gui_doc_typed = gui_doc
+        try:
+            return bool(gui_doc_typed.isModified())
+        except (AttributeError, RuntimeError, ReferenceError, ValueError, TypeError) as exc:
+            Log.warning(
+                f"Failed to check modified state for GUI document '{doc_name}': {exc}"
+            )
+            return False
+
+    def save_document_if_modified(self, doc: DocumentLike) -> bool:
+        if not self._get_gui_doc_modified(doc):
+            return False
+        doc.save()
+        return True
 
     def try_recompute_active_document(self) -> None:
         doc = self._ctx.app.ActiveDocument

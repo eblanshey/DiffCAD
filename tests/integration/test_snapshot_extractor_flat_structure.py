@@ -13,9 +13,9 @@ from freecad.diff_wb.domain.snapshots.gui_extractor import SnapshotExtractor
 
 
 @pytest.fixture
-def extractor() -> SnapshotExtractor:
+def extractor(freecad_gui: object) -> SnapshotExtractor:
     """Create a SnapshotExtractor instance."""
-    return SnapshotExtractor()
+    return SnapshotExtractor(gui=freecad_gui)  # type: ignore[arg-type]
 
 
 class TestBasicFileSnapshotContract:

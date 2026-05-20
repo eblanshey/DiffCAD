@@ -42,6 +42,17 @@ class StageDocumentsAction:
             docs_by_git_path[git_path] = doc
         return docs_by_git_path
 
+    def _save_open_doc_if_modified(self, doc: DocumentLike, git_path: str) -> Result | None:
+        try:
+            saved = self._freecad_port.save_document_if_modified(doc)
+            if saved:
+                Log.info(f"Saved modified open document before staging: {git_path}")
+        except Exception as e:  # noqa: BLE001
+            # Broad catch required: FreeCAD save adapters and tests can raise arbitrary exceptions.
+            Log.exception(f"Failed to save open document before staging {git_path}: {e}")
+            return Result.failure(f"Failed to save document before staging: {e}")
+        return None
+
     def execute(self, repo: GitRepository, snapshots: list[Snapshot]) -> Result:
         """Stage documents by persisting snapshots and adding to git.
 
@@ -73,13 +84,9 @@ class StageDocumentsAction:
 
             matching_doc = docs_by_git_path.get(git_path)
             if matching_doc is not None:
-                try:
-                    self._freecad_port.save_document(matching_doc)
-                    Log.info(f"Saved open document before staging: {git_path}")
-                except Exception as e:  # noqa: BLE001
-                    # Broad catch required: FreeCAD save adapters and tests can raise arbitrary exceptions.
-                    Log.exception(f"Failed to save open document before staging {git_path}: {e}")
-                    return Result.failure(f"Failed to save document before staging: {e}")
+                save_result = self._save_open_doc_if_modified(matching_doc, git_path)
+                if save_result is not None:
+                    return save_result
 
             # Get the yaml path (relative to git_path) and make it absolute
             yaml_path_relative = get_snapshot_yaml_path_for_document(git_path)

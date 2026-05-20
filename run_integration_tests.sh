@@ -38,10 +38,15 @@ export LD_LIBRARY_PATH="$FREECAD_ROOT/usr/lib:${LD_LIBRARY_PATH:-}"
 # Add FreeCAD's site-packages and lib to PYTHONPATH
 SITE_PACKAGES="$FREECAD_ROOT/usr/lib/python3.11/site-packages"
 FREECAD_LIB="$FREECAD_ROOT/usr/lib"
-export PYTHONPATH="$SITE_PACKAGES:$FREECAD_LIB:$PYTHONPATH"
+export PYTHONPATH="$PROJECT_ROOT:$SITE_PACKAGES:$FREECAD_LIB:${PYTHONPATH:-}"
 
 # Set offscreen mode for headless testing
 export QT_QPA_PLATFORM=offscreen
+
+# Isolate from user-installed FreeCAD workbenches to avoid stale module imports
+FREECAD_TEST_HOME="/tmp/kilo/freecad_test_home"
+mkdir -p "$FREECAD_TEST_HOME"
+export FREECAD_USER_HOME="$FREECAD_TEST_HOME"
 
 # Run pytest with FreeCAD's Python
 echo "Running integration tests..."

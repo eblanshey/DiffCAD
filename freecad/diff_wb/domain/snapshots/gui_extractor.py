@@ -1,8 +1,7 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
 # File responsibility: This module contains the SnapshotExtractor class which extracts
 # tree structure from FreeCAD documents and converts them to Snapshot domain models.
-# It uses FreeCAD's GUI-level claimChildren() API to match the FreeCAD tree structure.
-# Requires FreeCAD GUI. Raises GuiNotAvailableError if unavailable.
+# It uses FreeCAD GUI-level claimChildren() API via injected GuiLike.
 """Snapshot extraction from FreeCAD documents using GUI-level claimChildren() API.
 
 This module provides expression path normalization for FreeCAD ExpressionEngine
@@ -17,7 +16,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any, cast
 
 from ...utils import Log
-from ..freecad_ports import DocumentLike, DocumentObjectLike
+from ..freecad_ports import DocumentLike, DocumentObjectLike, GuiLike
 from ..tree import Property
 from ..tree.data_path import PropertyPathType, PropertyPathValue
 
@@ -29,10 +28,7 @@ if TYPE_CHECKING:
 class GuiNotAvailableError(Exception):
     """Exception raised when FreeCAD GUI is not available.
 
-    This exception is raised by _init_gui_and_get_doc() when:
-    - FreeCADGui module cannot be imported
-    - setupWithoutGUI() fails
-    - getDocument() fails
+    This exception is raised by _init_gui_and_get_doc() when GUI doc lookup fails.
     """
 
     pass
@@ -190,50 +186,28 @@ def _get_claimed_children(vp: Any) -> list[str]:
         return []
 
 
-def _init_gui_and_get_doc(doc: Any) -> Any:
-    """Initialize FreeCAD GUI and get the GUI document.
-
-    This function directly imports FreeCADGui in the domain layer. This is a
-    deliberate architectural choice:
-
-    - The function `_init_gui_and_get_doc` is isolated and easily patchable
-    - Unit tests successfully mock it via `unittest.mock.patch`
-    - The pattern follows pragmatic architecture over strict layered separation
-
-    For future improvement, a `GuiPort` protocol could be added to `domain/ports.py`
-    and injected into `SnapshotExtractor`, but this adds overhead without significant
-    benefit given the current testing approach works well.
+def _init_gui_and_get_doc(gui: GuiLike, doc: Any) -> Any:
+    """Get GUI document for given App document.
 
     Args:
-        doc: The FreeCAD App document
+        gui: Injected FreeCAD GUI module-like object.
+        doc: The FreeCAD App document.
 
     Returns:
-        The GUI document
+        The GUI document.
 
     Raises:
-        GuiNotAvailableError: If FreeCAD GUI is not available
+        GuiNotAvailableError: If GUI document is unavailable.
     """
+    doc_name = getattr(doc, "Name", None)
+    if not doc_name:
+        raise GuiNotAvailableError("Failed to get GUI document: missing document Name")
     try:
-        import FreeCADGui as Gui
-    except ImportError as e:
-        Log.warning(f"FreeCADGui not available: {e}")
-        raise GuiNotAvailableError(f"FreeCADGui not available - cannot use claimChildren(): {e}") from e
-
-    if hasattr(Gui, "setupWithoutGUI"):
-        try:
-            Gui.setupWithoutGUI()
-        except FREECAD_ACCESS_ERRORS as e:
-            raise GuiNotAvailableError(f"Failed to setup GUI without display: {e}") from e
-
-    gui_doc = None
-    if hasattr(Gui, "getDocument"):
-        try:
-            doc_name = getattr(doc, "Name", None)
-            if doc_name is not None:
-                gui_doc = Gui.getDocument(doc_name)
-        except FREECAD_ACCESS_ERRORS as e:
-            raise GuiNotAvailableError(f"Failed to get GUI document: {e}") from e
-
+        gui_doc = gui.getDocument(doc_name)
+    except FREECAD_ACCESS_ERRORS as e:
+        raise GuiNotAvailableError(f"Failed to get GUI document: {e}") from e
+    if gui_doc is None:
+        raise GuiNotAvailableError(f"Failed to get GUI document: {doc_name}")
     return gui_doc
 
 
@@ -786,9 +760,9 @@ class SnapshotExtractor:
     unified Log class from utils for logging.
     """
 
-    def __init__(self) -> None:
-        """Initialize the extractor."""
-        pass
+    def __init__(self, gui: GuiLike) -> None:
+        """Initialize extractor with injected GUI dependency."""
+        self._gui = gui
 
     def extract_tree(self, doc: DocumentLike, git_path: str = "") -> Snapshot:
         """Extract the document tree structure from a FreeCAD document.
@@ -810,8 +784,8 @@ class SnapshotExtractor:
         document_name = getattr(doc, "Name", "Unnamed")
 
         try:
-            # Initialize FreeCAD GUI and get GUI document for claimChildren()
-            gui_doc = _init_gui_and_get_doc(doc)
+            # Resolve GUI document for claimChildren() traversal.
+            gui_doc = _init_gui_and_get_doc(self._gui, doc)
 
             # Use single-pass BFS algorithm for better performance
             return _extract_tree_single_pass(doc, gui_doc, document_name, git_path)

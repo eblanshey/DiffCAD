@@ -26,6 +26,7 @@ class TestFindActiveGitRepositoryAction:
         self,
         project_root: Path,
         freecad_app: AppLike,
+        freecad_gui: GuiLike,
     ) -> None:
         """Test that action returns a valid GitRepository for a saved document.
 
@@ -39,7 +40,7 @@ class TestFindActiveGitRepositoryAction:
         )
 
         # Wire up dependencies directly - no container needed
-        ctx = FreeCadContext(app=freecad_app)
+        ctx = FreeCadContext(app=freecad_app, gui=freecad_gui)
         port = get_port(ctx)
         git_service = GitService(git_port=GitPortAdapter())
 
@@ -62,8 +63,7 @@ class TestFindActiveGitRepositoryAction:
         repo = result.data
         assert repo is not None
 
-        # Verify repository properties
-        assert repo.name == "freecad_diff_workbench", f"Unexpected repo name: {repo.name}"
+        # Verify repository path points to current test checkout/worktree
         assert repo.absolute_path == str(project_root), f"Unexpected repo path: {repo.absolute_path}"
 
         # Clean up
@@ -72,6 +72,7 @@ class TestFindActiveGitRepositoryAction:
     def test_execute_returns_failure_for_unsaved_document(
         self,
         freecad_app: AppLike,
+        freecad_gui: GuiLike,
     ) -> None:
         """Test that action returns failure when document is not saved."""
         from freecad.diff_wb.application.actions.find_active_git_repository import (
@@ -79,7 +80,7 @@ class TestFindActiveGitRepositoryAction:
         )
 
         # Wire up dependencies directly - no container needed
-        ctx = FreeCadContext(app=freecad_app)
+        ctx = FreeCadContext(app=freecad_app, gui=freecad_gui)
         port = get_port(ctx)
         git_service = GitService(git_port=GitPortAdapter())
 
@@ -109,7 +110,7 @@ class TestFindActiveGitRepositoryAction:
     def test_execute_returns_failure_when_no_active_document(
         self,
         freecad_app: AppLike,
-        freecad_gui: GuiLike | None,
+        freecad_gui: GuiLike,
     ) -> None:
         """Test that action returns failure when no document is active."""
         from freecad.diff_wb.application.actions.find_active_git_repository import (
@@ -117,7 +118,7 @@ class TestFindActiveGitRepositoryAction:
         )
 
         # Wire up dependencies directly - no container needed
-        ctx = FreeCadContext(app=freecad_app)
+        ctx = FreeCadContext(app=freecad_app, gui=freecad_gui)
         port = get_port(ctx)
         git_service = GitService(git_port=GitPortAdapter())
 
@@ -128,14 +129,12 @@ class TestFindActiveGitRepositoryAction:
 
         # Close all documents to ensure no active document
         # Use Gui.documentManager() if available, otherwise try App approach
-        if freecad_gui is not None:
-            try:
-                doc_manager = freecad_gui.documentManager()
-                for doc_name in [d.Name for d in doc_manager.documents()]:
-                    freecad_app.closeDocument(doc_name)
-            except (AttributeError, TypeError):
-                # Fallback: try to close via ActiveDocument
-                pass
+        try:
+            doc_manager = freecad_gui.documentManager()
+            for doc_name in [d.Name for d in doc_manager.documents()]:
+                freecad_app.closeDocument(doc_name)
+        except (AttributeError, TypeError):
+            pass
 
         # Execute the action
         result = action.execute()

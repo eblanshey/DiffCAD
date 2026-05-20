@@ -16,17 +16,15 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-import pytest
-
 
 if TYPE_CHECKING:
-    from freecad.diff_wb.domain.freecad_ports import AppLike
+    from freecad.diff_wb.domain.freecad_ports import AppLike, GuiLike
 
 
 class TestPropertyViewerIntegration:
     """Integration tests for property extraction and rendering with real FreeCAD runtime."""
 
-    def test_savedgeometry_is_hidden(self, freecad_app: AppLike, project_root: object) -> None:
+    def test_savedgeometry_is_hidden(self, freecad_app: AppLike, freecad_gui: GuiLike, project_root: object) -> None:
         """Verify SavedGeometry is hidden via Prop_Hidden bit (Phase 1).
 
         SavedGeometry has Prop_Hidden bit set in FreeCAD. This test verifies
@@ -40,7 +38,7 @@ class TestPropertyViewerIntegration:
 
         try:
             # Extract directly with document
-            extractor = SnapshotExtractor()
+            extractor = SnapshotExtractor(gui=freecad_gui)
             result = extractor.extract_tree(doc)
 
             # Build node lookup from occurrences
@@ -72,7 +70,7 @@ class TestPropertyViewerIntegration:
         finally:
             freecad_app.closeDocument(doc.Name)
 
-    def test_properties_grouped_correctly(self, freecad_app: AppLike, project_root: object) -> None:
+    def test_properties_grouped_correctly(self, freecad_app: AppLike, freecad_gui: GuiLike, project_root: object) -> None:
         """Verify properties are grouped correctly (Phase 2).
 
         This test checks that:
@@ -87,7 +85,7 @@ class TestPropertyViewerIntegration:
 
         try:
             # Extract directly with document
-            extractor = SnapshotExtractor()
+            extractor = SnapshotExtractor(gui=freecad_gui)
             result = extractor.extract_tree(doc)
 
             # Build node lookup from occurrences
@@ -200,7 +198,12 @@ class TestPropertyViewerIntegration:
         finally:
             freecad_app.closeDocument(doc.Name)
 
-    def test_tree_widget_renders_properties_with_groups(self, freecad_app: AppLike, project_root: object) -> None:
+    def test_tree_widget_renders_properties_with_groups(
+        self,
+        freecad_app: AppLike,
+        freecad_gui: GuiLike,
+        project_root: object,
+    ) -> None:
         """Integration test: Verify tree widget renders properties grouped correctly."""
         from PySide6.QtWidgets import QApplication
 
@@ -218,7 +221,7 @@ class TestPropertyViewerIntegration:
         doc = freecad_app.open(str(doc_path))
 
         try:
-            extractor = SnapshotExtractor()
+            extractor = SnapshotExtractor(gui=freecad_gui)
             result = extractor.extract_tree(doc)
 
             # Build node lookup from occurrences
@@ -282,7 +285,12 @@ class TestPropertyViewerIntegration:
         finally:
             freecad_app.closeDocument(doc.Name)
 
-    def test_various_object_types_extraction(self, freecad_app: AppLike, project_root: object) -> None:
+    def test_various_object_types_extraction(
+        self,
+        freecad_app: AppLike,
+        freecad_gui: GuiLike,
+        project_root: object,
+    ) -> None:
         """Test extraction works with various FreeCAD object types (Phase 6 checklist).
 
         Tests:
@@ -296,7 +304,7 @@ class TestPropertyViewerIntegration:
         doc = freecad_app.open(str(doc_path))
 
         try:
-            extractor = SnapshotExtractor()
+            extractor = SnapshotExtractor(gui=freecad_gui)
             result = extractor.extract_tree(doc)
 
             # Build node lookup from occurrences
