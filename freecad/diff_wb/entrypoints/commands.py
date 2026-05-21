@@ -716,6 +716,33 @@ class _OpenDiffWindowCommand:
             workbench.create_or_show_diff_panel()
 
 
+class _CloseDiffWindowsCommand:
+    """Command to close all Diff_* windows without saving."""
+
+    def GetResources(self) -> dict[str, str]:
+        """Return FreeCAD command metadata for UI integration."""
+        return {
+            "MenuText": "Close All Diff Windows",
+            "ToolTip": "Close every document starting with 'Diff_' without saving",
+            "Pixmap": os.path.join(ICONPATH, "DiffCloseDiffWindows.svg"),
+        }
+
+    def IsActive(self) -> bool:
+        """Return whether the command should be enabled."""
+        return True
+
+    def Activated(self) -> None:
+        """FreeCAD calls this when user clicks toolbar button."""
+        import FreeCAD as App  # pylint: disable=import-error
+
+        # Get list of document names to close (iterate over copy to avoid modification during iteration)
+        docs_to_close = [doc_name for doc_name in App.listDocuments() if doc_name.startswith("Diff_")]
+
+        # Close each document without saving
+        for doc_name in docs_to_close:
+            App.closeDocument(doc_name)
+
+
 def register_commands() -> None:
     """Register the Diff Workbench commands with FreeCAD."""
     import FreeCADGui as Gui  # pylint: disable=import-error
@@ -728,3 +755,4 @@ def register_commands() -> None:
     Gui.addCommand("DiffRecomputeAllOpenDocuments", _RecomputeAllOpenDocumentsCommand())
     Gui.addCommand("DiffRecomputeActiveDocument", _RecomputeActiveDocumentCommand())
     Gui.addCommand("DiffOpenDiffWindow", _OpenDiffWindowCommand())
+    Gui.addCommand("DiffCloseDiffWindows", _CloseDiffWindowsCommand())

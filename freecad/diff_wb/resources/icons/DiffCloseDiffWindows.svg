@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="linearGradient893">
+      <stop offset="0" style="stop-color:#ce5c00;stop-opacity:1;" />
+      <stop offset="1" style="stop-color:#fcaf3e;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient
+      id="linearGradient895"
+      gradientUnits="userSpaceOnUse"
+      x1="46.529083" y1="37.19397"
+      x2="16.006361" y2="17.486736">
+      <stop offset="0" style="stop-color:#ce5c00;stop-opacity:1;" />
+      <stop offset="1" style="stop-color:#fcaf3e;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Cubes -->
+  <polygon points="32,24.91 16.75,17.29 32,9.67 47.25,17.29" fill="#95a5a6" stroke="#4a4a4a" stroke-width="1.5" stroke-linejoin="round"/>
+  <polygon points="1.5,24.91 16.75,17.29 32,24.91 16.75,32.54" fill="#d63031" stroke="#7a1a1a" stroke-width="1.5" stroke-linejoin="round"/>
+  <polygon points="1.5,24.91 16.75,32.54 16.75,54.30 1.5,46.68" fill="#d63031" stroke="#7a1a1a" stroke-width="1.5" stroke-linejoin="round"/>
+  <polygon points="16.75,32.54 32,24.91 32,46.68 16.75,54.30" fill="#d63031" stroke="#7a1a1a" stroke-width="1.5" stroke-linejoin="round"/>
+  <polygon points="32,24.91 47.25,17.29 62.5,24.91 47.25,32.54" fill="#2ecc71" stroke="#1b5e20" stroke-width="1.5" stroke-linejoin="round"/>
+  <polygon points="32,24.91 47.25,32.54 47.25,54.30 32,46.68" fill="#2ecc71" stroke="#1b5e20" stroke-width="1.5" stroke-linejoin="round"/>
+  <polygon points="47.25,32.54 62.5,24.91 62.5,46.68 47.25,54.30" fill="#2ecc71" stroke="#1b5e20" stroke-width="1.5" stroke-linejoin="round"/>
+
+  <!-- Orange close icon, scaled to ~60% and centered -->
+  <g transform="translate(12.8, 12.8) scale(0.6)">
+    <rect
+      style="fill:url(#linearGradient895);fill-opacity:1;fill-rule:evenodd;stroke:#a40000;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"
+      width="40.202198" height="40.202198" x="11.777025" y="11.860861" />
+    <rect
+      style="fill:none;fill-rule:evenodd;stroke:#fcaf3e;stroke-width:2;stroke-linecap:round;stroke-linejoin:miter"
+      width="36.188057" height="36.253456" x="13.777622" y="13.821222" ry="0" />
+    <path
+      style="fill:none;stroke:#ffffff;stroke-width:6;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+      d="M 21.276835,21.015235 42.64087,42.55367" />
+    <path
+      style="fill:none;stroke:#ffffff;stroke-width:6;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+      d="M 42.582913,20.971634 21.218878,42.510069" />
+  </g>
+</svg>
