@@ -210,7 +210,7 @@ class TestShowDocDiffsWithStageButtons:
             ]
         )
 
-        assert widget._stage_buttons["parts/A.FCStd"].text() == "+ Stage"
+        assert widget._stage_buttons["parts/A.FCStd"].text() == "+ Reviewed"
 
     def test_stage_buttons_hidden_when_not_working_tree(self, widget) -> None:  # type: ignore[no-untyped-def]
         """Stage buttons are hidden when selection is not WORKING_TREE."""
@@ -664,4 +664,4 @@ class TestWarningDisplay:
         # assertion conditional.
         tooltip_values = [label.toolTip() for label in labels]
         if any(tooltip_values):
-            assert "Cannot find old snapshot. Diff cannot be generated." in tooltip_values
+            assert "Cannot find old snapshot. Comparison cannot be generated." in tooltip_values

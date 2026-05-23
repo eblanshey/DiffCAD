@@ -2,6 +2,27 @@
 
 This guide describes how to make maintainable changes to DiffCAD. For environment setup, see [Development Setup](DevSetup.md). For system structure, see [Architecture](Architecture.md).
 
+## UI Terminology Mapping
+
+The user-facing UI uses CAD-oriented terminology while internal code keeps Git/diff terms for the time being.
+
+| UI term | Internal term |
+|---------|---------------|
+| Project | Git repository |
+| Iteration | Git commit |
+| Save Iteration | git commit operation |
+| Reviewed | Git staging/index |
+| In Progress | Git working tree |
+| Tree Comparison | snapshot/tree/property diff |
+| 3D Comparison | visual/BREP diff |
+| History Panel | Diff panel window |
+
+**Contributor guidance:**
+- User-facing text must use UI terms (see `translation_strings.py`).
+- Internal code may keep Git/diff terms until additional refactoring phase.
+- Do not rename internal domain/application/infrastructure classes (`GitService`, `DiffEngine`, etc.).
+- Do not rename `freecad/diff_wb` package path.
+
 ## Required Checks
 
 Run all checks before submitting changes:

@@ -62,27 +62,27 @@ DIFF_LOADING_MESSAGE = "Computing diff..."
 No placeholders. This is a static message.
 """
 
-STAGE_ALL_LABEL = "+ Stage All"
-"""Label for the Stage All button in the Working Tree view.
+STAGE_ALL_LABEL = "+ Mark All Reviewed"
+"""Label for the Mark All Reviewed button in the In Progress view.
 
 No placeholders. This is a static label displayed above the diff tree.
 """
 
-STAGE_LABEL = "+ Stage"
-"""Label for a single-document stage button in the Working Tree view.
+STAGE_LABEL = "+ Reviewed"
+"""Label for a single-document reviewed button in the In Progress view.
 
 No placeholders. This is a static label displayed in document rows.
 """
 
 DOC_STATUS_NEW_DOCUMENT_TOOLTIP = "New document"
-DOC_STATUS_OLD_SNAPSHOT_MISSING_TOOLTIP = "Cannot find old snapshot. Diff cannot be generated."
-DOC_STATUS_SNAPSHOT_MISSING_TOOLTIP = "The selected commit does not have a snapshot for this document"
-DOC_STATUS_INVALID_SNAPSHOT_TOOLTIP = "The older snapshot is invalid, so a diff cannot be generated."
-VISUAL_DIFF_TOOLTIP = "Open visual diff"
-VISUAL_DIFF_MISSING_FCSTD_MESSAGE = "Could not load FCStd from old or new side for visual diff."
+DOC_STATUS_OLD_SNAPSHOT_MISSING_TOOLTIP = "Cannot find old snapshot. Tree comparison cannot be generated."
+DOC_STATUS_SNAPSHOT_MISSING_TOOLTIP = "The selected iteration does not have a snapshot for this document"
+DOC_STATUS_INVALID_SNAPSHOT_TOOLTIP = "The older snapshot is invalid, so a tree comparison cannot be generated."
+VISUAL_DIFF_TOOLTIP = "Open 3D comparison"
+VISUAL_DIFF_MISSING_FCSTD_MESSAGE = "Could not load FCStd from old or new side for 3D comparison."
 VISUAL_DIFF_MISSING_BREP_MESSAGE = "Could not find Shape BREP for this object in old or new document."
-VISUAL_DIFF_IMPORT_FAILURE_MESSAGE = "Could not import shape BREP files for visual diff."
-VISUAL_DIFF_INVALID_REQUEST_MESSAGE = "Could not determine old and new revisions for visual diff."
+VISUAL_DIFF_IMPORT_FAILURE_MESSAGE = "Could not import shape BREP files for 3D comparison."
+VISUAL_DIFF_INVALID_REQUEST_MESSAGE = "Could not determine old and new revisions for 3D comparison."
 
 # ============================================================================
 # COMMON STRINGS
@@ -120,71 +120,71 @@ No placeholders. This is a static label.
 # Context: "Common"
 # These strings are used for displaying git repository information in the UI.
 
-REPOSITORY_INFO_TEMPLATE = "Repository: %1"
-"""Template for displaying git repository info.
+REPOSITORY_INFO_TEMPLATE = "Project: %1"
+"""Template for displaying project info.
 
 Placeholders:
-    %1 - Repository name (str)
+    %1 - Project name (str)
 
 The absolute path is stored separately for use as a tooltip.
 
 Example:
-    "Repository: my_project"
+    "Project: my_project"
 """
 
-REPOSITORY_NO_REPO_MESSAGE = "No git repository detected"
+REPOSITORY_NO_REPO_MESSAGE = "No project detected"
 """Message shown when no git repository is detected for the active document.
 
 No placeholders. This is a static message.
 """
 
-HISTORY_LABEL = "History"
-"""Label for the history/commit list widget.
+ITERATION_LABEL = "Iterations"
+"""Label for the iterations/commit list widget.
 
 No placeholders. This is a static label.
 """
 
-HISTORY_WORKING_TREE_LABEL = "Working Tree"
-"""Label for the synthetic history row representing current working tree."""
+HISTORY_WORKING_TREE_LABEL = "In Progress"
+"""Label for the synthetic history row representing current work in progress."""
 
-HISTORY_STAGING_LABEL = "Staging"
-"""Label for the synthetic history row representing current staging area."""
+HISTORY_STAGING_LABEL = "Reviewed"
+"""Label for the synthetic history row representing reviewed items."""
 
-REFRESH_REPOSITORY_TOOLTIP = "Refresh Git Repository and Commits"
-"""Tooltip for repository refresh button."""
+REFRESH_REPOSITORY_TOOLTIP = "Refresh Project and Iterations"
+"""Tooltip for project refresh button."""
 
 # ============================================================================
-# COMMIT STRINGS
+# ITERATION SAVE STRINGS
 # ============================================================================
 # Context: "Commit"
-# These strings are used for commit-related UI messages in entry points.
+# These strings are used for iteration save-related UI messages in entry points.
 
-COMMIT_NO_REPOSITORY_TITLE = "No Repository"
+COMMIT_NO_REPOSITORY_TITLE = "No Project"
 """Title for the warning when no git repository is detected.
 
 No placeholders. This is a static message.
 """
 
-COMMIT_NO_REPOSITORY_MESSAGE = "No git repository detected. Please open a document from a git repository."
+COMMIT_NO_REPOSITORY_MESSAGE = "No project detected. Please open a document from a project."
 """Message shown when no git repository is detected for the active document.
 
 No placeholders. This is a static message.
 """
 
-COMMIT_NO_STAGED_FILES_TITLE = "No Staged Files"
-"""Title for the info message when there are no staged files to commit.
+COMMIT_NO_STAGED_FILES_TITLE = "No Reviewed Files"
+"""Title for the info message when there are no reviewed files to save.
 
 No placeholders. This is a static message.
 """
 
-COMMIT_NO_STAGED_FILES_MESSAGE = "There are no staged files to commit."
-"""Message shown when there are no staged files to commit.
+COMMIT_NO_STAGED_FILES_MESSAGE = "There are no reviewed files to save."
+"""Message shown when there are no reviewed files to save.
 
 No placeholders. This is a static message.
 """
 
-COMMIT_DIALOG_TITLE = "Git Commit"
-"""Title for the commit message input dialog.
+COMMIT_DIALOG_TITLE = "Save Iteration"
+"""Title for the iteration notes input dialog.
 
 No placeholders. This is a static message.
 """
@@ -207,79 +207,97 @@ CONFIGURE_GIT_GLOBAL_CONFIG_NOT_WRITABLE_MESSAGE = (
 )
 """Message shown when global git config cannot be written."""
 
-COMMIT_DIALOG_PROMPT = "Enter commit message:"
-"""Prompt text for the commit message input dialog.
+COMMIT_DIALOG_PROMPT = "Enter iteration notes:"
+"""Prompt text for the iteration notes input dialog.
 
 No placeholders. This is a static message.
 """
 
 COMMIT_NAME_LABEL = "Name:"
-"""Label for git author name field in the commit dialog."""
+"""Label for git author name field in the iteration save dialog."""
 
 COMMIT_EMAIL_LABEL = "Email:"
-"""Label for git author email field in the commit dialog."""
+"""Label for git author email field in the iteration save dialog."""
 
-COMMIT_REMEMBER_IDENTITY_LABEL = "Configure globally for all repositories"
+COMMIT_REMEMBER_IDENTITY_LABEL = "Configure globally for all projects"
 """Checkbox label for saving git author identity globally."""
 
-COMMIT_EMPTY_MESSAGE_TITLE = "Empty Message"
-"""Title for the warning when commit message is empty.
+CONFIGURE_GIT_IDENTITY_PROMPT = (
+    "Enter the name and email you'd like to use for your git identity, which is used for authoring project iterations."
+)
+"""Prompt shown in the git identity configuration dialog."""
+
+CONFIGURE_GIT_GLOBAL_SAVE_FAILED_MESSAGE = (
+    "Could not save git identity for all projects. Uncheck the global option to save it only for this project."
+)
+"""Message shown when global git identity save fails and local save is available."""
+
+CONFIGURE_GIT_GLOBAL_CONFIG_NOT_WRITABLE_MESSAGE = (
+    "Global configuration option disabled because global config file not writable."
+)
+"""Message shown when global git config cannot be written."""
+
+COMMIT_EMPTY_MESSAGE_TITLE = "Empty Notes"
+"""Title for the warning when iteration notes is empty.
 
 No placeholders. This is a static message.
 """
 
-COMMIT_EMPTY_MESSAGE = "Commit message cannot be empty"
-"""Message shown when the user provides an empty commit message.
+COMMIT_EMPTY_MESSAGE = "Iteration notes cannot be empty"
+"""Message shown when the user provides an empty iteration notes.
 
 No placeholders. This is a static message.
 """
 
-COMMIT_IDENTITY_REQUIRED_MESSAGE = "Name and email are required to commit"
-"""Message shown when git author identity is missing from the commit dialog."""
+COMMIT_IDENTITY_REQUIRED_MESSAGE = "Name and email are required to save iteration"
+"""Message shown when git author identity is missing from the iteration save dialog."""
 
 COMMIT_IDENTITY_SAVE_FAILED_MESSAGE = "Git identity could not be saved"
 """Message shown when saving git author identity fails."""
 
-COMMIT_FAILED_TITLE = "Commit Failed"
-"""Title for the error dialog when commit fails.
+COMMIT_FAILED_TITLE = "Save Iteration Failed"
+"""Title for the error dialog when iteration save fails.
 
 No placeholders. This is a static message.
 """
 
-COMMIT_DIALOG_PLACEHOLDER = "Enter commit message (subject and optional body)..."
-"""Placeholder text for the commit message text area.
+COMMIT_DIALOG_PLACEHOLDER = "Enter iteration notes (subject and optional body)..."
+"""Placeholder text for the iteration notes text area.
 
 No placeholders. This is a static message shown in the empty text field.
 """
 
 # ============================================================================
-# OPEN ALL REPOSITORY DOCUMENTS STRINGS
+# OPEN ALL PROJECT DOCUMENTS STRINGS
 # ============================================================================
 # Context: "OpenAllDocuments"
 
-OPEN_ALL_DOCUMENTS_NO_REPOSITORY_TITLE = "No Repository"
-OPEN_ALL_DOCUMENTS_NO_REPOSITORY_MESSAGE = "No repository detected. Open a FreeCAD document in a git repository first."
+OPEN_ALL_DOCUMENTS_NO_REPOSITORY_TITLE = "No Project"
+OPEN_ALL_DOCUMENTS_NO_REPOSITORY_MESSAGE = "No project detected. Open a FreeCAD document in a project first."
 
 # ============================================================================
-# INITIALIZE GIT REPOSITORY STRINGS
+# INITIALIZE PROJECT STRINGS
 # ============================================================================
 # Context: "InitializeGitRepository"
 
-INITIALIZE_REPOSITORY_MENU_TEXT = "Initialize Git Repository"
-INITIALIZE_REPOSITORY_TOOLTIP = "Initialize a new git repository from open saved document directories"
-INITIALIZE_REPOSITORY_DIALOG_TITLE = "Initialize Git Repository"
-INITIALIZE_REPOSITORY_DIALOG_PROMPT = "Choose a directory to initialize. It should be the root of your project:"
+INITIALIZE_REPOSITORY_MENU_TEXT = "Initialize Project"
+INITIALIZE_REPOSITORY_TOOLTIP = "Initialize a new project from open saved document directories"
+INITIALIZE_REPOSITORY_DIALOG_TITLE = "Initialize Project"
+INITIALIZE_REPOSITORY_DIALOG_PROMPT = (
+    "Choose a directory to initialize based on currently open documents. The selected "
+    "directory will be the root of your project:"
+)
 INITIALIZE_REPOSITORY_BUTTON = "Initialize"
-INITIALIZE_REPOSITORY_DISABLED_REASON = "Already inside repository"
+INITIALIZE_REPOSITORY_DISABLED_REASON = "Already inside project"
 INITIALIZE_REPOSITORY_NO_CANDIDATES_TITLE = "No Directories Available"
 INITIALIZE_REPOSITORY_NO_CANDIDATES_MESSAGE = (
-    "No open documents are available for git repository initialization. "
+    "No open documents are available for project initialization. "
     "Please open at least one saved document in the root location you'd "
-    "like to initialize a new git repository."
+    "like to initialize a new project."
 )
-INITIALIZE_REPOSITORY_NO_AVAILABLE_MESSAGE = "All listed directories are already inside git repositories."
-INITIALIZE_REPOSITORY_SUCCESS_TITLE = "Repository Initialized"
-INITIALIZE_REPOSITORY_SUCCESS_TEMPLATE = "Initialized git repository: %1"
+INITIALIZE_REPOSITORY_NO_AVAILABLE_MESSAGE = "All listed directories are already inside projects."
+INITIALIZE_REPOSITORY_SUCCESS_TITLE = "Project Initialized"
+INITIALIZE_REPOSITORY_SUCCESS_TEMPLATE = "Initialized project: %1"
 INITIALIZE_REPOSITORY_FAILED_TITLE = "Initialization Failed"
 
 # ============================================================================
@@ -288,7 +306,7 @@ INITIALIZE_REPOSITORY_FAILED_TITLE = "Initialization Failed"
 # Context: "PreferencesView"
 
 PREFERENCES_RUNTIME_ONLY_NOTICE = (
-    "Settings apply only during diffing. Saved snapshots are unaffected by these settings."
+    "Settings apply only during tree comparisons. Saved tree snapshots are unaffected by these settings."
 )
 """Notice shown at top of preferences page clarifying runtime-only behavior."""
 
@@ -330,7 +348,7 @@ __all__ = [
     # Git Repository
     "REPOSITORY_INFO_TEMPLATE",
     "REPOSITORY_NO_REPO_MESSAGE",
-    "HISTORY_LABEL",
+    "ITERATION_LABEL",
     "HISTORY_WORKING_TREE_LABEL",
     "HISTORY_STAGING_LABEL",
     "REFRESH_REPOSITORY_TOOLTIP",

@@ -30,8 +30,8 @@ __all__ = ["DocumentDiffTreeWidget"]
 TREE_ITEM_HEIGHT = 22
 # Icon stays 16px inside that 22px box, leaving 3px visual padding on each side.
 TREE_ITEM_ICON_SIZE = 16
-STAGE_BUTTON_WIDTH = 60
-STAGE_ALL_BUTTON_WIDTH = 82
+STAGE_BUTTON_WIDTH = 90
+STAGE_ALL_BUTTON_WIDTH = 140
 
 
 class DocumentDiffTreeWidget(QWidget):
@@ -85,7 +85,7 @@ class DocumentDiffTreeWidget(QWidget):
         layout.addWidget(self._tree_widget)
 
     def set_current_history_selection(self, selection: HistorySelection | None) -> None:
-        """Set current history selection for conditional Working Tree controls."""
+        """Set current history selection for conditional In Progress controls."""
         self._current_selection = selection
 
     def set_node_selection_callback(self, callback: Callable[[str, str], None]) -> None:
@@ -101,16 +101,16 @@ class DocumentDiffTreeWidget(QWidget):
         self._on_visual_diff_callback = callback
 
     def set_add_button_callback(self, callback: Callable[[str], None]) -> None:
-        """Set the callback for when the '+ Stage' button is clicked.
+        """Set the callback for when the '+ Reviewed' button is clicked.
 
         Args:
             callback: A callable that receives the git_path (str) of the
-                      document whose '+ Stage' button was clicked.
+                      document whose '+ Reviewed' button was clicked.
         """
         self._on_add_button_callback = callback
 
     def set_stage_all_callback(self, callback: Callable[[], None]) -> None:
-        """Set the callback for Stage All button.
+        """Set the callback for Mark All Reviewed button.
 
         Args:
             callback: A no-argument callable to invoke on click.
@@ -118,7 +118,7 @@ class DocumentDiffTreeWidget(QWidget):
         self._on_stage_all_callback = callback
 
     def set_stage_all_button_visible(self, visible: bool) -> None:
-        """Show or hide the Stage All button.
+        """Show or hide the Mark All Reviewed button.
 
         Args:
             visible: Whether the button should be visible.
@@ -126,7 +126,7 @@ class DocumentDiffTreeWidget(QWidget):
         self._stage_all_button.setVisible(visible)
 
     def set_stage_all_button_enabled(self, enabled: bool) -> None:
-        """Enable or disable the Stage All button.
+        """Enable or disable the Mark All Reviewed button.
 
         Args:
             enabled: Whether the button should be enabled.
@@ -236,7 +236,7 @@ class DocumentDiffTreeWidget(QWidget):
             layout.addWidget(icon_label)
 
     def _on_add_button_clicked(self, git_path: str) -> None:
-        """Handle '+ Stage' button click by invoking the callback.
+        """Handle '+ Reviewed' button click by invoking the callback.
 
         Args:
             git_path: The git_path of the document whose button was clicked.
@@ -412,11 +412,11 @@ class DocumentDiffTreeWidget(QWidget):
                 break
 
     def set_stage_button_enabled(self, git_path: str, enabled: bool) -> None:
-        """Enable or disable the '+ Stage' button for a given git_path.
+        """Enable or disable the '+ Reviewed' button for a given git_path.
 
         Args:
             git_path: The git_path of the document whose button to update.
-            enabled: Whether the stage button should be enabled.
+            enabled: Whether the reviewed button should be enabled.
         """
         if git_path in self._stage_buttons:
             self._stage_buttons[git_path].setEnabled(enabled)

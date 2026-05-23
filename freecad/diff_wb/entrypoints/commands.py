@@ -248,13 +248,13 @@ class _ConfigureGitCommand:
 
 
 class _CommitCommand:
-    """Command to commit staged changes."""
+    """Command to save iteration."""
 
     def GetResources(self) -> dict[str, str]:
         """Return FreeCAD command metadata for UI integration."""
         return {
-            "MenuText": "Commit",
-            "ToolTip": "Commit staged changes to git",
+            "MenuText": "Save Iteration",
+            "ToolTip": "Save reviewed changes as an iteration",
             "Pixmap": os.path.join(ICONPATH, "Commit.svg"),
         }
 
@@ -417,15 +417,15 @@ class _CommitCommand:
 
 
 class _RefreshRepositoryCommand:
-    """Command to refresh repository detection and reload commits."""
+    """Command to refresh project detection and reload iterations."""
 
     def GetResources(self) -> dict[str, str]:
         """Return FreeCAD command metadata for UI integration."""
         return {
-            "MenuText": "Refresh Git Repository and Commits",
-            "ToolTip": "Refresh the detected git repository and reload commits.\nOpen at least one FreeCAD document "
-            "located within a git repository before running this command.\nHow it works: open FreeCAD "
-            "documents are checked one by one until one is found to be located within a git repository.",
+            "MenuText": "Refresh Project",
+            "ToolTip": "Refresh the detected project and reload iterations.\nOpen at least one FreeCAD document "
+            "located within a project before running this command.\nHow it works: open FreeCAD "
+            "documents are checked one by one until one is found to be located within a project.",
             "Pixmap": os.path.join(ICONPATH, "RefreshRepository.svg"),
         }
 
@@ -608,9 +608,8 @@ class _OpenAllDocumentsInRepositoryCommand:
     def GetResources(self) -> dict[str, str]:
         """Return FreeCAD command metadata for UI integration."""
         return {
-            "MenuText": "Open All Documents in Repository",
-            "ToolTip": "Open every .FCStd file found in repository. Useful for generating snapshots for all project "
-            "documents.",
+            "MenuText": "Open All Documents in Project",
+            "ToolTip": ("Open every .FCStd file found in the project. Useful for generating en masse."),
             "Pixmap": os.path.join(ICONPATH, "OpenAllDocuments.svg"),
         }
 
@@ -692,13 +691,13 @@ class _RecomputeActiveDocumentCommand:
 
 
 class _OpenDiffWindowCommand:
-    """Command to open or focus the diff window."""
+    """Command to open or focus the history panel."""
 
     def GetResources(self) -> dict[str, str]:
         """Return FreeCAD command metadata for UI integration."""
         return {
-            "MenuText": "Open Diff Window",
-            "ToolTip": "Open diff view",
+            "MenuText": "Open History Panel",
+            "ToolTip": "Open project history view",
             "Pixmap": os.path.join(ICONPATH, "Logo.svg"),
         }
 
@@ -717,13 +716,13 @@ class _OpenDiffWindowCommand:
 
 
 class _CloseDiffWindowsCommand:
-    """Command to close all Diff_* windows without saving."""
+    """Command to close all Compare_* windows without saving."""
 
     def GetResources(self) -> dict[str, str]:
         """Return FreeCAD command metadata for UI integration."""
         return {
-            "MenuText": "Close All Diff Windows",
-            "ToolTip": "Close every document starting with 'Diff_' without saving",
+            "MenuText": "Close Comparison Windows",
+            "ToolTip": "Close every document starting with 'Compare_' without saving",
             "Pixmap": os.path.join(ICONPATH, "DiffCloseDiffWindows.svg"),
         }
 
@@ -736,7 +735,7 @@ class _CloseDiffWindowsCommand:
         import FreeCAD as App  # pylint: disable=import-error
 
         # Get list of document names to close (iterate over copy to avoid modification during iteration)
-        docs_to_close = [doc_name for doc_name in App.listDocuments() if doc_name.startswith("Diff_")]
+        docs_to_close = [doc_name for doc_name in App.listDocuments() if doc_name.startswith("Compare_")]
 
         # Close each document without saving
         for doc_name in docs_to_close:

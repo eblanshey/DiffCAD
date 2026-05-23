@@ -120,7 +120,7 @@ class TestDiffPresenterCommitSelection:
         assert show_trees_call is not None
         presentations = show_trees_call["diff_trees"]
         assert isinstance(presentations[0].indicators[0], OldSnapshotMissingIndicator)
-        assert presentations[0].indicators[0].tooltip == "Cannot find old snapshot. Diff cannot be generated."
+        assert presentations[0].indicators[0].tooltip == "Cannot find old snapshot. Comparison cannot be generated."
 
 
 class TestDiffPresenterStageSingleDocument:

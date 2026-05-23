@@ -83,8 +83,8 @@ class TestCommitCommand:
         # Verify
         mock_message_box.warning.assert_called_once()
         call_args = mock_message_box.warning.call_args
-        assert call_args[0][1] == "No Repository"
-        assert "git repository" in call_args[0][2].lower()
+        assert call_args[0][1] == "No Project"
+        assert "project" in call_args[0][2].lower()
         mock_message_box.critical.assert_not_called()
 
     @patch("PySide6.QtWidgets.QMessageBox")
@@ -142,8 +142,7 @@ class TestCommitCommand:
         # Verify
         mock_message_box.warning.assert_called_once()
         call_args = mock_message_box.warning.call_args
-        assert call_args[0][1] == "Empty Message"
-        assert "empty" in call_args[0][2].lower()
+        assert call_args[0][1] == "Empty Notes"
         mock_message_box.critical.assert_not_called()
 
     @patch("PySide6.QtWidgets.QMessageBox")
@@ -173,7 +172,7 @@ class TestCommitCommand:
         # Verify
         mock_message_box.warning.assert_called_once()
         call_args = mock_message_box.warning.call_args
-        assert call_args[0][1] == "Empty Message"
+        assert call_args[0][1] == "Empty Notes"
         mock_message_box.critical.assert_not_called()
 
     @patch("PySide6.QtWidgets.QMessageBox")
@@ -208,7 +207,7 @@ class TestCommitCommand:
         # Verify
         mock_message_box.critical.assert_called_once()
         call_args = mock_message_box.critical.call_args
-        assert call_args[0][1] == "Commit Failed"
+        assert call_args[0][1] == "Save Iteration Failed"
         assert "git commit failed" in call_args[0][2].lower()
         mock_message_box.warning.assert_not_called()
 
@@ -273,8 +272,8 @@ class TestCommitCommand:
         # Verify - no dialog shown, no commit attempted
         mock_message_box.information.assert_called_once()
         call_args = mock_message_box.information.call_args
-        assert call_args[0][1] == "No Staged Files"
-        assert "staged" in call_args[0][2].lower()
+        assert call_args[0][1] == "No Reviewed Files"
+        assert "reviewed" in call_args[0][2].lower()
         mock_message_box.warning.assert_not_called()
         mock_message_box.critical.assert_not_called()
 
@@ -357,8 +356,8 @@ class TestCommitCommand:
         assert "MenuText" in resources
         assert "ToolTip" in resources
         assert "Pixmap" in resources
-        assert resources["MenuText"] == "Commit"
-        assert "commit" in resources["ToolTip"].lower()
+        assert resources["MenuText"] == "Save Iteration"
+        assert "iteration" in resources["ToolTip"].lower()
         assert "Commit.svg" in resources["Pixmap"]
 
     def test_commit_is_active_returns_true(self) -> None:

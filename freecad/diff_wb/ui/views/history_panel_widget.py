@@ -1,4 +1,4 @@
-"""File responsibility: History panel widget for repository info, snapshots, and commits."""
+"""File responsibility: History panel widget for project info, snapshots, and iterations."""
 
 from collections.abc import Callable
 from datetime import datetime, timedelta
@@ -21,9 +21,9 @@ from ...application.actions.result_models import SnapshotSummary
 from ...domain.git.models import GitCommit, GitRepository
 from ...resources import get_icon_path
 from ..translation_strings import (
-    HISTORY_LABEL,
     HISTORY_STAGING_LABEL,
     HISTORY_WORKING_TREE_LABEL,
+    ITERATION_LABEL,
     REFRESH_REPOSITORY_TOOLTIP,
     REPOSITORY_INFO_TEMPLATE,
     REPOSITORY_NO_REPO_MESSAGE,
@@ -118,7 +118,7 @@ class HistoryPanelWidget(QWidget):
         self._history_list.setWordWrap(True)
         self._history_list.setSpacing(0)
 
-        history_placeholder = QLabel(HISTORY_LABEL)
+        history_placeholder = QLabel(ITERATION_LABEL)
         history_placeholder.setAlignment(Qt.AlignmentFlag.AlignLeft)
 
         self._repository_label = QLabel("")
@@ -202,7 +202,7 @@ class HistoryPanelWidget(QWidget):
     def show_commits(self, commits: list[GitCommit]) -> None:
         """Display git commits in the history list.
 
-        The list always starts with two special items: "Working Tree" and "Staging"
+        The list always starts with two special items: "In Progress" and "Reviewed"
         when displaying git commits. These items use HistorySelection dataclass
         to distinguish them from actual GitCommits.
 
@@ -218,10 +218,10 @@ class HistoryPanelWidget(QWidget):
         # Clear existing items
         self._history_list.clear()
 
-        # Add special items first: "Working Tree" and "Staging"
+        # Add special items first: "In Progress" and "Reviewed"
         # These are always present, even if no commits are provided
 
-        # Add "Working Tree" item
+        # Add "In Progress" item
         working_tree_text = QCoreApplication.translate("DiffView", HISTORY_WORKING_TREE_LABEL)
         staging_text = QCoreApplication.translate("DiffView", HISTORY_STAGING_LABEL)
 
@@ -239,7 +239,7 @@ class HistoryPanelWidget(QWidget):
         working_tree_item.setText("")
         working_tree_item.setSizeHint(self._history_list.itemWidget(working_tree_item).sizeHint())
 
-        # Add "Staging" item
+        # Add "Reviewed" item
         staging_item = QListWidgetItem(staging_text)
         staging_item.setData(Qt.ItemDataRole.TextAlignmentRole, Qt.AlignmentFlag.AlignCenter)
         staging_item.setData(

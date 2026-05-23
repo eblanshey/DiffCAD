@@ -108,7 +108,7 @@ def freecad_gui(freecad_app: Any) -> object:
 
         def getViewProvider(self, obj: object) -> object | None:
             if hasattr(obj, "ViewObject"):
-                return getattr(obj, "ViewObject")
+                return obj.ViewObject
             return None
 
     class _GuiAdapter:

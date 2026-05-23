@@ -1,4 +1,4 @@
-"""File responsibility: Diff panel view with 3-column layout, implementing DiffView protocol."""
+"""File responsibility: History panel view with 3-column layout, implementing DiffView protocol."""
 
 from collections.abc import Callable
 
@@ -150,18 +150,18 @@ class DiffPanelView(QWidget):
         self._history_panel.show_repository(repo)
 
     def set_add_button_callback(self, callback: Callable[[str], None]) -> None:
-        """Set the callback for when the '+ Stage' button is clicked.
+        """Set the callback for when the '+ Reviewed' button is clicked.
 
         Delegates to DocumentDiffTreeWidget.
 
         Args:
             callback: A callable that receives the git_path (str) of the
-                      document whose '+ Stage' button was clicked.
+                      document whose '+ Reviewed' button was clicked.
         """
         self._document_diff_tree.set_add_button_callback(callback)
 
     def set_stage_all_button_visible(self, visible: bool) -> None:
-        """Show or hide the Stage All button.
+        """Show or hide the Mark All Reviewed button.
 
         Delegates to DocumentDiffTreeWidget.
 
@@ -171,7 +171,7 @@ class DiffPanelView(QWidget):
         self._document_diff_tree.set_stage_all_button_visible(visible)
 
     def set_stage_all_button_enabled(self, enabled: bool) -> None:
-        """Enable or disable the Stage All button.
+        """Enable or disable the Mark All Reviewed button.
 
         Delegates to DocumentDiffTreeWidget.
 
@@ -181,7 +181,7 @@ class DiffPanelView(QWidget):
         self._document_diff_tree.set_stage_all_button_enabled(enabled)
 
     def set_stage_all_callback(self, callback: Callable[[], None]) -> None:
-        """Set the callback for Stage All button.
+        """Set the callback for Mark All Reviewed button.
 
         Delegates to DocumentDiffTreeWidget.
 
@@ -272,12 +272,12 @@ class DiffPanelView(QWidget):
         self._document_diff_tree.collapse_tree_item(git_path)
 
     def set_stage_button_enabled(self, git_path: str, enabled: bool) -> None:
-        """Enable or disable the '+ Stage' button for a given git_path.
+        """Enable or disable the '+ Reviewed' button for a given git_path.
 
         Delegates to DocumentDiffTreeWidget.
 
         Args:
             git_path: The git_path of the document whose button to update.
-            enabled: Whether the stage button should be enabled.
+            enabled: Whether the reviewed button should be enabled.
         """
         self._document_diff_tree.set_stage_button_enabled(git_path, enabled)

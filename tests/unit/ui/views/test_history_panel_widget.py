@@ -102,10 +102,10 @@ class TestHistoryPanelWidgetShowRepository:
         # When: Call show_repository with a valid repository
         widget.show_repository(repo)
 
-        # Then: Label shows repository name with path in tooltip
+        # Then: Label shows project name with path in tooltip
         text = widget._repository_label.text()
         assert "test_project" in text
-        assert "Repository:" in text
+        assert "Project:" in text
         # Path should be in tooltip, not in displayed text
         assert widget._repository_label.toolTip() == "/home/user/test_project"
         stylesheet = widget._repository_label.styleSheet()
@@ -153,8 +153,8 @@ class TestHistoryPanelWidgetShowRepository:
 class TestShowCommitsSpecialItems:
     """Tests for the special "Working Tree" and "Staging" items in show_commits."""
 
-    def test_show_commits_always_shows_working_tree_and_staging_at_top(self, widget) -> None:  # type: ignore[no-untyped-def]
-        """Test that Working Tree and Staging items are always present at the top of the list."""
+    def test_show_commits_always_shows_in_progress_and_reviewed_at_top(self, widget) -> None:  # type: ignore[no-untyped-def]
+        """Test that In Progress and Reviewed items are always present at the top of the list."""
         from freecad.diff_wb.domain.git.models import GitCommit
 
         commits = [
@@ -168,18 +168,18 @@ class TestShowCommitsSpecialItems:
 
         widget.show_commits(commits)
 
-        # Verify there are 3 items: Working Tree, Staging, and the commit
+        # Verify there are 3 items: In Progress, Reviewed, and the commit
         assert widget.history_list.count() == 3
 
-        # Verify Working Tree is first
+        # Verify In Progress is first
         working_tree_item = widget.history_list.item(0)
         assert working_tree_item is not None
-        assert _history_row_text(widget, 0) == "Working Tree"
+        assert _history_row_text(widget, 0) == "In Progress"
 
-        # Verify Staging is second
+        # Verify Reviewed is second
         staging_item = widget.history_list.item(1)
         assert staging_item is not None
-        assert _history_row_text(widget, 1) == "Staging"
+        assert _history_row_text(widget, 1) == "Reviewed"
 
         # Verify commit is third
         commit_item = widget.history_list.item(2)
@@ -187,21 +187,21 @@ class TestShowCommitsSpecialItems:
         assert "a1b2c3d" in _history_row_text(widget, 2)
 
     def test_show_commits_shows_special_items_even_with_empty_commits(self, widget) -> None:  # type: ignore[no-untyped-def]
-        """Test that Working Tree and Staging items are present even when no commits are provided."""
+        """Test that In Progress and Reviewed items are present even when no commits are provided."""
         widget.show_commits([])
 
-        # Verify there are exactly 2 items: Working Tree and Staging
+        # Verify there are exactly 2 items: In Progress and Reviewed
         assert widget.history_list.count() == 2
 
-        # Verify Working Tree is first
+        # Verify In Progress is first
         working_tree_item = widget.history_list.item(0)
         assert working_tree_item is not None
-        assert _history_row_text(widget, 0) == "Working Tree"
+        assert _history_row_text(widget, 0) == "In Progress"
 
-        # Verify Staging is second
+        # Verify Reviewed is second
         staging_item = widget.history_list.item(1)
         assert staging_item is not None
-        assert _history_row_text(widget, 1) == "Staging"
+        assert _history_row_text(widget, 1) == "Reviewed"
 
     def test_show_commits_working_tree_has_correct_user_role(self, widget) -> None:  # type: ignore[no-untyped-def]
         """Test that Working Tree item has UserRole set to HistorySelection with WORKING_TREE kind."""
@@ -278,8 +278,8 @@ class TestShowCommitsSpecialItems:
         ]
         widget.show_commits(commits1)
         assert widget.history_list.count() == 3
-        assert _history_row_text(widget, 0) == "Working Tree"
-        assert _history_row_text(widget, 1) == "Staging"
+        assert _history_row_text(widget, 0) == "In Progress"
+        assert _history_row_text(widget, 1) == "Reviewed"
 
         # Second call with different commits
         commits2 = [
@@ -300,8 +300,8 @@ class TestShowCommitsSpecialItems:
 
         # Verify special items are still at top
         assert widget.history_list.count() == 4  # 2 special + 2 commits
-        assert _history_row_text(widget, 0) == "Working Tree"
-        assert _history_row_text(widget, 1) == "Staging"
+        assert _history_row_text(widget, 0) == "In Progress"
+        assert _history_row_text(widget, 1) == "Reviewed"
         assert "Second commit" in _history_row_text(widget, 2)
         assert "Third commit" in _history_row_text(widget, 3)
 
@@ -334,10 +334,10 @@ class TestShowCommits:
     def test_show_commits_empty_list(self, widget) -> None:  # type: ignore[no-untyped-def]
         """Test that empty commit list shows only special items."""
         widget.show_commits([])
-        # Special items (Working Tree, Staging) are always present
+        # Special items (In Progress, Reviewed) are always present
         assert widget.history_list.count() == 2
-        assert _history_row_text(widget, 0) == "Working Tree"
-        assert _history_row_text(widget, 1) == "Staging"
+        assert _history_row_text(widget, 0) == "In Progress"
+        assert _history_row_text(widget, 1) == "Reviewed"
 
     def test_show_commits_tooltip_has_full_message(self, widget) -> None:  # type: ignore[no-untyped-def]
         """Test that tooltip contains full commit message."""
@@ -382,8 +382,8 @@ class TestShowCommits:
 
         # List should contain special items + new commit (not old commit)
         assert widget.history_list.count() == 3
-        assert _history_row_text(widget, 0) == "Working Tree"
-        assert _history_row_text(widget, 1) == "Staging"
+        assert _history_row_text(widget, 0) == "In Progress"
+        assert _history_row_text(widget, 1) == "Reviewed"
         assert "Test commit" in _history_row_text(widget, 2)
 
     def test_show_commits_two_line_format(self, widget) -> None:  # type: ignore[no-untyped-def]
@@ -448,8 +448,8 @@ class TestShowCommits:
         # Verify order matches input (pre-sorted) + special items at top
         assert widget.history_list.count() == 5  # 2 special + 3 commits
         # Special items at top
-        assert _history_row_text(widget, 0) == "Working Tree"
-        assert _history_row_text(widget, 1) == "Staging"
+        assert _history_row_text(widget, 0) == "In Progress"
+        assert _history_row_text(widget, 1) == "Reviewed"
         # Commits start at row 2
         assert "New commit" in _history_row_text(widget, 2)
         assert "Middle commit" in _history_row_text(widget, 3)
@@ -665,7 +665,7 @@ class TestHistorySelectionCallback:
         # Verify callback was invoked with HistorySelection
         assert callback_called is True
         assert isinstance(received_selection, HistorySelection)
-        assert received_selection.item_kind == "WORKING_TREE"
+        assert received_selection.item_kind == "WORKING_TREE"  # Internal enum unchanged
         assert received_selection.commit_hash is None
 
     def test_callback_receives_commit_selection(self, widget) -> None:  # type: ignore[no-untyped-def]
@@ -718,7 +718,7 @@ class TestHistoryInfiniteScroll:
     """Tests for history infinite scroll support."""
 
     def test_append_commits_keeps_special_rows(self, widget) -> None:  # type: ignore[no-untyped-def]
-        """append_commits() appends without clearing existing Working Tree/Staging rows."""
+        """append_commits() appends without clearing existing In Progress/Reviewed rows."""
         from freecad.diff_wb.domain.git.models import GitCommit
 
         widget.show_commits([])
@@ -734,8 +734,8 @@ class TestHistoryInfiniteScroll:
         widget.append_commits(commits)
 
         assert widget.history_list.count() == 3
-        assert _history_row_text(widget, 0) == "Working Tree"
-        assert _history_row_text(widget, 1) == "Staging"
+        assert _history_row_text(widget, 0) == "In Progress"
+        assert _history_row_text(widget, 1) == "Reviewed"
         assert "Older commit" in _history_row_text(widget, 2)
 
     def test_scroll_bottom_callback_fires_near_bottom(self, widget) -> None:  # type: ignore[no-untyped-def]

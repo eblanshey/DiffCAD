@@ -32,7 +32,7 @@ class TestOpenAllDocumentsInRepositoryCommand:
 
         mock_message_box.warning.assert_called_once()
         call_args = mock_message_box.warning.call_args
-        assert call_args[0][2] == ("No repository detected. Open a FreeCAD document in a git repository first.")
+        assert call_args[0][2] == ("No project detected. Open a FreeCAD document in a project first.")
         mock_container.open_all_documents_in_repository_action.execute.assert_not_called()
 
     @patch("PySide6.QtWidgets.QMessageBox")

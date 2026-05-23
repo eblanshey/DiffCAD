@@ -35,7 +35,7 @@ except ImportError as e:
 if Gui is not None:
 
     class DiffWorkbench(Gui.Workbench):
-        """Workbench class for the Diff Workbench addon."""
+        """Workbench class for the Project History Workbench addon."""
 
         _preferences_page_registered = False
 
@@ -60,8 +60,8 @@ if Gui is not None:
 
         def __init__(self):
             super().__init__()
-            self.MenuText = "Diff"
-            self.ToolTip = "Compare document snapshots"
+            self.MenuText = "History"
+            self.ToolTip = "Track project iterations and history"
             self._subwindow = None  # Store reference to MDI subwindow
 
         def GetClassName(self) -> str:
@@ -107,8 +107,8 @@ if Gui is not None:
             # Setup toolbar and menu
             Log.info("Switching to diff_wb")
             qt_translate_noop = App.Qt.QT_TRANSLATE_NOOP
-            self.appendToolbar(qt_translate_noop("Workbench", "Diff Workbench"), self.toolbar_commands)
-            self.appendMenu(qt_translate_noop("Workbench", "Diff Workbench"), self.menu_commands)
+            self.appendToolbar(qt_translate_noop("Workbench", "Project History Workbench"), self.toolbar_commands)
+            self.appendMenu(qt_translate_noop("Workbench", "Project History Workbench"), self.menu_commands)
 
         @classmethod
         def _register_preferences_page(cls) -> None:
@@ -127,7 +127,7 @@ if Gui is not None:
 
             from ..ui.views.settings_preferences_page import DiffSettingsPreferencesPage
 
-            Gui.addPreferencePage(DiffSettingsPreferencesPage, "Diff")
+            Gui.addPreferencePage(DiffSettingsPreferencesPage, "Project History")
             registry.add(_PREFERENCES_PAGE_ID)
             cls._preferences_page_registered = True
 
@@ -182,7 +182,7 @@ if Gui is not None:
 
                 # Add as MDI subwindow
                 self._subwindow = mdi_area.addSubWindow(view)
-                self._subwindow.setWindowTitle("Diff View")
+                self._subwindow.setWindowTitle("History Panel")
                 self._subwindow.setWindowIcon(QIcon(os.path.join(ICONPATH, "Logo.svg")))
                 self._subwindow.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, True)
                 self._subwindow.resize(900, 600)

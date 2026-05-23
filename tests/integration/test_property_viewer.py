@@ -16,6 +16,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+import pytest
+
 
 if TYPE_CHECKING:
     from freecad.diff_wb.domain.freecad_ports import AppLike, GuiLike
@@ -70,7 +72,9 @@ class TestPropertyViewerIntegration:
         finally:
             freecad_app.closeDocument(doc.Name)
 
-    def test_properties_grouped_correctly(self, freecad_app: AppLike, freecad_gui: GuiLike, project_root: object) -> None:
+    def test_properties_grouped_correctly(
+        self, freecad_app: AppLike, freecad_gui: GuiLike, project_root: object
+    ) -> None:
         """Verify properties are grouped correctly (Phase 2).
 
         This test checks that:

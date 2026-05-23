@@ -59,7 +59,7 @@ def test_workbench_initializes_and_registers_preference_page_once(monkeypatch) -
     assert fake_gui.addPreferencePage.call_count == 1
     call_args = fake_gui.addPreferencePage.call_args[0]
     assert call_args[0].__name__ == "DiffSettingsPreferencesPage"
-    assert call_args[1] == "Diff"
+    assert call_args[1] == "Project History"
 
 
 def test_preference_registration_is_idempotent_across_module_reload(monkeypatch) -> None:  # type: ignore[no-untyped-def]

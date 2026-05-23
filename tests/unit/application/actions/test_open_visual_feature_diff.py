@@ -99,7 +99,7 @@ def test_document_name_construction(tmp_path: Path) -> None:
     result = action.execute(OpenVisualDiffRequest(repo, "BasicFile.FCStd", "Body/Pad", VisualDiffRequestType.WORKING))
 
     assert result.is_success is True
-    assert visual_diff.document_name == "Diff_BasicFile_Pad"
+    assert visual_diff.document_name == "Compare_BasicFile_Pad"
 
 
 def test_execute_opens_visual_diff_when_shape_present(tmp_path: Path) -> None:

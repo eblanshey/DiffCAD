@@ -63,7 +63,7 @@ class TestRefreshRepositoryCommand:
 
         resources = command.GetResources()
 
-        assert resources["MenuText"] == "Refresh Git Repository and Commits"
+        assert resources["MenuText"] == "Refresh Project and Iterations"
         assert "refresh" in resources["ToolTip"].lower()
         assert resources["Pixmap"].endswith("RefreshRepository.svg")
         assert command.IsActive() is True
@@ -120,7 +120,7 @@ class TestOpenDiffWindowCommand:
 
         resources = command.GetResources()
 
-        assert resources["MenuText"] == "Open Diff Window"
-        assert "diff" in resources["ToolTip"].lower()
+        assert resources["MenuText"] == "Open History Panel"
+        assert "history" in resources["ToolTip"].lower()
         assert resources["Pixmap"].endswith("Logo.svg")
         assert command.IsActive() is True

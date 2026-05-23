@@ -124,6 +124,6 @@ class OpenVisualDiffAction:
         raise RuntimeError(f"Unknown visual diff request type: {request.type}")
 
     def _construct_document_name(self, request: OpenVisualDiffRequest, feature_name: str) -> str:
-        """Construct document name as Diff_{File}_{Feature}."""
+        """Construct document name as Compare_{File}_{Feature}."""
         filename = Path(request.git_path).stem
-        return f"Diff_{filename}_{feature_name}"
+        return f"Compare_{filename}_{feature_name}"
