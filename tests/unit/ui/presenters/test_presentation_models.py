@@ -4,9 +4,8 @@
 import dataclasses
 
 import pytest
-
-from freecad.diff_wb.domain.diff.models import DiffState
-from freecad.diff_wb.ui.presenters.presentation_models import (
+from freecad.history_wb.domain.diff.models import DiffState
+from freecad.history_wb.ui.presenters.presentation_models import (
     DiffTreePresentation,
     NodePresentation,
     PropertyPresentation,

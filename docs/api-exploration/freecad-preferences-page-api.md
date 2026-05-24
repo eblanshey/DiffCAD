@@ -75,7 +75,7 @@ Encoding note:
 
 ## Registration location + non-duplication strategy
 
-Confirmed registration point: `DiffWorkbench.Initialize` in `freecad/diff_wb/entrypoints/workbench.py`.
+Confirmed registration point: `HistoryWorkbench.Initialize` in `freecad/history_wb/entrypoints/workbench.py`.
 
 Registration strategy:
 

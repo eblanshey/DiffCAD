@@ -9,13 +9,13 @@ class TestDiffPanelView:
 
     def test_diff_panel_smoke(self) -> None:
         """Verify DiffPanelView instantiates and exposes required public methods."""
-        from freecad.diff_wb.qt import QtWidgets
+        from freecad.history_wb.qt import QtWidgets
 
         app = QtWidgets.QApplication.instance()
         if app is None:
             app = QtWidgets.QApplication([])
 
-        from freecad.diff_wb.ui import DiffPanelView
+        from freecad.history_wb.ui import DiffPanelView
 
         panel = DiffPanelView()
         assert panel is not None

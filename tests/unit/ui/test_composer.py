@@ -4,11 +4,10 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-
-from freecad.diff_wb.application.di.container import ApplicationContainer
-from freecad.diff_wb.ui.composer import compose_and_register_ui
-from freecad.diff_wb.ui.registry import ui_registry
-from freecad.diff_wb.ui.state import UIState
+from freecad.history_wb.application.di.container import ApplicationContainer
+from freecad.history_wb.ui.composer import compose_and_register_ui
+from freecad.history_wb.ui.registry import ui_registry
+from freecad.history_wb.ui.state import UIState
 
 
 @pytest.fixture(autouse=True)
@@ -43,10 +42,10 @@ def test_compose_creates_and_registers_ui_components() -> None:
     mock_container = _mock_container()
 
     with (
-        patch("freecad.diff_wb.ui.composer.DiffPanelView") as MockView,
-        patch("freecad.diff_wb.ui.composer.UIState") as MockUIState,
-        patch("freecad.diff_wb.ui.composer.DiffPresenter") as MockDiffPresenter,
-        patch("freecad.diff_wb.ui.composer.GitRepositoryPresenter") as MockGitPresenter,
+        patch("freecad.history_wb.ui.composer.DiffPanelView") as MockView,
+        patch("freecad.history_wb.ui.composer.UIState") as MockUIState,
+        patch("freecad.history_wb.ui.composer.DiffPresenter") as MockDiffPresenter,
+        patch("freecad.history_wb.ui.composer.GitRepositoryPresenter") as MockGitPresenter,
     ):
         mock_view = MagicMock()
         MockView.return_value = mock_view
@@ -81,10 +80,10 @@ def test_compose_wires_action_dependencies_and_callbacks() -> None:
     mock_container = _mock_container()
 
     with (
-        patch("freecad.diff_wb.ui.composer.DiffPanelView") as MockView,
-        patch("freecad.diff_wb.ui.composer.UIState"),
-        patch("freecad.diff_wb.ui.composer.DiffPresenter") as MockDiffPresenter,
-        patch("freecad.diff_wb.ui.composer.GitRepositoryPresenter") as MockGitPresenter,
+        patch("freecad.history_wb.ui.composer.DiffPanelView") as MockView,
+        patch("freecad.history_wb.ui.composer.UIState"),
+        patch("freecad.history_wb.ui.composer.DiffPresenter") as MockDiffPresenter,
+        patch("freecad.history_wb.ui.composer.GitRepositoryPresenter") as MockGitPresenter,
     ):
         mock_view = MagicMock()
         MockView.return_value = mock_view

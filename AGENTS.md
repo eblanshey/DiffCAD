@@ -16,11 +16,11 @@
 - You are NEVER to check out files from git unless given approval by the user.
 - No hacky patches allowed. If seems like a lot of work needed to implement something cleanly without patches, stop and ask the user for direction. Strive for 100% clean, readable, maintainable code.
   - Similarly, NO backwards-compatibility code is allowed ANYWHERE, unless explicitly approved by the user.
-- All user-facing English words and phrases must use `translate("ProjectHistory", "...")` literals at display sites, or `QT_TRANSLATE_NOOP` with correct context when deferred (command `GetResources()` uses exact command context; workbench labels use `Workbench`; property descriptions use `App::Property`). Logs do not require translation.
+- All user-facing English words and phrases must use `translate("History", "...")` literals at display sites, or `QT_TRANSLATE_NOOP` with correct context when deferred (command `GetResources()` uses exact command context; workbench labels use `Workbench`; property descriptions use `App::Property`). Logs do not require translation.
 - When changing user-facing text, run `task translations:refresh` before the completion of your work.
 - Read the `docs/Architecture.md` guidelines when planning new features.
 - Do not remove useful line comments when refactoring
-- Keep cyclomatic complexity at B (5-10) or better in the src dir: `uv run radon cc --min C freecad/diff_wb --no-assert -s`
+- Keep cyclomatic complexity at B (5-10) or better in the src dir: `uv run radon cc --min C freecad/history_wb --no-assert -s`
 
 Terse like caveman. Technical substance exact. Only fluff die.
 Drop: articles, filler (just/really/basically), pleasantries, hedging.
@@ -72,4 +72,4 @@ For exploring the actual FreeCAD runtime API, use the extracted FreeCAD AppImage
 This runs Python with FreeCAD's built-in interpreter and bindings, giving access to live API inspection when stubs are incomplete or uncertain.
 
 There is also a test freecad file you can inspect, in `tests/freecad/BasicFile.FCStd`.
-The FreeCADGui module is not available using this script. So if you need to debug something that calls any of the Gui APIs, you must create a new python file in the `freecad/diff_wb` directory with logging and call it in the `workbench.py`'s Activated method. Then ask the user to run freecad and report the output logs.
+The FreeCADGui module is not available using this script. So if you need to debug something that calls any of the Gui APIs, you must create a new python file in the `freecad/history_wb` directory with logging and call it in the `workbench.py`'s Activated method. Then ask the user to run freecad and report the output logs.

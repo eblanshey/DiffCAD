@@ -6,14 +6,15 @@
 
 from unittest.mock import MagicMock, patch
 
-from freecad.diff_wb.application.actions.create_document_snapshot_working import (
+from freecad.history_wb.application.actions.create_document_snapshot_working import (
     CreateDocumentSnapshotForWorkingTreeAction,
 )
-from freecad.diff_wb.domain.freecad_ports import DocumentObjectLike
-from freecad.diff_wb.domain.git.git_service import GitService
-from freecad.diff_wb.domain.git.models import GitRepository
-from freecad.diff_wb.domain.snapshots.gui_extractor import SnapshotExtractor
-from freecad.diff_wb.domain.snapshots.models import Snapshot
+from freecad.history_wb.domain.freecad_ports import DocumentObjectLike
+from freecad.history_wb.domain.git.git_service import GitService
+from freecad.history_wb.domain.git.models import GitRepository
+from freecad.history_wb.domain.snapshots.gui_extractor import SnapshotExtractor
+from freecad.history_wb.domain.snapshots.models import Snapshot
+
 from tests.fakes.fake_git_port import FakeGitPort
 
 
@@ -95,7 +96,7 @@ class TestCreateDocumentSnapshotForWorkingTreeActionSuccess:
         repo = GitRepository(name="repo", absolute_path="C:\\repo")
         action = CreateDocumentSnapshotForWorkingTreeAction(git_service, extractor)
 
-        with patch("freecad.diff_wb.domain.git.paths.relpath", lambda path, root: "src\\file.FCStd"):
+        with patch("freecad.history_wb.domain.git.paths.relpath", lambda path, root: "src\\file.FCStd"):
             result = action.execute(repo, doc)
 
         assert result.is_success is True

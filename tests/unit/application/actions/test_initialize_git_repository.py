@@ -2,8 +2,9 @@
 # File responsibility: Unit tests for initializing git repositories via application action.
 """Unit tests for InitializeGitRepositoryAction."""
 
-from freecad.diff_wb.application.actions.initialize_git_repository import InitializeGitRepositoryAction
-from freecad.diff_wb.domain.git import GitRepository, GitService
+from freecad.history_wb.application.actions.initialize_git_repository import InitializeGitRepositoryAction
+from freecad.history_wb.domain.git import GitRepository, GitService
+
 from tests.fakes.fake_git_port import FakeGitPort
 
 

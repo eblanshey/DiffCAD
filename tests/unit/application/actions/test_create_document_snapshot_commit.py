@@ -5,13 +5,13 @@
 from datetime import datetime
 from unittest.mock import MagicMock
 
-from freecad.diff_wb.application.actions.create_document_snapshot_commit import (
+from freecad.history_wb.application.actions.create_document_snapshot_commit import (
     CreateDocumentSnapshotForCommitAction,
 )
-from freecad.diff_wb.application.actions.result_models import SnapshotLoadStatus
-from freecad.diff_wb.domain.git.git_service import GitService
-from freecad.diff_wb.domain.git.models import GitRepository
-from freecad.diff_wb.domain.snapshots.models import Snapshot
+from freecad.history_wb.application.actions.result_models import SnapshotLoadStatus
+from freecad.history_wb.domain.git.git_service import GitService
+from freecad.history_wb.domain.git.models import GitRepository
+from freecad.history_wb.domain.snapshots.models import Snapshot
 
 
 def _snapshot(snapshot_id: str) -> Snapshot:

@@ -5,8 +5,7 @@
 import dataclasses
 
 import pytest
-
-from freecad.diff_wb.domain.git import GitRepository
+from freecad.history_wb.domain.git import GitRepository
 
 
 @pytest.fixture

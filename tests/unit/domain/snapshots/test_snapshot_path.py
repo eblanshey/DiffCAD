@@ -4,7 +4,7 @@
 
 from pathlib import Path
 
-from freecad.diff_wb.domain.snapshots import get_snapshot_yaml_path_for_document
+from freecad.history_wb.domain.snapshots import get_snapshot_yaml_path_for_document
 
 
 class TestGetSnapshotYamlPathForDocument:

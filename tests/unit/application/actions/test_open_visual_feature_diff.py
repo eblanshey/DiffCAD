@@ -5,15 +5,16 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from freecad.diff_wb.application.actions.open_visual_diff import (
+from freecad.history_wb.application.actions.open_visual_diff import (
     OpenVisualDiffAction,
     OpenVisualDiffRequest,
     VisualDiffFailureReason,
     VisualDiffRequestType,
 )
-from freecad.diff_wb.domain.freecad_ports import FreeCadFileManagerPort
-from freecad.diff_wb.domain.git.git_service import GitService
-from freecad.diff_wb.domain.git.models import GitRepository
+from freecad.history_wb.domain.freecad_ports import FreeCadFileManagerPort
+from freecad.history_wb.domain.git.git_service import GitService
+from freecad.history_wb.domain.git.models import GitRepository
+
 from tests.fakes.fake_git_port import FakeGitPort
 
 

@@ -8,7 +8,7 @@ import os
 from datetime import datetime
 from pathlib import Path
 
-from freecad.diff_wb.domain.git.models import GitCommit, GitIdentity
+from freecad.history_wb.domain.git.models import GitCommit, GitIdentity
 
 
 class FakeGitPort:

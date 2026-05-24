@@ -6,8 +6,7 @@ import dataclasses
 from datetime import datetime
 
 import pytest
-
-from freecad.diff_wb.domain.git import GitCommit
+from freecad.history_wb.domain.git import GitCommit
 
 
 @pytest.fixture

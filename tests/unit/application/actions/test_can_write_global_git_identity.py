@@ -1,9 +1,9 @@
 """File responsibility: Unit tests for CanWriteGlobalGitIdentityAction."""
 
 import pytest
+from freecad.history_wb.application.actions.can_write_global_git_identity import CanWriteGlobalGitIdentityAction
+from freecad.history_wb.domain.git.git_service import GitService
 
-from freecad.diff_wb.application.actions.can_write_global_git_identity import CanWriteGlobalGitIdentityAction
-from freecad.diff_wb.domain.git.git_service import GitService
 from tests.fakes import FakeGitPort
 
 

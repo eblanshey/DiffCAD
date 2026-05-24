@@ -6,21 +6,21 @@
 
 from unittest.mock import MagicMock
 
-from freecad.diff_wb.domain.config import FLOAT_PRECISION as DEFAULT_FLOAT_PRECISION
-from freecad.diff_wb.domain.diff.engine import DiffEngine
-from freecad.diff_wb.domain.diff.models import (
+from freecad.history_wb.domain.config import FLOAT_PRECISION as DEFAULT_FLOAT_PRECISION
+from freecad.history_wb.domain.diff.engine import DiffEngine
+from freecad.history_wb.domain.diff.models import (
     DiffState,
     PropertyDiff,
     _path_values_equal,
 )
-from freecad.diff_wb.domain.snapshots import Snapshot
-from freecad.diff_wb.domain.snapshots.models import SnapshotObject, SnapshotOccurrence
-from freecad.diff_wb.domain.tree.data_path import (
+from freecad.history_wb.domain.snapshots import Snapshot
+from freecad.history_wb.domain.snapshots.models import SnapshotObject, SnapshotOccurrence
+from freecad.history_wb.domain.tree.data_path import (
     PrimitiveData,
     PropertyPathType,
     PropertyPathValue,
 )
-from freecad.diff_wb.domain.tree.property import Property
+from freecad.history_wb.domain.tree.property import Property
 
 
 class TestPrecisionBoundary:

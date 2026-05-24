@@ -5,8 +5,8 @@
 
 from datetime import datetime
 
-from freecad.diff_wb.domain import Snapshot, SnapshotObject, SnapshotOccurrence
-from freecad.diff_wb.domain.snapshots.repository import InMemorySnapshotRepository
+from freecad.history_wb.domain import Snapshot, SnapshotObject, SnapshotOccurrence
+from freecad.history_wb.domain.snapshots.repository import InMemorySnapshotRepository
 
 
 def _make_snapshot(name: str, objects: list[SnapshotObject], occurrences: list[SnapshotOccurrence]) -> Snapshot:

@@ -5,13 +5,13 @@
 
 import datetime
 
-from freecad.diff_wb.domain.diff.engine import DiffEngine
-from freecad.diff_wb.domain.diff.models import DiffHierarchy, DiffResult
-from freecad.diff_wb.domain.settings.models import Settings
-from freecad.diff_wb.domain.settings.repository import SettingsRepository
-from freecad.diff_wb.domain.snapshots import Snapshot
-from freecad.diff_wb.domain.snapshots.models import SnapshotObject, SnapshotOccurrence
-from freecad.diff_wb.domain.snapshots.repository import (
+from freecad.history_wb.domain.diff.engine import DiffEngine
+from freecad.history_wb.domain.diff.models import DiffHierarchy, DiffResult
+from freecad.history_wb.domain.settings.models import Settings
+from freecad.history_wb.domain.settings.repository import SettingsRepository
+from freecad.history_wb.domain.snapshots import Snapshot
+from freecad.history_wb.domain.snapshots.models import SnapshotObject, SnapshotOccurrence
+from freecad.history_wb.domain.snapshots.repository import (
     InMemorySnapshotRepository,
     SnapshotRepository,
 )

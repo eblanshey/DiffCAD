@@ -4,16 +4,16 @@
 
 from unittest.mock import MagicMock, Mock, patch
 
-from freecad.diff_wb.domain.git.models import GitRepository
-from freecad.diff_wb.entrypoints.commands import _OpenAllDocumentsInRepositoryCommand
+from freecad.history_wb.domain.git.models import GitRepository
+from freecad.history_wb.entrypoints.commands import _OpenAllDocumentsInRepositoryCommand
 
 
 class TestOpenAllDocumentsInRepositoryCommand:
     """Tests for _OpenAllDocumentsInRepositoryCommand."""
 
-    @patch("freecad.diff_wb.qt.QtWidgets.QMessageBox")
-    @patch("freecad.diff_wb.ui.registry.ui_registry")
-    @patch("freecad.diff_wb._container.get_container")
+    @patch("freecad.history_wb.qt.QtWidgets.QMessageBox")
+    @patch("freecad.history_wb.ui.registry.ui_registry")
+    @patch("freecad.history_wb._container.get_container")
     def test_activated_no_repository_shows_warning(
         self,
         mock_get_container: Mock,
@@ -35,9 +35,9 @@ class TestOpenAllDocumentsInRepositoryCommand:
         assert call_args[0][2] == ("No project detected. Open a FreeCAD document in a project first.")
         mock_container.open_all_documents_in_repository_action.execute.assert_not_called()
 
-    @patch("freecad.diff_wb.qt.QtWidgets.QMessageBox")
-    @patch("freecad.diff_wb.ui.registry.ui_registry")
-    @patch("freecad.diff_wb._container.get_container")
+    @patch("freecad.history_wb.qt.QtWidgets.QMessageBox")
+    @patch("freecad.history_wb.ui.registry.ui_registry")
+    @patch("freecad.history_wb._container.get_container")
     def test_activated_calls_open_action_when_repository_present(
         self,
         mock_get_container: Mock,

@@ -6,15 +6,15 @@ from __future__ import annotations
 
 from dataclasses import replace
 
-from freecad.diff_wb.application.actions.result_models import Result
-from freecad.diff_wb.domain.config import EXCLUDED_TYPES
-from freecad.diff_wb.domain.settings.persistence_state import (
+from freecad.history_wb.application.actions.result_models import Result
+from freecad.history_wb.domain.config import EXCLUDED_TYPES
+from freecad.history_wb.domain.settings.persistence_state import (
     ByTypeSettingState,
     ListSettingState,
     SettingsPersistenceState,
 )
-from freecad.diff_wb.qt import QtWidgets
-from freecad.diff_wb.ui.views.settings_preferences_page import DiffSettingsPreferencesPage
+from freecad.history_wb.qt import QtWidgets
+from freecad.history_wb.ui.views.settings_preferences_page import DiffSettingsPreferencesPage
 
 
 class _FakeGetDiffSettingsAction:

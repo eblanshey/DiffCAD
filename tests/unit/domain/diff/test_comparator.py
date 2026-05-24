@@ -9,12 +9,11 @@ from datetime import datetime
 from typing import Any
 
 import pytest
-
-from freecad.diff_wb.domain.config import EXCLUDED_PROPERTIES
-from freecad.diff_wb.domain.diff.comparator import PropertyComparator, TreeComparator
-from freecad.diff_wb.domain.diff.models import DiffState, NodeDiff, PropertyDiff
-from freecad.diff_wb.domain.snapshots.models import Snapshot, SnapshotObject, SnapshotOccurrence
-from freecad.diff_wb.domain.tree.property import Property
+from freecad.history_wb.domain.config import EXCLUDED_PROPERTIES
+from freecad.history_wb.domain.diff.comparator import PropertyComparator, TreeComparator
+from freecad.history_wb.domain.diff.models import DiffState, NodeDiff, PropertyDiff
+from freecad.history_wb.domain.snapshots.models import Snapshot, SnapshotObject, SnapshotOccurrence
+from freecad.history_wb.domain.tree.property import Property
 
 
 # Test fixtures - create comparator instances

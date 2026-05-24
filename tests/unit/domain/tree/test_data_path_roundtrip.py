@@ -3,7 +3,7 @@
 # all DataPath types through their serialize() and from_serialized_value() methods.
 """Unit tests for DataPath round-trip serialization."""
 
-from freecad.diff_wb.domain.tree.data_path import (
+from freecad.history_wb.domain.tree.data_path import (
     DATA_PATH_KIND_MAP,
     ConstraintData,
     DataPathKind,

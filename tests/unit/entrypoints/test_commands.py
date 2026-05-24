@@ -9,7 +9,7 @@ test files.
 
 from unittest.mock import MagicMock, Mock, patch
 
-from freecad.diff_wb.entrypoints.commands import (
+from freecad.history_wb.entrypoints.commands import (
     _RecomputeAllOpenDocumentsCommand,
     _RefreshRepositoryCommand,
     _SwapColumnsCommand,
@@ -40,7 +40,7 @@ class TestSwapColumnsCommand:
 class TestRefreshRepositoryCommand:
     """Tests for _RefreshRepositoryCommand."""
 
-    @patch("freecad.diff_wb.ui.registry.ui_registry")
+    @patch("freecad.history_wb.ui.registry.ui_registry")
     def test_refresh_repository_command_calls_git_repository_presenter(
         self,
         mock_ui_registry: Mock,
@@ -59,7 +59,7 @@ class TestRefreshRepositoryCommand:
 class TestRecomputeAllOpenDocumentsCommand:
     """Tests for _RecomputeAllOpenDocumentsCommand."""
 
-    @patch("freecad.diff_wb._container.get_container")
+    @patch("freecad.history_wb._container.get_container")
     def test_activated_calls_application_action(self, mock_get_container: Mock) -> None:
         """Activated delegates to application action execute API."""
         mock_container = MagicMock()

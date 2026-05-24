@@ -19,7 +19,7 @@ import pytest
 
 
 if TYPE_CHECKING:
-    from freecad.diff_wb.domain.freecad_ports import FreeCadContext
+    from freecad.history_wb.domain.freecad_ports import FreeCadContext
 
 
 def pytest_configure(config: object) -> None:
@@ -134,7 +134,7 @@ def freecad_context(freecad_app: Any, freecad_gui: Any) -> FreeCadContext:
     Returns:
         FreeCadContext instance.
     """
-    from freecad.diff_wb.domain.freecad_ports import FreeCadContext
+    from freecad.history_wb.domain.freecad_ports import FreeCadContext
 
     return FreeCadContext(app=freecad_app, gui=freecad_gui)
 
@@ -180,7 +180,7 @@ def initialized_workbench(project_root: Path) -> Any:
         project_root: Project root directory.
 
     Returns:
-        DiffWorkbench instance.
+        HistoryWorkbench instance.
 
     Raises:
         pytest.skip: If FreeCADGui.Workbench is not available (headless mode).
@@ -195,8 +195,8 @@ def initialized_workbench(project_root: Path) -> Any:
     if not hasattr(Gui, "Workbench"):
         pytest.skip("Gui.Workbench requires real display (not available in offscreen/Xvfb mode)")
 
-    # Remove any cached diff_wb modules to force reload
-    mods_to_remove = [k for k in list(sys.modules.keys()) if "diff_wb" in k]
+    # Remove any cached history_wb modules to force reload
+    mods_to_remove = [k for k in list(sys.modules.keys()) if "history_wb" in k]
     for mod in mods_to_remove:
         del sys.modules[mod]
 
@@ -207,10 +207,10 @@ def initialized_workbench(project_root: Path) -> Any:
     sys.path.insert(0, project_path)
 
     # Import and initialize
-    from freecad.diff_wb.application.di.container import create_application_container
-    from freecad.diff_wb.domain.snapshots import InMemorySnapshotRepository
-    from freecad.diff_wb.entrypoints.workbench import DiffWorkbench
-    from freecad.diff_wb.infrastructure.freecad.ports import get_freecad_runtime_context
+    from freecad.history_wb.application.di.container import create_application_container
+    from freecad.history_wb.domain.snapshots import InMemorySnapshotRepository
+    from freecad.history_wb.entrypoints.workbench import HistoryWorkbench
+    from freecad.history_wb.infrastructure.freecad.ports import get_freecad_runtime_context
 
     # Create container (diff_view=None for now)
     ctx = get_freecad_runtime_context()
@@ -222,11 +222,11 @@ def initialized_workbench(project_root: Path) -> Any:
     )
 
     # Set container before importing workbench
-    from freecad.diff_wb import _container as container_module
+    from freecad.history_wb import _container as container_module
 
     container_module.set_container(container)
 
     # Create workbench instance
-    wb = DiffWorkbench()  # type: ignore[no-untyped-call]
+    wb = HistoryWorkbench()  # type: ignore[no-untyped-call]
 
     return wb

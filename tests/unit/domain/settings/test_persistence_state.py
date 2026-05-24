@@ -2,8 +2,8 @@
 # File responsibility: Unit tests for persistence-to-effective settings conversion helpers.
 """Tests for SettingsPersistenceState conversion helpers."""
 
-from freecad.diff_wb.domain.settings.models import Settings
-from freecad.diff_wb.domain.settings.persistence_state import (
+from freecad.history_wb.domain.settings.models import Settings
+from freecad.history_wb.domain.settings.persistence_state import (
     ByTypeSettingState,
     ListSettingState,
     SettingsPersistenceState,

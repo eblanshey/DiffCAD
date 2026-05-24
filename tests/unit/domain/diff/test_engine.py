@@ -7,17 +7,17 @@ import datetime
 import uuid
 from typing import Any
 
-from freecad.diff_wb.domain import Property
-from freecad.diff_wb.domain.diff import (
+from freecad.history_wb.domain import Property
+from freecad.history_wb.domain.diff import (
     DiffHierarchy,
     DiffResult,
     DiffState,
     NodeDiff,
     PropertyDiff,
 )
-from freecad.diff_wb.domain.diff.engine import DiffEngine
-from freecad.diff_wb.domain.snapshots import Snapshot
-from freecad.diff_wb.domain.snapshots.models import SnapshotObject, SnapshotOccurrence
+from freecad.history_wb.domain.diff.engine import DiffEngine
+from freecad.history_wb.domain.snapshots import Snapshot
+from freecad.history_wb.domain.snapshots.models import SnapshotObject, SnapshotOccurrence
 
 
 class _MockSettingsRepo:
@@ -470,7 +470,7 @@ class TestDiffEngineComputeDiff:
 
     def test_compute_diff_detect_modified_node(self) -> None:
         """Test compute_diff detects modified nodes with flat structure."""
-        from freecad.diff_wb.domain import Property
+        from freecad.history_wb.domain import Property
 
         old_node = {
             "id": 1,
@@ -664,7 +664,7 @@ class TestDiffEngineComputeDiffWithSettings:
 
     def test_compute_diff_with_custom_excluded_properties(self) -> None:
         """Test compute_diff with custom excluded properties filters correctly."""
-        from freecad.diff_wb.domain import Property
+        from freecad.history_wb.domain import Property
 
         old_node = {
             "id": 1,
@@ -720,7 +720,7 @@ class TestDiffEngineTypeSpecificExclusions:
 
     def test_engine_passes_type_specific_exclusions(self) -> None:
         """Test that engine passes type-specific exclusions from settings repo to comparator."""
-        from freecad.diff_wb.domain import Property
+        from freecad.history_wb.domain import Property
 
         old_node = {
             "id": 1,
@@ -770,7 +770,7 @@ class TestDiffEngineTypeSpecificExclusions:
 
     def test_engine_with_non_matching_type_includes_property(self) -> None:
         """Test that engine does not apply type-specific exclusion for non-matching types."""
-        from freecad.diff_wb.domain import Property
+        from freecad.history_wb.domain import Property
 
         old_node = {
             "id": 1,

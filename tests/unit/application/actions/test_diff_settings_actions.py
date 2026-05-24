@@ -4,9 +4,9 @@
 
 from __future__ import annotations
 
-from freecad.diff_wb.application.actions.get_diff_settings import GetDiffSettingsAction
-from freecad.diff_wb.application.actions.save_diff_settings import SaveDiffSettingsAction
-from freecad.diff_wb.domain.settings.persistence_state import (
+from freecad.history_wb.application.actions.get_diff_settings import GetDiffSettingsAction
+from freecad.history_wb.application.actions.save_diff_settings import SaveDiffSettingsAction
+from freecad.history_wb.domain.settings.persistence_state import (
     ByTypeSettingState,
     ListSettingState,
     SettingsPersistenceState,

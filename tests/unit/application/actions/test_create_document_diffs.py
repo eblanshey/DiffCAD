@@ -5,8 +5,8 @@
 from dataclasses import dataclass
 from datetime import datetime
 
-from freecad.diff_wb.application.actions.create_document_diffs import CreateDocumentDiffsAction
-from freecad.diff_wb.application.actions.result_models import (
+from freecad.history_wb.application.actions.create_document_diffs import CreateDocumentDiffsAction
+from freecad.history_wb.application.actions.result_models import (
     CreateDocumentDiffsRequest,
     DocumentDiffMode,
     DocumentDiffStatus,
@@ -14,8 +14,8 @@ from freecad.diff_wb.application.actions.result_models import (
     SnapshotLoadResult,
     SnapshotLoadStatus,
 )
-from freecad.diff_wb.domain.git.models import GitRepository
-from freecad.diff_wb.domain.snapshots.models import Snapshot
+from freecad.history_wb.domain.git.models import GitRepository
+from freecad.history_wb.domain.snapshots.models import Snapshot
 
 
 def _snapshot(git_path: str, suffix: str = "") -> Snapshot:

@@ -4,14 +4,14 @@
 
 from dataclasses import replace
 
-from freecad.diff_wb.domain.config import (
+from freecad.history_wb.domain.config import (
     EXCLUDED_PROPERTIES,
     EXCLUDED_PROPERTIES_BY_TYPE,
     EXCLUDED_TYPES,
     FLOAT_PRECISION,
 )
-from freecad.diff_wb.domain.freecad_ports import FreeCadContext
-from freecad.diff_wb.infrastructure.freecad.settings_repo import (
+from freecad.history_wb.domain.freecad_ports import FreeCadContext
+from freecad.history_wb.infrastructure.freecad.settings_repo import (
     MAX_FLOAT_PRECISION,
     MIN_FLOAT_PRECISION,
     FreeCADSettingsRepository,

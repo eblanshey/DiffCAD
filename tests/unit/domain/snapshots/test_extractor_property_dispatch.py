@@ -3,11 +3,11 @@
 # the new Property.from_freecad API with expression maps instead of the legacy API.
 """Tests for extractor property dispatch using new Property.from_freecad API."""
 
-from freecad.diff_wb.domain.snapshots.gui_extractor import (
+from freecad.history_wb.domain.snapshots.gui_extractor import (
     _build_expression_map_for_property,
     _extract_property_value,
 )
-from freecad.diff_wb.domain.tree import Property
+from freecad.history_wb.domain.tree import Property
 
 
 class MockFreeCADObject:

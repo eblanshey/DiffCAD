@@ -3,8 +3,8 @@
 # value/expression state calculation and precision-aware float comparison.
 """Tests for PropertyPathDiff public behavior."""
 
-from freecad.diff_wb.domain.diff.models import DiffState, PropertyPathDiff
-from freecad.diff_wb.domain.tree.data_path import PropertyPathType, PropertyPathValue
+from freecad.history_wb.domain.diff.models import DiffState, PropertyPathDiff
+from freecad.history_wb.domain.tree.data_path import PropertyPathType, PropertyPathValue
 
 
 class TestPropertyPathDiff:

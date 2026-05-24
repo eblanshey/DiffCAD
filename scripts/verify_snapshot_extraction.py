@@ -9,9 +9,9 @@ Run with: ./run_with_freecad.sh python scripts/verify_snapshot_extraction.py
 
 import FreeCAD
 
-from freecad.diff_wb.domain.snapshots.models import Snapshot
-from freecad.diff_wb.domain.tree.node import TreeNode
-from freecad.diff_wb.domain.tree.property import Property
+from freecad.history_wb.domain.snapshots.models import Snapshot
+from freecad.history_wb.domain.tree.node import TreeNode
+from freecad.history_wb.domain.tree.property import Property
 
 
 def print_section(title: str) -> None:

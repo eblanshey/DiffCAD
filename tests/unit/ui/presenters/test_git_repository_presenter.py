@@ -8,9 +8,8 @@ from datetime import datetime
 from unittest.mock import MagicMock, patch
 
 import pytest
-
-from freecad.diff_wb.domain.git.models import GitCommit, GitRepository
-from freecad.diff_wb.ui.presenters.git_repository_presenter import GitRepositoryPresenter
+from freecad.history_wb.domain.git.models import GitCommit, GitRepository
+from freecad.history_wb.ui.presenters.git_repository_presenter import GitRepositoryPresenter
 
 
 @pytest.fixture
@@ -399,7 +398,7 @@ class TestCommitLoading:
         result.data = []
         presenter._get_commits_action.execute.return_value = result
 
-        with patch("freecad.diff_wb.ui.presenters.git_repository_presenter.monotonic", return_value=10.0):
+        with patch("freecad.history_wb.ui.presenters.git_repository_presenter.monotonic", return_value=10.0):
             presenter.on_history_scroll_near_bottom()
             presenter.on_history_scroll_near_bottom()
 

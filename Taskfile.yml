@@ -3,7 +3,7 @@ version: '3'
 vars:
   APP_NAME:
     sh: python3 -c "import tomllib; f = open('pyproject.toml', 'rb'); data = tomllib.load(f); f.close(); print(data['project']['name'].replace('-', '_'))"
-  SRC: freecad/diff_wb/
+  SRC: freecad/history_wb/
   TESTS: tests/
   UV: uv
 
@@ -89,20 +89,20 @@ tasks:
       - "./run_integration_tests.sh {{.CLI_ARGS | default \"\"}}"
 
   translations:update:
-    desc: Extract translatable strings into ProjectHistory.ts
+    desc: Extract translatable strings into History.ts
     cmds:
-      - "lupdate -extensions py freecad/diff_wb -ts freecad/diff_wb/resources/translations/ProjectHistory.ts"
+      - "lupdate -extensions py freecad/history_wb -ts freecad/history_wb/resources/translations/History.ts"
 
   translations:update-locales:
     desc: Merge extracted strings into locale .ts files
     cmds:
       - |
-          set -- freecad/diff_wb/resources/translations/ProjectHistory_*.ts
-          if [ "$1" = "freecad/diff_wb/resources/translations/ProjectHistory_*.ts" ]; then
+          set -- freecad/history_wb/resources/translations/History_*.ts
+          if [ "$1" = "freecad/history_wb/resources/translations/History_*.ts" ]; then
             printf '%s\n' "No locale translation files to update"
             exit 0
           fi
-          lupdate -extensions py freecad/diff_wb -ts "$@"
+          lupdate -extensions py freecad/history_wb -ts "$@"
 
   translations:verify-clean:
     desc: Fail if translation artifacts are stale after refresh
@@ -110,16 +110,16 @@ tasks:
       - task: translations:refresh
       - |
           git diff --exit-code -- \
-            freecad/diff_wb/resources/translations/ProjectHistory.ts \
-            'freecad/diff_wb/resources/translations/ProjectHistory_*.ts' \
-            'freecad/diff_wb/resources/translations/ProjectHistory_*.qm'
+            freecad/history_wb/resources/translations/History.ts \
+            'freecad/history_wb/resources/translations/History_*.ts' \
+            'freecad/history_wb/resources/translations/History_*.qm'
       - |
           untracked=$(git ls-files --others --exclude-standard -- \
-            freecad/diff_wb/resources/translations/ProjectHistory.ts \
-            'freecad/diff_wb/resources/translations/ProjectHistory_*.ts' \
-            'freecad/diff_wb/resources/translations/ProjectHistory_*.qm')
+            freecad/history_wb/resources/translations/History.ts \
+            'freecad/history_wb/resources/translations/History_*.ts' \
+            'freecad/history_wb/resources/translations/History_*.qm')
           if [ -n "$untracked" ]; then
-            printf '%s\n' "Untracked translation artifacts detected:" 
+            printf '%s\n' "Untracked translation artifacts detected:"
             printf '%s\n' "$untracked"
             exit 1
           fi
@@ -128,8 +128,8 @@ tasks:
     desc: Compile locale translation .ts files to .qm
     cmds:
       - |
-          set -- freecad/diff_wb/resources/translations/ProjectHistory_*.ts
-          if [ "$1" = "freecad/diff_wb/resources/translations/ProjectHistory_*.ts" ]; then
+          set -- freecad/history_wb/resources/translations/History_*.ts
+          if [ "$1" = "freecad/history_wb/resources/translations/History_*.ts" ]; then
             printf '%s\n' "No locale translation files to compile"
             exit 0
           fi

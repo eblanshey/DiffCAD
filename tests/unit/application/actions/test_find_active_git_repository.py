@@ -4,11 +4,12 @@
 
 from unittest.mock import MagicMock
 
-from freecad.diff_wb.application.actions.find_active_git_repository import (
+from freecad.history_wb.application.actions.find_active_git_repository import (
     FindActiveGitRepositoryAction,
 )
-from freecad.diff_wb.domain.git.git_service import GitService
-from freecad.diff_wb.domain.git.models import GitRepository
+from freecad.history_wb.domain.git.git_service import GitService
+from freecad.history_wb.domain.git.models import GitRepository
+
 from tests.fakes.fake_freecad_port import FakeFreeCadPort
 from tests.fakes.fake_git_port import FakeGitPort
 

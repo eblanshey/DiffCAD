@@ -3,7 +3,7 @@
 
     <!--[ Versions ]―――――――――――――――――――――――――――――――――――――――――――――――――――――――――-->
 
-    <freecadmin>1.0.2</freecadmin>
+    <freecadmin>1.1.0</freecadmin>
     <version>0.1.0</version>
     <date>2026-03-11</date>
 
@@ -12,17 +12,17 @@
 
     <!--[ Info ]―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――-->
 
-    <description>A FreeCAD workbench for comparing document snapshots.</description>
-    <name>Diff Workbench</name>
+    <name>History Workbench</name>
+    <description>A FreeCAD workbench to track model history and review changes using 3D and tree comparisons.</description>
 
     <!--[ Tags ]―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――-->
 
     <tag>Diff</tag>
     <tag>Comparison</tag>
     <tag>Snapshots</tag>
-    <tag>Versions</tag>
     <tag>Versioning</tag>
     <tag>Git</tag>
+    <tag>Revisions</tag>
 
     <!--[ Maintainers ]――――――――――――――――――――――――――――――――――――――――――――――――――――――-->
 
@@ -38,20 +38,20 @@
 
     <!--[ Icon ]―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――-->
 
-    <icon>freecad/diff_wb/resources/icons/Logo.svg</icon>
+    <icon>freecad/history_wb/resources/icons/Logo.svg</icon>
 
     <!--[ Urls ]―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――-->
 
-    <url type="documentation">https://github.com/eblanshey/DiffCAD</url>
-    <url branch="master" type="repository">https://github.com/eblanshey/DiffCAD</url>
-    <url type="bugtracker">https://github.com/eblanshey/DiffCAD/issues</url>
-    <url type="readme">https://github.com/eblanshey/DiffCAD/blob/master/README.md</url>
+    <url type="documentation">https://github.com/eblanshey/project-history-workbench</url>
+    <url branch="master" type="repository">https://github.com/eblanshey/project-history-workbench</url>
+    <url type="bugtracker">https://github.com/eblanshey/project-history-workbench/issues</url>
+    <url type="readme">https://github.com/eblanshey/project-history-workbench/blob/master/README.md</url>
 
     <!--[ Content ]――――――――――――――――――――――――――――――――――――――――――――――――――――――――――-->
 
     <content>
         <workbench>
-            <classname>DiffWorkbench</classname>
+            <classname>HistoryWorkbench</classname>
             <subdirectory>./</subdirectory>
         </workbench>
     </content>

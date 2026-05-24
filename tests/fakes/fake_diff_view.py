@@ -3,13 +3,13 @@
 from collections.abc import Callable
 from typing import Any
 
-from freecad.diff_wb.domain.git.models import GitCommit, GitRepository
-from freecad.diff_wb.ui.presenters.presentation_models import (
+from freecad.history_wb.domain.git.models import GitCommit, GitRepository
+from freecad.history_wb.ui.presenters.presentation_models import (
     DiffTreePresentation,
     NodePresentation,
     PropertyPresentation,
 )
-from freecad.diff_wb.ui.views.models import HistorySelection
+from freecad.history_wb.ui.views.models import HistorySelection
 
 
 class FakeDiffView:

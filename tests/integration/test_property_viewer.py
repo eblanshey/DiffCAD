@@ -20,7 +20,7 @@ import pytest
 
 
 if TYPE_CHECKING:
-    from freecad.diff_wb.domain.freecad_ports import AppLike, GuiLike
+    from freecad.history_wb.domain.freecad_ports import AppLike, GuiLike
 
 
 class TestPropertyViewerIntegration:
@@ -32,7 +32,7 @@ class TestPropertyViewerIntegration:
         SavedGeometry has Prop_Hidden bit set in FreeCAD. This test verifies
         that our extractor correctly hides it.
         """
-        from freecad.diff_wb.domain.snapshots.gui_extractor import SnapshotExtractor
+        from freecad.history_wb.domain.snapshots.gui_extractor import SnapshotExtractor
 
         # Open BasicFile
         doc_path = Path(project_root) / "tests/freecad/BasicFile.FCStd"
@@ -81,7 +81,7 @@ class TestPropertyViewerIntegration:
         - Properties with explicit groups (e.g., "Side1") use those groups
         - Properties with empty group map to "Base"
         """
-        from freecad.diff_wb.domain.snapshots.gui_extractor import SnapshotExtractor
+        from freecad.history_wb.domain.snapshots.gui_extractor import SnapshotExtractor
 
         # Open BasicFile
         doc_path = Path(project_root) / "tests/freecad/BasicFile.FCStd"
@@ -134,8 +134,8 @@ class TestPropertyViewerIntegration:
         Placement should have nested path entries for Base coordinates
         and Rotation properties.
         """
-        from freecad.diff_wb.domain.tree.data_path import PlacementData
-        from freecad.diff_wb.domain.tree.property import Property
+        from freecad.history_wb.domain.tree.data_path import PlacementData
+        from freecad.history_wb.domain.tree.property import Property
 
         # Open BasicFile
         doc_path = Path(project_root) / "tests/freecad/BasicFile.FCStd"
@@ -169,8 +169,8 @@ class TestPropertyViewerIntegration:
 
     def test_expandable_vector_property(self, freecad_app: AppLike, project_root: object) -> None:
         """Verify vector properties expand to x, y, z (Phase 4)."""
-        from freecad.diff_wb.domain.tree.data_path import VectorData
-        from freecad.diff_wb.domain.tree.property import Property
+        from freecad.history_wb.domain.tree.data_path import VectorData
+        from freecad.history_wb.domain.tree.property import Property
 
         # Open BasicFile
         doc_path = Path(project_root) / "tests/freecad/BasicFile.FCStd"
@@ -209,16 +209,16 @@ class TestPropertyViewerIntegration:
         project_root: object,
     ) -> None:
         """Integration test: Verify tree widget renders properties grouped correctly."""
-        from freecad.diff_wb.qt import QtWidgets
+        from freecad.history_wb.qt import QtWidgets
 
         # Ensure QApplication exists
         app = QtWidgets.QApplication.instance()
         if app is None:
             app = QtWidgets.QApplication([])
 
-        from freecad.diff_wb.domain.snapshots.gui_extractor import SnapshotExtractor
-        from freecad.diff_wb.ui import DiffPanelView
-        from freecad.diff_wb.ui.presenters.presentation_models import PropertyPresentation
+        from freecad.history_wb.domain.snapshots.gui_extractor import SnapshotExtractor
+        from freecad.history_wb.ui import DiffPanelView
+        from freecad.history_wb.ui.presenters.presentation_models import PropertyPresentation
 
         # Open BasicFile
         doc_path = Path(project_root) / "tests/freecad/BasicFile.FCStd"
@@ -254,7 +254,7 @@ class TestPropertyViewerIntegration:
                 pytest.skip("No nodes with properties found")
 
             # Convert to PropertyPresentation
-            from freecad.diff_wb.domain.diff.models import DiffState
+            from freecad.history_wb.domain.diff.models import DiffState
 
             properties = []
             for prop_name, prop in test_node.properties.items():
@@ -301,7 +301,7 @@ class TestPropertyViewerIntegration:
         - App::Part (Placement, Color)
         - TechDraw::DrawViewDimension
         """
-        from freecad.diff_wb.domain.snapshots.gui_extractor import SnapshotExtractor
+        from freecad.history_wb.domain.snapshots.gui_extractor import SnapshotExtractor
 
         # Open BasicFile
         doc_path = Path(project_root) / "tests/freecad/BasicFile.FCStd"

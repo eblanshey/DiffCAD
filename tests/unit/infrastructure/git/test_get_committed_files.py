@@ -8,8 +8,7 @@ import subprocess
 from unittest.mock import patch
 
 import pytest
-
-from freecad.diff_wb.infrastructure.git import GitPortAdapter
+from freecad.history_wb.infrastructure.git import GitPortAdapter
 
 
 class TestGitPortAdapterGetCommittedFiles:

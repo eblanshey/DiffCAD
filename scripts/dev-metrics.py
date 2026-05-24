@@ -222,9 +222,9 @@ def main() -> None:
             data = tomllib.load(f)
         package = data.get("project", {}).get("name", "").replace("-", "_")
     except Exception:
-        package = "diff_wb"
+        package = "history_wb"
 
-    src_paths = [Path("freecad/diff_wb")]
+    src_paths = [Path("freecad/history_wb")]
     tests_paths = [Path("tests")]
 
     # Gather metrics

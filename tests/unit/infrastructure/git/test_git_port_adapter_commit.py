@@ -9,10 +9,9 @@ from pathlib import Path
 from unittest.mock import call, patch
 
 import pytest
-
-from freecad.diff_wb.domain.git.models import GitIdentity
-from freecad.diff_wb.infrastructure.git import GitPortAdapter
-from freecad.diff_wb.utils import Log
+from freecad.history_wb.domain.git.models import GitIdentity
+from freecad.history_wb.infrastructure.git import GitPortAdapter
+from freecad.history_wb.utils import Log
 
 
 class TestGitPortAdapterCommit:

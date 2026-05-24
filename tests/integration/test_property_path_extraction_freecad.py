@@ -26,11 +26,11 @@ class TestPlacementNestedExpressions:
 
     def test_placement_base_x_expression(self, temp_document):
         """Placement.Base.x expression should normalize to 'Base.x' key."""
-        from freecad.diff_wb.domain.snapshots.gui_extractor import (
+        from freecad.history_wb.domain.snapshots.gui_extractor import (
             _build_expression_map_for_property,
             _extract_property_value,
         )
-        from freecad.diff_wb.domain.tree.data_path import PlacementData
+        from freecad.history_wb.domain.tree.data_path import PlacementData
 
         doc = temp_document
         pad = doc.addObject("PartDesign::Pad", "TestPad")
@@ -56,11 +56,11 @@ class TestPlacementNestedExpressions:
 
     def test_placement_multiple_subpath_expressions(self, temp_document):
         """Multiple placement sub-path expressions should all be captured."""
-        from freecad.diff_wb.domain.snapshots.gui_extractor import (
+        from freecad.history_wb.domain.snapshots.gui_extractor import (
             _build_expression_map_for_property,
             _extract_property_value,
         )
-        from freecad.diff_wb.domain.tree.data_path import PlacementData
+        from freecad.history_wb.domain.tree.data_path import PlacementData
 
         doc = temp_document
         pad = doc.addObject("PartDesign::Pad", "TestPad")
@@ -90,11 +90,10 @@ class TestConstraintItemExpression:
         """Constraint[0] expression should map to key '[0]', not '[0].Value'."""
         import Sketcher
         from FreeCAD import Vector
-        from Part import LineSegment
-
-        from freecad.diff_wb.domain.snapshots.gui_extractor import (
+        from freecad.history_wb.domain.snapshots.gui_extractor import (
             _build_expression_map_for_property,
         )
+        from Part import LineSegment
 
         doc = temp_document
         sketch = doc.addObject("Sketcher::SketchObject", "TestSketch")
@@ -125,10 +124,10 @@ class TestQuantityExtraction:
 
     def test_quantity_property_type(self, temp_document):
         """Quantity property should extract with QUANTITY type and unit field."""
-        from freecad.diff_wb.domain.snapshots.gui_extractor import (
+        from freecad.history_wb.domain.snapshots.gui_extractor import (
             _extract_property_value,
         )
-        from freecad.diff_wb.domain.tree.data_path import PrimitiveData, PropertyPathType
+        from freecad.history_wb.domain.tree.data_path import PrimitiveData, PropertyPathType
 
         doc = temp_document
         pad = doc.addObject("PartDesign::Pad", "TestPad")
@@ -145,11 +144,11 @@ class TestQuantityExtraction:
 
     def test_quantity_with_expression(self, temp_document):
         """Quantity property with expression should preserve expression on root path."""
-        from freecad.diff_wb.domain.snapshots.gui_extractor import (
+        from freecad.history_wb.domain.snapshots.gui_extractor import (
             _build_expression_map_for_property,
             _extract_property_value,
         )
-        from freecad.diff_wb.domain.tree.data_path import PrimitiveData, PropertyPathType
+        from freecad.history_wb.domain.tree.data_path import PrimitiveData, PropertyPathType
 
         doc = temp_document
         pad = doc.addObject("PartDesign::Pad", "TestPad")
@@ -177,11 +176,11 @@ class TestRootExpressionOnPrimitive:
 
     def test_primitive_with_expression(self, temp_document):
         """Simple property with expression should capture at root '.'."""
-        from freecad.diff_wb.domain.snapshots.gui_extractor import (
+        from freecad.history_wb.domain.snapshots.gui_extractor import (
             _build_expression_map_for_property,
             _extract_property_value,
         )
-        from freecad.diff_wb.domain.tree.data_path import PrimitiveData
+        from freecad.history_wb.domain.tree.data_path import PrimitiveData
 
         doc = temp_document
         pad = doc.addObject("PartDesign::Pad", "TestPad")
@@ -206,10 +205,10 @@ class TestVectorSubPathExpressions:
 
     def test_vector_subpath_expressions(self, temp_document):
         """Vector sub-path expressions within Placement should be captured."""
-        from freecad.diff_wb.domain.snapshots.gui_extractor import (
+        from freecad.history_wb.domain.snapshots.gui_extractor import (
             _extract_property_value,
         )
-        from freecad.diff_wb.domain.tree.data_path import PlacementData
+        from freecad.history_wb.domain.tree.data_path import PlacementData
 
         doc = temp_document
         obj = doc.addObject("PartDesign::Pad", "TestPad")
@@ -234,7 +233,7 @@ class TestExpressionMapNormalization:
 
     def test_dotted_wins_duplicate_resolution(self, temp_document):
         """When both dotted and undotted forms exist, dotted should win."""
-        from freecad.diff_wb.domain.snapshots.gui_extractor import (
+        from freecad.history_wb.domain.snapshots.gui_extractor import (
             _build_expression_map_for_property,
         )
 

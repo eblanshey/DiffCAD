@@ -7,8 +7,7 @@ from types import ModuleType
 from typing import Any
 
 import pytest
-
-from freecad.diff_wb.infrastructure.freecad.freecad_visual_diff_creator import FreeCADVisualDiffCreator
+from freecad.history_wb.infrastructure.freecad.freecad_visual_diff_creator import FreeCADVisualDiffCreator
 
 
 class FakeShape:

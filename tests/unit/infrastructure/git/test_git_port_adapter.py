@@ -10,9 +10,8 @@ import unittest.mock
 from unittest.mock import patch
 
 import pytest
-
-from freecad.diff_wb.infrastructure.git import GitPortAdapter
-from freecad.diff_wb.utils import Log
+from freecad.history_wb.infrastructure.git import GitPortAdapter
+from freecad.history_wb.utils import Log
 
 
 class TestGitPortAdapter:

@@ -5,10 +5,9 @@
 from unittest.mock import MagicMock
 
 import pytest
-
-from freecad.diff_wb.application.actions.get_staged_file_paths import GetStagedFilePathsAction
-from freecad.diff_wb.domain.git.git_service import GitService
-from freecad.diff_wb.domain.git.models import GitRepository
+from freecad.history_wb.application.actions.get_staged_file_paths import GetStagedFilePathsAction
+from freecad.history_wb.domain.git.git_service import GitService
+from freecad.history_wb.domain.git.models import GitRepository
 
 
 class TestGetStagedFilePathsAction:

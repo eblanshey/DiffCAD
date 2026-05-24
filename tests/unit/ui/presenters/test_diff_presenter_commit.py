@@ -3,29 +3,30 @@
 from datetime import datetime
 from unittest.mock import MagicMock
 
-from freecad.diff_wb.application.actions.create_document_diffs import CreateDocumentDiffsAction
-from freecad.diff_wb.application.actions.get_dirty_documents import GetDirtyDocumentsAction
-from freecad.diff_wb.application.actions.get_open_eligible_documents import GetOpenEligibleDocumentsAction
-from freecad.diff_wb.application.actions.open_visual_diff import (
+from freecad.history_wb.application.actions.create_document_diffs import CreateDocumentDiffsAction
+from freecad.history_wb.application.actions.get_dirty_documents import GetDirtyDocumentsAction
+from freecad.history_wb.application.actions.get_open_eligible_documents import GetOpenEligibleDocumentsAction
+from freecad.history_wb.application.actions.open_visual_diff import (
     OpenVisualDiffAction,
     OpenVisualDiffRequest,
     VisualDiffRequestType,
 )
-from freecad.diff_wb.application.actions.result_models import (
+from freecad.history_wb.application.actions.result_models import (
     CreateDocumentDiffsRequest,
     DocumentDiffMode,
     DocumentDiffResult,
     DocumentDiffStatus,
     Result,
 )
-from freecad.diff_wb.application.actions.stage_documents import StageDocumentsAction
-from freecad.diff_wb.domain.diff.models import DiffResult
-from freecad.diff_wb.domain.git.models import GitRepository
-from freecad.diff_wb.domain.snapshots.models import Snapshot
-from freecad.diff_wb.ui.presenters.diff_presenter import DiffPresenter
-from freecad.diff_wb.ui.presenters.presentation_models import NewFileIndicator
-from freecad.diff_wb.ui.state import UIState
-from freecad.diff_wb.ui.views.models import HistorySelection
+from freecad.history_wb.application.actions.stage_documents import StageDocumentsAction
+from freecad.history_wb.domain.diff.models import DiffResult
+from freecad.history_wb.domain.git.models import GitRepository
+from freecad.history_wb.domain.snapshots.models import Snapshot
+from freecad.history_wb.ui.presenters.diff_presenter import DiffPresenter
+from freecad.history_wb.ui.presenters.presentation_models import NewFileIndicator
+from freecad.history_wb.ui.state import UIState
+from freecad.history_wb.ui.views.models import HistorySelection
+
 from tests.fakes.fake_diff_view import FakeDiffView
 
 

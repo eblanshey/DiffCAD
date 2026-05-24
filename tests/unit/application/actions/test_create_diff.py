@@ -6,10 +6,10 @@
 from datetime import datetime
 from typing import Protocol
 
-from freecad.diff_wb.application.actions.create_diff import CreateDiffAction
-from freecad.diff_wb.domain.diff.models import DiffResult
-from freecad.diff_wb.domain.snapshots.models import Snapshot
-from freecad.diff_wb.domain.tree.property import Property
+from freecad.history_wb.application.actions.create_diff import CreateDiffAction
+from freecad.history_wb.domain.diff.models import DiffResult
+from freecad.history_wb.domain.snapshots.models import Snapshot
+from freecad.history_wb.domain.tree.property import Property
 
 
 class DiffEngineProtocol(Protocol):

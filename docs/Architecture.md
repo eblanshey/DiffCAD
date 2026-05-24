@@ -79,18 +79,18 @@ Domain services and infrastructure adapters perform work
 
 ### Entry Points
 
-Location: `freecad/diff_wb/entrypoints/`
+Location: `freecad/history_wb/entrypoints/`
 
 Entry points integrate with FreeCAD's workbench and command APIs.
 
-- `workbench.py` defines `DiffWorkbench`, registers toolbars/menus, creates the application container, registers preferences, and opens the diff panel.
+- `workbench.py` defines `HistoryWorkbench`, registers toolbars/menus, creates the application container, registers preferences, and opens the diff panel.
 - `commands.py` defines FreeCAD command classes and delegates work to presenters or application actions.
-- Entry points may access the global container through `freecad/diff_wb/_container.py`.
+- Entry points may access the global container through `freecad/history_wb/_container.py`.
 - Entry points should stay thin. They translate FreeCAD callbacks into application or UI calls.
 
 ### UI Layer
 
-Location: `freecad/diff_wb/ui/`
+Location: `freecad/history_wb/ui/`
 
 The UI layer owns presenter state, Qt views, and view protocols.
 
@@ -100,13 +100,13 @@ The UI layer owns presenter state, Qt views, and view protocols.
 - `presenters/` transforms application results into view updates.
 - `protocols/` defines presenter-facing view contracts.
 - `views/` contains Qt widgets and preferences UI.
-- User-facing UI text is translated at display sites with literal `translate("ProjectHistory", "...")` calls, or defined with `QT_TRANSLATE_NOOP` when deferred.
+- User-facing UI text is translated at display sites with literal `translate("History", "...")` calls, or defined with `QT_TRANSLATE_NOOP` when deferred.
 
 Presenters depend on view protocols and application actions. Views render Qt widgets and perform translation. Presenters should pass raw data, not translated UI strings.
 
 ### Application Layer
 
-Location: `freecad/diff_wb/application/`
+Location: `freecad/history_wb/application/`
 
 The application layer exposes workbench use cases as small action classes.
 
@@ -118,7 +118,7 @@ Actions should be stateless after construction. They receive dependencies throug
 
 ### Domain Layer
 
-Location: `freecad/diff_wb/domain/`
+Location: `freecad/history_wb/domain/`
 
 The domain layer contains core workbench concepts and contracts.
 
@@ -134,7 +134,7 @@ Most domain code is pure Python. `domain/snapshots/gui_extractor.py` extracts Fr
 
 ### Infrastructure Layer
 
-Location: `freecad/diff_wb/infrastructure/`
+Location: `freecad/history_wb/infrastructure/`
 
 Infrastructure adapts external systems to project protocols.
 
@@ -150,7 +150,7 @@ Infrastructure can depend on domain and application types. Domain and applicatio
 ## Current Source Layout
 
 ```text
-freecad/diff_wb/
+freecad/history_wb/
 ├── _container.py
 ├── init_gui.py
 ├── resources.py
@@ -307,9 +307,9 @@ Settings affect diff computation and display. They do not affect snapshot genera
 Module `__init__.py` files define public module APIs with `__all__` where useful. Importing from package-level modules is preferred when a symbol is exported there.
 
 ```python
-from freecad.diff_wb.domain.diff import DiffEngine
-from freecad.diff_wb.domain.snapshots import Snapshot
-from freecad.diff_wb.domain.tree import Property
+from freecad.history_wb.domain.diff import DiffEngine
+from freecad.history_wb.domain.snapshots import Snapshot
+from freecad.history_wb.domain.tree import Property
 ```
 
 Direct file imports are acceptable when a symbol is not part of a package API or when tests need focused access to implementation details.

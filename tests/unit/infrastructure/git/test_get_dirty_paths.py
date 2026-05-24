@@ -8,8 +8,7 @@ import subprocess
 from unittest.mock import patch
 
 import pytest
-
-from freecad.diff_wb.infrastructure.git.git_port_adapter import GitPortAdapter
+from freecad.history_wb.infrastructure.git.git_port_adapter import GitPortAdapter
 
 
 def test_get_dirty_paths_returns_modified_and_untracked():

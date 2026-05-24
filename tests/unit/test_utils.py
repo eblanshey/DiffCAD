@@ -3,9 +3,8 @@
 """Unit tests for utility functions in the Diff Workbench."""
 
 import pytest
-
-from freecad.diff_wb.domain.config import FLOAT_PRECISION
-from freecad.diff_wb.utils import float_values_equal
+from freecad.history_wb.domain.config import FLOAT_PRECISION
+from freecad.history_wb.utils import float_values_equal
 
 
 class TestFloatValuesEqual:

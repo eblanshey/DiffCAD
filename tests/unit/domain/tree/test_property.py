@@ -4,14 +4,13 @@
 """Unit tests for the Property class."""
 
 import pytest
-
-from freecad.diff_wb.domain.tree.data_path import (
+from freecad.history_wb.domain.tree.data_path import (
     DataPathKind,
     ListData,
     PrimitiveData,
     PropertyPathType,
 )
-from freecad.diff_wb.domain.tree.property import Property
+from freecad.history_wb.domain.tree.property import Property
 
 
 class MockConstraint:
@@ -59,7 +58,7 @@ class TestPropertyCreation:
                 return "CustomObj(1, 2, 3)"
 
         pv = Property.from_freecad(CustomObj(), {}, "Base")
-        from freecad.diff_wb.domain.tree.data_path import UnknownData
+        from freecad.history_wb.domain.tree.data_path import UnknownData
 
         assert isinstance(pv.value, UnknownData)
         assert pv.value.paths["."].value == "CustomObj(1, 2, 3)"

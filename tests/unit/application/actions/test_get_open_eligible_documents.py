@@ -4,12 +4,13 @@
 # results, and filtering behavior.
 """Unit tests for GetOpenEligibleDocumentsAction."""
 
-from freecad.diff_wb.application.actions.get_open_eligible_documents import (
+from freecad.history_wb.application.actions.get_open_eligible_documents import (
     GetOpenEligibleDocumentsAction,
 )
-from freecad.diff_wb.domain.freecad_ports import DocumentObjectLike
-from freecad.diff_wb.domain.git.git_service import GitService
-from freecad.diff_wb.domain.git.models import GitRepository
+from freecad.history_wb.domain.freecad_ports import DocumentObjectLike
+from freecad.history_wb.domain.git.git_service import GitService
+from freecad.history_wb.domain.git.models import GitRepository
+
 from tests.fakes.fake_freecad_port import FakeFreeCadPort
 from tests.fakes.fake_git_port import FakeGitPort
 

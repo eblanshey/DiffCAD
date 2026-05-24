@@ -21,7 +21,6 @@ The user-facing UI uses CAD-oriented terminology while internal code keeps Git/d
 - User-facing text must use UI terms and translation-safe literals.
 - Internal code may keep Git/diff terms until additional refactoring phase.
 - Do not rename internal domain/application/infrastructure classes (`GitService`, `DiffEngine`, etc.).
-- Do not rename `freecad/diff_wb` package path.
 
 ## Required Checks
 
@@ -40,7 +39,7 @@ task test
 ## Project Layout
 
 ```text
-freecad/diff_wb/
+freecad/history_wb/
 ├── application/       # Use cases and dependency injection container
 ├── domain/            # Core models, services, settings, ports, snapshot and diff logic
 ├── entrypoints/       # FreeCAD workbench and command integration
@@ -55,7 +54,7 @@ tests/
 └── freecad/           # Test FreeCAD documents
 ```
 
-Keep tests close to the source structure they cover. For example, behavior in `freecad/diff_wb/domain/diff/engine.py` belongs under `tests/unit/domain/diff/` unless it needs the FreeCAD runtime.
+Keep tests close to the source structure they cover. For example, behavior in `freecad/history_wb/domain/diff/engine.py` belongs under `tests/unit/domain/diff/` unless it needs the FreeCAD runtime.
 
 ## Coding Standards
 
@@ -65,7 +64,7 @@ Keep tests close to the source structure they cover. For example, behavior in `f
 - Do not add comments that describe old bugs or temporary phases.
 - Add comments only when code would otherwise be hard to understand.
 - Use ASCII in new text unless the file already uses non-ASCII or the content needs it.
-- Keep user-facing English strings extractable with `translate("ProjectHistory", "...")` or `QT_TRANSLATE_NOOP(...)` in-place.
+- Keep user-facing English strings extractable with `translate("History", "...")` or `QT_TRANSLATE_NOOP(...)` in-place.
 - Logs do not require translation.
 
 Every Python file must start with a responsibility comment:
@@ -89,7 +88,7 @@ Keep function complexity at **B (5-10)** or better. Functions rated **C (10-20)*
 Check complexity before submitting changes:
 
 ```bash
-uv run radon cc --min C freecad/diff_wb --no-assert -s
+uv run radon cc --min C freecad/history_wb --no-assert -s
 ```
 
 Target: No C-rated functions in the codebase.
@@ -148,25 +147,25 @@ Do not wrap a simple pure algorithm in a class only to make it look architectura
 Prefer package-level imports when symbols are exported by `__init__.py`:
 
 ```python
-from freecad.diff_wb.domain.diff import DiffEngine
-from freecad.diff_wb.domain.snapshots import Snapshot
-from freecad.diff_wb.domain.tree import Property
+from freecad.history_wb.domain.diff import DiffEngine
+from freecad.history_wb.domain.snapshots import Snapshot
+from freecad.history_wb.domain.tree import Property
 ```
 
 Direct module imports are fine when a symbol is intentionally not re-exported:
 
 ```python
-from freecad.diff_wb.infrastructure.git.git_port_adapter import GitPortAdapter
+from freecad.history_wb.infrastructure.git.git_port_adapter import GitPortAdapter
 ```
 
 Use `__all__` for clear module APIs when a package or module exposes a stable set of public symbols. Internal helpers should use a leading underscore.
 
 ## Logging
 
-Use `Log` from `freecad.diff_wb.utils` for project logging:
+Use `Log` from `freecad.history_wb.utils` for project logging:
 
 ```python
-from freecad.diff_wb.utils import Log
+from freecad.history_wb.utils import Log
 
 Log.info("Repository refreshed")
 Log.warning("No active document")
@@ -186,13 +185,13 @@ All user-facing English UI text should be defined at the usage site so Qt extrac
 
 Pattern:
 
-- Translate immediate UI strings with literal calls: `translate("ProjectHistory", "...")`.
+- Translate immediate UI strings with literal calls: `translate("History", "...")`.
 - Use `QT_TRANSLATE_NOOP` for deferred strings with explicit context:
   - Command `GetResources()` strings use exact command-name contexts (for example, `DiffCommit`).
   - Workbench menu/toolbar strings use `Workbench` context.
 - Use Qt-style placeholders such as `%1` and `%2` in templates.
 - Presenters should pass raw data rather than formatted translated messages.
-- Keep translation template at `freecad/diff_wb/resources/translations/ProjectHistory.ts` with locale files named `ProjectHistory_<locale>.ts`.
+- Keep translation template at `freecad/history_wb/resources/translations/History.ts` with locale files named `History_<locale>.ts`.
 
 Example:
 
@@ -265,7 +264,7 @@ task test
 
 ### Add An Application Action
 
-1. Add a focused action class under `freecad/diff_wb/application/actions/`.
+1. Add a focused action class under `freecad/history_wb/application/actions/`.
 2. Return an existing result model or add a small result model when needed.
 3. Inject domain services or ports through the constructor.
 4. Wire the action in `application/di/container.py`.
@@ -273,7 +272,7 @@ task test
 
 ### Add UI Text
 
-1. Add translated UI text at the display site using `translate("ProjectHistory", "...")`.
+1. Add translated UI text at the display site using `translate("History", "...")`.
 2. For deferred text, define literal with `QT_TRANSLATE_NOOP` in correct context.
 3. Keep placeholders (`%1`, `%2`) in the source literal and replace after translation.
 4. Avoid formatting translated strings in presenters.

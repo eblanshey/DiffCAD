@@ -10,9 +10,8 @@ from __future__ import annotations
 from datetime import datetime
 
 import pytest
-
-from freecad.diff_wb.qt import QtCore, QtWidgets
-from freecad.diff_wb.ui.views.history_panel_widget import HistoryPanelWidget
+from freecad.history_wb.qt import QtCore, QtWidgets
+from freecad.history_wb.ui.views.history_panel_widget import HistoryPanelWidget
 
 
 def _history_row_text(panel, row: int) -> str:  # type: ignore[no-untyped-def]
@@ -92,7 +91,7 @@ class TestHistoryPanelWidgetShowRepository:
     def test_show_repository_with_valid_repo_shows_info(self, widget) -> None:  # type: ignore[no-untyped-def]
         """show_repository() displays repository name with tooltip containing path and bold/underline styling."""
         # Given: A valid GitRepository
-        from freecad.diff_wb.domain.git.models import GitRepository
+        from freecad.history_wb.domain.git.models import GitRepository
 
         repo = GitRepository(name="test_project", absolute_path="/home/user/test_project")
 
@@ -112,7 +111,7 @@ class TestHistoryPanelWidgetShowRepository:
     def test_show_repository_overwrites_previous_display(self, widget) -> None:  # type: ignore[no-untyped-def]
         """show_repository() overwrites previous repository display."""
         # Given: Previous repository displayed
-        from freecad.diff_wb.domain.git.models import GitRepository
+        from freecad.history_wb.domain.git.models import GitRepository
 
         repo1 = GitRepository(name="old_project", absolute_path="/home/old")
         widget.show_repository(repo1)
@@ -132,7 +131,7 @@ class TestHistoryPanelWidgetShowRepository:
     def test_show_repository_none_after_repo_resets_style(self, widget) -> None:  # type: ignore[no-untyped-def]
         """show_repository(None) after showing a repo resets to italic gray style and clears tooltip."""
         # Given: Repository previously displayed
-        from freecad.diff_wb.domain.git.models import GitRepository
+        from freecad.history_wb.domain.git.models import GitRepository
 
         repo = GitRepository(name="test_project", absolute_path="/home/test")
         widget.show_repository(repo)
@@ -152,7 +151,7 @@ class TestShowCommitsSpecialItems:
 
     def test_show_commits_always_shows_in_progress_and_reviewed_at_top(self, widget) -> None:  # type: ignore[no-untyped-def]
         """Test that In Progress and Reviewed items are always present at the top of the list."""
-        from freecad.diff_wb.domain.git.models import GitCommit
+        from freecad.history_wb.domain.git.models import GitCommit
 
         commits = [
             GitCommit(
@@ -202,7 +201,7 @@ class TestShowCommitsSpecialItems:
 
     def test_show_commits_working_tree_has_correct_user_role(self, widget) -> None:  # type: ignore[no-untyped-def]
         """Test that Working Tree item has UserRole set to HistorySelection with WORKING_TREE kind."""
-        from freecad.diff_wb.ui.views.models import HistorySelection
+        from freecad.history_wb.ui.views.models import HistorySelection
 
         widget.show_commits([])
 
@@ -216,7 +215,7 @@ class TestShowCommitsSpecialItems:
 
     def test_show_commits_staging_has_correct_user_role(self, widget) -> None:  # type: ignore[no-untyped-def]
         """Test that Staging item has UserRole set to HistorySelection with STAGING kind."""
-        from freecad.diff_wb.ui.views.models import HistorySelection
+        from freecad.history_wb.ui.views.models import HistorySelection
 
         widget.show_commits([])
 
@@ -230,8 +229,8 @@ class TestShowCommitsSpecialItems:
 
     def test_show_commits_commits_have_commit_history_selection(self, widget) -> None:  # type: ignore[no-untyped-def]
         """Test that actual commits have HistorySelection with COMMIT kind and commit hash."""
-        from freecad.diff_wb.domain.git.models import GitCommit
-        from freecad.diff_wb.ui.views.models import HistorySelection
+        from freecad.history_wb.domain.git.models import GitCommit
+        from freecad.history_wb.ui.views.models import HistorySelection
 
         commit_hash = "a1b2c3d4e5f67890"
         commits = [
@@ -256,7 +255,7 @@ class TestShowCommitsSpecialItems:
 
     def test_show_commits_refresh_clears_and_readds_special_items(self, widget) -> None:  # type: ignore[no-untyped-def]
         """Test that refreshing the list with new commits re-adds special items correctly."""
-        from freecad.diff_wb.domain.git.models import GitCommit
+        from freecad.history_wb.domain.git.models import GitCommit
 
         # First call with commits
         commits1 = [
@@ -302,7 +301,7 @@ class TestShowCommits:
 
     def test_show_commits_displays_commits_correctly(self, widget) -> None:  # type: ignore[no-untyped-def]
         """Test that commits are displayed with correct format."""
-        from freecad.diff_wb.domain.git.models import GitCommit
+        from freecad.history_wb.domain.git.models import GitCommit
 
         commits = [
             GitCommit(
@@ -332,7 +331,7 @@ class TestShowCommits:
 
     def test_show_commits_tooltip_has_full_message(self, widget) -> None:  # type: ignore[no-untyped-def]
         """Test that tooltip contains full commit message."""
-        from freecad.diff_wb.domain.git.models import GitCommit
+        from freecad.history_wb.domain.git.models import GitCommit
 
         full_message = "Fix bug\n\nDetailed explanation..."
         commit = GitCommit(
@@ -350,7 +349,7 @@ class TestShowCommits:
 
     def test_show_commits_clears_existing_list(self, widget) -> None:  # type: ignore[no-untyped-def]
         """Test that show_commits replaces any existing list content."""
-        from freecad.diff_wb.domain.git.models import GitCommit
+        from freecad.history_wb.domain.git.models import GitCommit
 
         # First populate with one commit
         old_commit = GitCommit(
@@ -379,7 +378,7 @@ class TestShowCommits:
 
     def test_show_commits_two_line_format(self, widget) -> None:  # type: ignore[no-untyped-def]
         """Test that commits display with two-line format."""
-        from freecad.diff_wb.domain.git.models import GitCommit
+        from freecad.history_wb.domain.git.models import GitCommit
 
         commit = GitCommit(
             id="abc123def456",
@@ -410,7 +409,7 @@ class TestShowCommits:
         returns commits in DESC order (newest first), so the caller should ensure commits are
         sorted before passing to this method.
         """
-        from freecad.diff_wb.domain.git.models import GitCommit
+        from freecad.history_wb.domain.git.models import GitCommit
 
         # Pass commits already sorted in DESC order (newest first)
         commits = [
@@ -448,7 +447,7 @@ class TestShowCommits:
 
     def test_show_commits_short_hash_truncation(self, widget) -> None:  # type: ignore[no-untyped-def]
         """Test that long commit hashes are truncated to 7 characters."""
-        from freecad.diff_wb.domain.git.models import GitCommit
+        from freecad.history_wb.domain.git.models import GitCommit
 
         commit = GitCommit(
             id="a1b2c3d4e5f6789012345678901234567890abcd",
@@ -467,7 +466,7 @@ class TestShowCommits:
 
     def test_show_commits_leaves_history_unselected_without_previous_selection(self, widget) -> None:  # type: ignore[no-untyped-def]
         """show_commits() leaves history unselected when user had no selection."""
-        from freecad.diff_wb.domain.git.models import GitCommit
+        from freecad.history_wb.domain.git.models import GitCommit
 
         widget._current_selection = None
         commits = [
@@ -493,7 +492,7 @@ class TestShowCommits:
 
     def test_show_commits_refresh_restores_previous_selection_if_it_still_exists(self, widget) -> None:  # type: ignore[no-untyped-def]
         """Refreshing commits re-selects the same commit when still present."""
-        from freecad.diff_wb.domain.git.models import GitCommit
+        from freecad.history_wb.domain.git.models import GitCommit
 
         selected_commit_hash = "a1b2c3d4e5f67890"
         initial_commits = [
@@ -531,13 +530,13 @@ class TestShowCommits:
         selected_items = widget.history_list.selectedItems()
         assert len(selected_items) == 1
         selected_selection = selected_items[0].data(QtCore.Qt.ItemDataRole.UserRole)
-        from freecad.diff_wb.ui.views.models import HistorySelection
+        from freecad.history_wb.ui.views.models import HistorySelection
 
         assert selected_selection == HistorySelection(item_kind="COMMIT", commit_hash=selected_commit_hash)
 
     def test_show_commits_refresh_clears_selection_when_previous_selection_missing(self, widget) -> None:  # type: ignore[no-untyped-def]
         """Refreshing commits clears selection when prior commit selection disappears."""
-        from freecad.diff_wb.domain.git.models import GitCommit
+        from freecad.history_wb.domain.git.models import GitCommit
 
         removed_commit_hash = "a1b2c3d4e5f67890"
         widget.set_history_selection_callback(lambda selection: None)
@@ -575,7 +574,7 @@ class TestShowCommits:
 
     def test_show_commits_long_message_wraps(self, widget) -> None:  # type: ignore[no-untyped-def]
         """Test that long commit messages wrap within the list item."""
-        from freecad.diff_wb.domain.git.models import GitCommit
+        from freecad.history_wb.domain.git.models import GitCommit
 
         # Create a commit with a very long first line
         long_message = "A" * 200  # 200 character message
@@ -596,7 +595,7 @@ class TestShowCommits:
 
     def test_show_commits_empty_message_handles_gracefully(self, widget) -> None:  # type: ignore[no-untyped-def]
         """Test that empty or whitespace-only commit messages are handled gracefully."""
-        from freecad.diff_wb.domain.git.models import GitCommit
+        from freecad.history_wb.domain.git.models import GitCommit
 
         # Test with empty message
         commit_empty = GitCommit(
@@ -633,7 +632,7 @@ class TestHistorySelectionCallback:
 
     def test_set_history_selection_callback_connects_handler(self, widget) -> None:  # type: ignore[no-untyped-def]
         """set_history_selection_callback() sets the callback and connects itemClicked signal."""
-        from freecad.diff_wb.ui.views.models import HistorySelection
+        from freecad.history_wb.ui.views.models import HistorySelection
 
         callback_called = False
         received_selection = None
@@ -659,8 +658,8 @@ class TestHistorySelectionCallback:
 
     def test_callback_receives_commit_selection(self, widget) -> None:  # type: ignore[no-untyped-def]
         """Callback receives correct HistorySelection when clicking on a commit."""
-        from freecad.diff_wb.domain.git.models import GitCommit
-        from freecad.diff_wb.ui.views.models import HistorySelection
+        from freecad.history_wb.domain.git.models import GitCommit
+        from freecad.history_wb.ui.views.models import HistorySelection
 
         callback_called = False
         received_selection = None
@@ -708,7 +707,7 @@ class TestHistoryInfiniteScroll:
 
     def test_append_commits_keeps_special_rows(self, widget) -> None:  # type: ignore[no-untyped-def]
         """append_commits() appends without clearing existing In Progress/Reviewed rows."""
-        from freecad.diff_wb.domain.git.models import GitCommit
+        from freecad.history_wb.domain.git.models import GitCommit
 
         widget.show_commits([])
         commits = [
@@ -757,7 +756,7 @@ class TestHistoryPanelWidgetSelection:
 
     def test_get_current_history_selection_returns_selection_after_click(self, widget) -> None:  # type: ignore[no-untyped-def]
         """get_current_history_selection() returns the selection after clicking an item."""
-        from freecad.diff_wb.domain.git.models import GitCommit
+        from freecad.history_wb.domain.git.models import GitCommit
 
         commit_hash = "a1b2c3d4e5f67890"
         commit = GitCommit(
@@ -781,8 +780,8 @@ class TestHistoryPanelWidgetSelection:
 
     def test_set_selection_changed_callback_notifies_on_selection_change(self, widget) -> None:  # type: ignore[no-untyped-def]
         """set_selection_changed_callback() notifies when selection changes."""
-        from freecad.diff_wb.domain.git.models import GitCommit
-        from freecad.diff_wb.ui.views.models import HistorySelection
+        from freecad.history_wb.domain.git.models import GitCommit
+        from freecad.history_wb.ui.views.models import HistorySelection
 
         callback_called = False
         received_selection = None

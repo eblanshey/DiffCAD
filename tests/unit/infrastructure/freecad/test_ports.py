@@ -4,8 +4,8 @@
 
 from unittest.mock import MagicMock, PropertyMock
 
-from freecad.diff_wb.domain.freecad_ports import FreeCadContext
-from freecad.diff_wb.infrastructure.freecad.ports import FreeCadPortAdapter
+from freecad.history_wb.domain.freecad_ports import FreeCadContext
+from freecad.history_wb.infrastructure.freecad.ports import FreeCadPortAdapter
 
 
 class TestFreeCadPortAdapterSaveIfModified:

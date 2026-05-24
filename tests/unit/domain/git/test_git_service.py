@@ -3,8 +3,8 @@
 """Unit tests for the GitService class."""
 
 import pytest
+from freecad.history_wb.domain.git import GitRepository, GitService
 
-from freecad.diff_wb.domain.git import GitRepository, GitService
 from tests.fakes.fake_git_port import FakeGitPort
 
 

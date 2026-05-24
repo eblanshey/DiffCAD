@@ -7,9 +7,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import yaml
-
-from freecad.diff_wb.domain import Property, Snapshot, SnapshotObject, SnapshotOccurrence
-from freecad.diff_wb.infrastructure.persistence import SnapshotYamlSerializer
+from freecad.history_wb.domain import Property, Snapshot, SnapshotObject, SnapshotOccurrence
+from freecad.history_wb.infrastructure.persistence import SnapshotYamlSerializer
 
 
 class TestSnapshotYamlSerializer:
@@ -664,7 +663,7 @@ class TestSnapshotYamlDataPathEnvelope:
             SnapshotYamlSerializer.to_yaml(snapshot, yaml_path)
             restored = SnapshotYamlSerializer.from_yaml_file(yaml_path)
 
-        from freecad.diff_wb.domain.tree.data_path import ListData
+        from freecad.history_wb.domain.tree.data_path import ListData
 
         constraints_prop = restored.find_object("Sketch").properties["Constraints"]
         assert isinstance(constraints_prop.value, ListData)
@@ -695,7 +694,7 @@ class TestSnapshotYamlDataPathEnvelope:
             SnapshotYamlSerializer.to_yaml(snapshot, yaml_path)
             restored = SnapshotYamlSerializer.from_yaml_file(yaml_path)
 
-        from freecad.diff_wb.domain.tree.data_path import UnknownData
+        from freecad.history_wb.domain.tree.data_path import UnknownData
 
         unknown_prop = restored.find_object("Obj").properties["Unknown"]
         assert isinstance(unknown_prop.value, UnknownData)

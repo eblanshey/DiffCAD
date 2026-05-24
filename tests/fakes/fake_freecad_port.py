@@ -2,7 +2,7 @@
 
 from typing import cast
 
-from freecad.diff_wb.domain.freecad_ports import DocumentLike, DocumentObjectLike, FreeCadPort
+from freecad.history_wb.domain.freecad_ports import DocumentLike, DocumentObjectLike, FreeCadPort
 
 
 class FakeFreeCadPort(FreeCadPort):

@@ -6,10 +6,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from freecad.diff_wb.application.actions.open_all_documents_in_repository import (
+from freecad.history_wb.application.actions.open_all_documents_in_repository import (
     OpenAllDocumentsInRepositoryAction,
 )
-from freecad.diff_wb.domain.git.models import GitRepository
+from freecad.history_wb.domain.git.models import GitRepository
+
 from tests.fakes.fake_freecad_port import FakeFreeCadPort
 
 

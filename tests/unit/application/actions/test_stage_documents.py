@@ -7,11 +7,11 @@
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from freecad.diff_wb.application.actions.stage_documents import StageDocumentsAction
-from freecad.diff_wb.domain.freecad_ports import FreeCadPort
-from freecad.diff_wb.domain.git.git_service import GitService
-from freecad.diff_wb.domain.git.models import GitRepository
-from freecad.diff_wb.domain.snapshots.models import Snapshot
+from freecad.history_wb.application.actions.stage_documents import StageDocumentsAction
+from freecad.history_wb.domain.freecad_ports import FreeCadPort
+from freecad.history_wb.domain.git.git_service import GitService
+from freecad.history_wb.domain.git.models import GitRepository
+from freecad.history_wb.domain.snapshots.models import Snapshot
 
 
 class TestStageDocumentsActionEmptyList:
@@ -60,7 +60,7 @@ class TestStageDocumentsActionSnapshotYaml:
         )
 
         # Mock the SnapshotYamlSerializer
-        with patch("freecad.diff_wb.application.actions.stage_documents.SnapshotYamlSerializer") as mock_serializer:
+        with patch("freecad.history_wb.application.actions.stage_documents.SnapshotYamlSerializer") as mock_serializer:
             # When execute is called with repo and list of snapshots
             result = action.execute(repo, [snapshot])
 
@@ -95,7 +95,7 @@ class TestStageDocumentsActionStaging:
 
         # Mock directory creation and YAML serialization
         with (
-            patch("freecad.diff_wb.application.actions.stage_documents.SnapshotYamlSerializer"),
+            patch("freecad.history_wb.application.actions.stage_documents.SnapshotYamlSerializer"),
             patch("pathlib.Path.mkdir"),
         ):
             # When execute is called
@@ -136,7 +136,7 @@ class TestStageDocumentsActionStaging:
 
         # Mock directory creation and YAML serialization
         with (
-            patch("freecad.diff_wb.application.actions.stage_documents.SnapshotYamlSerializer"),
+            patch("freecad.history_wb.application.actions.stage_documents.SnapshotYamlSerializer"),
             patch("pathlib.Path.mkdir"),
         ):
             # When execute is called
@@ -175,7 +175,7 @@ class TestStageDocumentsActionStaging:
         )
 
         with (
-            patch("freecad.diff_wb.application.actions.stage_documents.SnapshotYamlSerializer"),
+            patch("freecad.history_wb.application.actions.stage_documents.SnapshotYamlSerializer"),
             patch("pathlib.Path.mkdir"),
         ):
             result = action.execute(repo, [snapshot])
@@ -209,7 +209,7 @@ class TestStageDocumentsActionSuccess:
 
         # Mock directory creation and YAML serialization
         with (
-            patch("freecad.diff_wb.application.actions.stage_documents.SnapshotYamlSerializer"),
+            patch("freecad.history_wb.application.actions.stage_documents.SnapshotYamlSerializer"),
             patch("pathlib.Path.mkdir"),
         ):
             # When execute is called
@@ -244,7 +244,7 @@ class TestStageDocumentsActionFailure:
         )
 
         # Mock YAML serialization to raise an exception
-        with patch("freecad.diff_wb.application.actions.stage_documents.SnapshotYamlSerializer") as mock_serializer:
+        with patch("freecad.history_wb.application.actions.stage_documents.SnapshotYamlSerializer") as mock_serializer:
             mock_serializer.to_yaml.side_effect = Exception("Serialization failed")
             # When execute is called
             result = action.execute(repo, [snapshot])
@@ -338,7 +338,7 @@ class TestStageDocumentsActionFailure:
 
         # Mock directory creation and YAML serialization
         with (
-            patch("freecad.diff_wb.application.actions.stage_documents.SnapshotYamlSerializer"),
+            patch("freecad.history_wb.application.actions.stage_documents.SnapshotYamlSerializer"),
             patch("pathlib.Path.mkdir"),
         ):
             # When execute is called
@@ -370,7 +370,7 @@ class TestStageDocumentsActionFailure:
 
         # Mock directory creation and YAML serialization
         with (
-            patch("freecad.diff_wb.application.actions.stage_documents.SnapshotYamlSerializer"),
+            patch("freecad.history_wb.application.actions.stage_documents.SnapshotYamlSerializer"),
             patch("pathlib.Path.mkdir"),
         ):
             # When execute is called

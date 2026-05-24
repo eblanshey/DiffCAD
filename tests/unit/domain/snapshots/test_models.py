@@ -4,7 +4,7 @@
 
 from datetime import datetime
 
-from freecad.diff_wb.domain import Snapshot, SnapshotObject, SnapshotOccurrence
+from freecad.history_wb.domain import Snapshot, SnapshotObject, SnapshotOccurrence
 
 
 class TestSnapshot:

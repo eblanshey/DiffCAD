@@ -7,11 +7,10 @@ including tree rendering, staging controls, and callback wiring.
 from __future__ import annotations
 
 import pytest
-from freecad.diff_wb.qt import QtCore, QtWidgets
-
-from freecad.diff_wb.domain.diff.models import DiffState
-from freecad.diff_wb.ui.views.diff_theme import DIFF_STATE_ROLE
-from freecad.diff_wb.ui.views.document_diff_tree_widget import DocumentDiffTreeWidget
+from freecad.history_wb.domain.diff.models import DiffState
+from freecad.history_wb.qt import QtCore, QtWidgets
+from freecad.history_wb.ui.views.diff_theme import DIFF_STATE_ROLE
+from freecad.history_wb.ui.views.document_diff_tree_widget import DocumentDiffTreeWidget
 
 
 @pytest.fixture(scope="module")
@@ -34,7 +33,7 @@ class TestShowDocDiffEmptyList:
 
     def test_show_doc_diff_with_empty_list_clears_tree(self, widget) -> None:  # type: ignore[no-untyped-def]
         """show_doc_diff() clears tree when given empty list."""
-        from freecad.diff_wb.ui.presenters.presentation_models import NodePresentation
+        from freecad.history_wb.ui.presenters.presentation_models import NodePresentation
 
         # Given: Tree has some items
         root_node = NodePresentation(
@@ -69,7 +68,7 @@ class TestShowDocDiffNodeColorsAndUserRole:
     def test_node_state_colors(self, widget, state) -> None:  # type: ignore[no-untyped-def]
         """Nodes display with theme-aware color data per diff state."""
 
-        from freecad.diff_wb.ui.presenters.presentation_models import NodePresentation
+        from freecad.history_wb.ui.presenters.presentation_models import NodePresentation
 
         node = NodePresentation(
             path="Body/TestPad",
@@ -92,7 +91,7 @@ class TestShowDocDiffNodeColorsAndUserRole:
 
     def test_unchanged_nodes_shown_without_color(self, widget) -> None:  # type: ignore[no-untyped-def]
         """UNCHANGED nodes display without custom color (default background)."""
-        from freecad.diff_wb.ui.presenters.presentation_models import NodePresentation
+        from freecad.history_wb.ui.presenters.presentation_models import NodePresentation
 
         unchanged_node = NodePresentation(
             path="Body/BasePart",
@@ -114,7 +113,7 @@ class TestShowDocDiffNodeColorsAndUserRole:
 
     def test_path_stored_in_user_role_for_retrieval(self, widget) -> None:  # type: ignore[no-untyped-def]
         """Node paths are stored in Qt.UserRole for later property lookup."""
-        from freecad.diff_wb.ui.presenters.presentation_models import NodePresentation
+        from freecad.history_wb.ui.presenters.presentation_models import NodePresentation
 
         # Given: Node with a specific path
         test_node = NodePresentation(
@@ -143,7 +142,7 @@ class TestShowDocDiffsWithStageButtons:
 
     def test_show_doc_diffs_creates_top_level_document_rows(self, widget) -> None:  # type: ignore[no-untyped-def]
         """show_doc_diffs() creates top-level document rows."""
-        from freecad.diff_wb.ui.presenters.presentation_models import (
+        from freecad.history_wb.ui.presenters.presentation_models import (
             DiffTreePresentation,
             NodePresentation,
         )
@@ -174,11 +173,11 @@ class TestShowDocDiffsWithStageButtons:
 
     def test_stage_buttons_only_appear_when_working_tree_selected(self, widget) -> None:  # type: ignore[no-untyped-def]
         """Stage buttons only appear when current selection is WORKING_TREE."""
-        from freecad.diff_wb.ui.presenters.presentation_models import (
+        from freecad.history_wb.ui.presenters.presentation_models import (
             DiffTreePresentation,
             NodePresentation,
         )
-        from freecad.diff_wb.ui.views.models import HistorySelection
+        from freecad.history_wb.ui.views.models import HistorySelection
 
         # Clear any previous state
         widget.clear_doc_diffs()
@@ -210,11 +209,11 @@ class TestShowDocDiffsWithStageButtons:
 
     def test_stage_buttons_hidden_when_not_working_tree(self, widget) -> None:  # type: ignore[no-untyped-def]
         """Stage buttons are hidden when selection is not WORKING_TREE."""
-        from freecad.diff_wb.ui.presenters.presentation_models import (
+        from freecad.history_wb.ui.presenters.presentation_models import (
             DiffTreePresentation,
             NodePresentation,
         )
-        from freecad.diff_wb.ui.views.models import HistorySelection
+        from freecad.history_wb.ui.views.models import HistorySelection
 
         # Clear any previous state
         widget.clear_doc_diffs()
@@ -246,7 +245,7 @@ class TestShowDocDiffsWithStageButtons:
 
     def test_show_doc_diffs_with_empty_list_clears_tree(self, widget) -> None:  # type: ignore[no-untyped-def]
         """show_doc_diffs() clears tree when given empty list."""
-        from freecad.diff_wb.ui.presenters.presentation_models import (
+        from freecad.history_wb.ui.presenters.presentation_models import (
             DiffTreePresentation,
             NodePresentation,
         )
@@ -284,11 +283,11 @@ class TestCallbackWiring:
 
     def test_set_add_button_callback_invokes_callback(self, widget) -> None:  # type: ignore[no-untyped-def]
         """set_add_button_callback() invokes callback when triggered."""
-        from freecad.diff_wb.ui.presenters.presentation_models import (
+        from freecad.history_wb.ui.presenters.presentation_models import (
             DiffTreePresentation,
             NodePresentation,
         )
-        from freecad.diff_wb.ui.views.models import HistorySelection
+        from freecad.history_wb.ui.views.models import HistorySelection
 
         captured: list[str] = []
 
@@ -338,7 +337,7 @@ class TestCallbackWiring:
 
     def test_set_node_selection_callback_receives_git_path_and_node_path(self, widget) -> None:  # type: ignore[no-untyped-def]
         """set_node_selection_callback() receives (git_path, node_path) for child item clicks."""
-        from freecad.diff_wb.ui.presenters.presentation_models import (
+        from freecad.history_wb.ui.presenters.presentation_models import (
             DiffTreePresentation,
             NodePresentation,
         )
@@ -379,8 +378,8 @@ class TestCallbackWiring:
 
     def test_visual_diff_button_only_for_enabled_nodes(self, widget) -> None:  # type: ignore[no-untyped-def]
         """Visual diff button appears only when presentation enables it."""
-        from freecad.diff_wb.ui.presenters.presentation_models import DiffTreePresentation, NodePresentation
-        from freecad.diff_wb.ui.views.models import HistorySelection
+        from freecad.history_wb.ui.presenters.presentation_models import DiffTreePresentation, NodePresentation
+        from freecad.history_wb.ui.views.models import HistorySelection
 
         widget.clear_doc_diffs()
         widget.set_current_history_selection(HistorySelection(item_kind="WORKING_TREE", commit_hash=None))
@@ -425,8 +424,8 @@ class TestCallbackWiring:
 
     def test_visual_diff_button_emits_git_path_and_node_path(self, widget) -> None:  # type: ignore[no-untyped-def]
         """Visual diff button callback emits (git_path, node_path)."""
-        from freecad.diff_wb.ui.presenters.presentation_models import DiffTreePresentation, NodePresentation
-        from freecad.diff_wb.ui.views.models import HistorySelection
+        from freecad.history_wb.ui.presenters.presentation_models import DiffTreePresentation, NodePresentation
+        from freecad.history_wb.ui.views.models import HistorySelection
 
         captured: list[tuple[str, str]] = []
         widget.clear_doc_diffs()
@@ -468,7 +467,7 @@ class TestDocumentDiffTreeWidgetIndependence:
 
     def test_widget_clears_document_diffs_without_property_widget(self, widget) -> None:  # type: ignore[no-untyped-def]
         """DocumentDiffTreeWidget does not need a property widget reference to clear document diffs."""
-        from freecad.diff_wb.ui.presenters.presentation_models import NodePresentation
+        from freecad.history_wb.ui.presenters.presentation_models import NodePresentation
 
         # Given: Tree with items
         widget.show_doc_diff(
@@ -493,7 +492,7 @@ class TestDocumentDiffTreeWidgetIndependence:
 
     def test_widget_renders_document_diffs_without_property_widget(self, widget) -> None:  # type: ignore[no-untyped-def]
         """DocumentDiffTreeWidget does not need a property widget reference to render document diffs."""
-        from freecad.diff_wb.ui.presenters.presentation_models import NodePresentation
+        from freecad.history_wb.ui.presenters.presentation_models import NodePresentation
 
         # This test simply verifies that show_doc_diff works without any property widget
         widget.show_doc_diff(
@@ -554,7 +553,7 @@ class TestCollapseTreeItem:
 
     def test_collapse_tree_item_collapses_root(self, widget) -> None:  # type: ignore[no-untyped-def]
         """collapse_tree_item() collapses the root item for given git_path."""
-        from freecad.diff_wb.ui.presenters.presentation_models import NodePresentation
+        from freecad.history_wb.ui.presenters.presentation_models import NodePresentation
 
         widget.show_doc_diff(
             [
@@ -584,11 +583,11 @@ class TestSetStageButtonEnabled:
 
     def test_set_stage_button_enabled_updates_button(self, widget) -> None:  # type: ignore[no-untyped-def]
         """set_stage_button_enabled() updates the stage button for given git_path."""
-        from freecad.diff_wb.ui.presenters.presentation_models import (
+        from freecad.history_wb.ui.presenters.presentation_models import (
             DiffTreePresentation,
             NodePresentation,
         )
-        from freecad.diff_wb.ui.views.models import HistorySelection
+        from freecad.history_wb.ui.views.models import HistorySelection
 
         widget.clear_doc_diffs()
         widget.set_current_history_selection(HistorySelection(item_kind="WORKING_TREE", commit_hash=None))

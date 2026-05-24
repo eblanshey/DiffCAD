@@ -6,8 +6,8 @@
 
 from unittest.mock import MagicMock
 
-from freecad.diff_wb.application.actions.get_dirty_documents import GetDirtyDocumentsAction
-from freecad.diff_wb.domain.git.models import GitRepository
+from freecad.history_wb.application.actions.get_dirty_documents import GetDirtyDocumentsAction
+from freecad.history_wb.domain.git.models import GitRepository
 
 
 def test_get_dirty_documents_returns_dirty_paths() -> None:

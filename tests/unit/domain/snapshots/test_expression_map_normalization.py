@@ -3,7 +3,7 @@
 # building functions used by the gui_extractor to parse FreeCAD ExpressionEngine entries.
 """Tests for expression path normalization and expression map building."""
 
-from freecad.diff_wb.domain.snapshots.gui_extractor import (
+from freecad.history_wb.domain.snapshots.gui_extractor import (
     _build_expression_map_for_property,
     _normalize_expression_path_for_property,
 )

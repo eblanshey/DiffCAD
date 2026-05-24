@@ -30,7 +30,7 @@ dev = [
 packages = ["freecad"]
 
 [tool.hatch.build.targets.wheel.force-include]
-"freecad/diff_wb/resources" = "freecad/diff_wb/resources"
+"freecad/history_wb/resources" = "freecad/history_wb/resources"
 
 [project.urls]
 Homepage = "https://github.com/eblanshey/DiffCAD"
@@ -51,8 +51,8 @@ warn_unused_ignores = true
 warn_unreachable = true
 strict_equality = true
 exclude = [
-    '^freecad/diff_wb/init_gui\\.py$',
-    '^freecad/diff_wb/entrypoints/.*\\.py$',
+    '^freecad/history_wb/init_gui\\.py$',
+    '^freecad/history_wb/entrypoints/.*\\.py$',
     '^scripts/.*\\.py$',
 ]
 explicit_package_bases = true
@@ -71,21 +71,21 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = [
-    "freecad.diff_wb.init_gui",
-    "freecad.diff_wb.entrypoints.*",
+    "freecad.history_wb.init_gui",
+    "freecad.history_wb.entrypoints.*",
 ]
 ignore_errors = true
 
 # UI layer: Enable type checking but disable Qt-specific errors
 # Qt stubs have incomplete/incorrect signatures, so we skip those checks
 [[tool.mypy.overrides]]
-module = ["freecad.diff_wb.ui.*"]
+module = ["freecad.history_wb.ui.*"]
 disable_error_code = ["override", "attr-defined", "no-untyped-def"]
 
 [[tool.mypy.overrides]]
 module = [
-    "freecad.diff_wb.ports.*",
-    "freecad.diff_wb.freecad_version_check",
+    "freecad.history_wb.ports.*",
+    "freecad.history_wb.freecad_version_check",
 ]
 disable_error_code = ["attr-defined", "no-any-return"]
 
@@ -119,17 +119,17 @@ select = ["E", "W", "F", "I", "B", "C4", "UP", "N", "SIM", "C901", "BLE"]
 ignore = ["S101", "N802", "N806"]
 # Configure ruff to recognize our custom Log instance as a logger object.
 # This allows BLE001 to recognize Log.exception() calls as proper exception logging.
-logger-objects = ["freecad.diff_wb.utils.Log"]
+logger-objects = ["freecad.history_wb.utils.Log"]
 # Per-file ignores:
 #   tests/* - allow asserts, higher complexity, and longer lines in tests
-#   freecad/diff_wb/snapshot/snapshot_query.py - allow higher complexity for _build_tree_node
-per-file-ignores = { "tests/*" = ["S101", "C901", "E501"], "freecad/diff_wb/snapshot/snapshot_query.py" = ["C901"] }
+#   freecad/history_wb/snapshot/snapshot_query.py - allow higher complexity for _build_tree_node
+per-file-ignores = { "tests/*" = ["S101", "C901", "E501"], "freecad/history_wb/snapshot/snapshot_query.py" = ["C901"] }
 
 [tool.ruff.lint.mccabe]
 max-complexity = 10
 
 [tool.ruff.lint.isort]
-known-first-party = ["diff_wb", "tests"]
+known-first-party = ["history_wb", "tests"]
 lines-after-imports = 2
 combine-as-imports = true
 

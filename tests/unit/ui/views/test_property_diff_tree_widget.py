@@ -1,10 +1,9 @@
 """File responsibility: Unit tests for PropertyDiffTreeWidget component."""
 
 import pytest
-from freecad.diff_wb.qt import QtCore, QtWidgets
-
-from freecad.diff_wb.domain.diff.models import DiffState
-from freecad.diff_wb.ui.views.diff_theme import DIFF_STATE_ROLE
+from freecad.history_wb.domain.diff.models import DiffState
+from freecad.history_wb.qt import QtCore, QtWidgets
+from freecad.history_wb.ui.views.diff_theme import DIFF_STATE_ROLE
 
 
 @pytest.fixture(scope="module")
@@ -19,7 +18,7 @@ def widget() -> object:
     if app is None:
         app = QtWidgets.QApplication([])
 
-    from freecad.diff_wb.ui.views.property_diff_tree_widget import PropertyDiffTreeWidget
+    from freecad.history_wb.ui.views.property_diff_tree_widget import PropertyDiffTreeWidget
 
     return PropertyDiffTreeWidget()
 
@@ -29,7 +28,7 @@ class TestPropertyDiffTreeWidgetShowPropertyDiff:
 
     def test_empty_property_list_clears_tree(self, widget) -> None:  # type: ignore[no-untyped-def]
         """show_property_diff() with empty list clears the properties tree."""
-        from freecad.diff_wb.ui.presenters.presentation_models import PropertyPresentation
+        from freecad.history_wb.ui.presenters.presentation_models import PropertyPresentation
 
         # Given: Tree has existing items from previous call
         widget.show_property_diff(
@@ -66,7 +65,7 @@ class TestPropertyDiffTreeWidgetShowPropertyDiff:
         col2,
     ) -> None:
         """Parametrized test for changed state coloring data and column values."""
-        from freecad.diff_wb.ui.presenters.presentation_models import PropertyPresentation
+        from freecad.history_wb.ui.presenters.presentation_models import PropertyPresentation
 
         properties = [
             PropertyPresentation(
@@ -93,7 +92,7 @@ class TestPropertyDiffTreeWidgetShowPropertyDiff:
 
     def test_property_with_unchanged_state_uses_normal_background(self, widget) -> None:  # type: ignore[no-untyped-def]
         """show_property_diff() includes UNCHANGED properties with normal theme background."""
-        from freecad.diff_wb.ui.presenters.presentation_models import PropertyPresentation
+        from freecad.history_wb.ui.presenters.presentation_models import PropertyPresentation
 
         # Given: Mix of changed and unchanged properties
         properties = [
@@ -147,7 +146,7 @@ class TestPropertyDiffTreeWidgetGroupHeaders:
 
     def test_group_header_is_non_selectable(self, widget) -> None:  # type: ignore[no-untyped-def]
         """show_property_diff() creates group headers that are not selectable."""
-        from freecad.diff_wb.ui.presenters.presentation_models import PropertyPresentation
+        from freecad.history_wb.ui.presenters.presentation_models import PropertyPresentation
 
         # Given: Properties to display
         properties = [
@@ -168,7 +167,7 @@ class TestPropertyDiffTreeWidgetGroupHeaders:
 
     def test_groups_are_expanded_by_default(self, widget) -> None:  # type: ignore[no-untyped-def]
         """show_property_diff() expands groups by default so properties are visible."""
-        from freecad.diff_wb.ui.presenters.presentation_models import PropertyPresentation
+        from freecad.history_wb.ui.presenters.presentation_models import PropertyPresentation
 
         # Given: Properties to display
         properties = [
@@ -191,7 +190,7 @@ class TestPropertyDiffTreeWidgetGroupSorting:
 
     def test_groups_appear_in_alphabetical_order(self, widget) -> None:  # type: ignore[no-untyped-def]
         """show_property_diff() displays groups in alphabetical order (Base, Data, Format, etc.)."""
-        from freecad.diff_wb.ui.presenters.presentation_models import PropertyPresentation
+        from freecad.history_wb.ui.presenters.presentation_models import PropertyPresentation
 
         # Given: Properties from multiple groups in non-alphabetical order
         properties = [
@@ -229,7 +228,7 @@ class TestPropertyDiffTreeWidgetGroupSorting:
 
     def test_properties_within_groups_maintain_input_order(self, widget) -> None:  # type: ignore[no-untyped-def]
         """show_property_diff() maintains property order within each group as provided."""
-        from freecad.diff_wb.ui.presenters.presentation_models import PropertyPresentation
+        from freecad.history_wb.ui.presenters.presentation_models import PropertyPresentation
 
         # Given: Multiple properties in same group with specific order
         properties = [
@@ -269,7 +268,7 @@ class TestPropertyDiffTreeWidgetCamelCaseConversion:
 
     def test_camelcase_conversion_remains_unchanged_simple(self, widget) -> None:  # type: ignore[no-untyped-def]
         """Simple CamelCase names are converted correctly."""
-        from freecad.diff_wb.ui.presenters.presentation_models import PropertyPresentation
+        from freecad.history_wb.ui.presenters.presentation_models import PropertyPresentation
 
         # Given: Properties with various CamelCase patterns
         properties = [
@@ -313,7 +312,7 @@ class TestCamelcaseHelper:
         ],
     )
     def test_camelcase_to_spaces(self, input_name: str, expected: str) -> None:
-        from freecad.diff_wb.ui.views.property_diff_tree_widget import _camelcase_to_spaces
+        from freecad.history_wb.ui.views.property_diff_tree_widget import _camelcase_to_spaces
 
         assert _camelcase_to_spaces(input_name) == expected
 
@@ -323,7 +322,7 @@ class TestPropertyDiffTreeWidgetNestedChildren:
 
     def test_nested_children_recurse_and_expansion_state_applied(self, widget) -> None:  # type: ignore[no-untyped-def]
         """Nested children are recursively added and expansion state is applied after insertion."""
-        from freecad.diff_wb.ui.presenters.presentation_models import PropertyPresentation
+        from freecad.history_wb.ui.presenters.presentation_models import PropertyPresentation
 
         # Given: Nested structure where inner node is MODIFIED
         x_child = PropertyPresentation(name="x", state=DiffState.MODIFIED, old_value=1.0, new_value=2.0)
@@ -352,7 +351,7 @@ class TestPropertyDiffTreeWidgetNestedChildren:
 
     def test_unchanged_branches_collapsed(self, widget) -> None:  # type: ignore[no-untyped-def]
         """Unchanged branches stay collapsed when no descendant has changes."""
-        from freecad.diff_wb.ui.presenters.presentation_models import PropertyPresentation
+        from freecad.history_wb.ui.presenters.presentation_models import PropertyPresentation
 
         # Given: All nodes UNCHANGED
         x_child = PropertyPresentation(name="x", state=DiffState.UNCHANGED, old_value=1.0, new_value=1.0)
@@ -391,7 +390,7 @@ class TestPropertyDiffTreeWidgetThreeColumnLayout:
 
     def test_header_labels_are_correct(self, widget) -> None:  # type: ignore[no-untyped-def]
         """Header labels are ['Property', 'Old Value', 'New Value']."""
-        from freecad.diff_wb.ui.presenters.presentation_models import PropertyPresentation
+        from freecad.history_wb.ui.presenters.presentation_models import PropertyPresentation
 
         # When: Adding a property
         properties = [

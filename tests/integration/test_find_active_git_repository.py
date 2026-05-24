@@ -9,14 +9,14 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from freecad.diff_wb.domain.freecad_ports import FreeCadContext
-from freecad.diff_wb.domain.git.git_service import GitService
-from freecad.diff_wb.infrastructure.freecad.ports import get_port
-from freecad.diff_wb.infrastructure.git.git_port_adapter import GitPortAdapter
+from freecad.history_wb.domain.freecad_ports import FreeCadContext
+from freecad.history_wb.domain.git.git_service import GitService
+from freecad.history_wb.infrastructure.freecad.ports import get_port
+from freecad.history_wb.infrastructure.git.git_port_adapter import GitPortAdapter
 
 
 if TYPE_CHECKING:
-    from freecad.diff_wb.domain.freecad_ports import AppLike, GuiLike
+    from freecad.history_wb.domain.freecad_ports import AppLike, GuiLike
 
 
 class TestFindActiveGitRepositoryAction:
@@ -35,7 +35,7 @@ class TestFindActiveGitRepositoryAction:
         2. Executes the FindActiveGitRepositoryAction
         3. Verifies the result contains a valid GitRepository with correct name and path
         """
-        from freecad.diff_wb.application.actions.find_active_git_repository import (
+        from freecad.history_wb.application.actions.find_active_git_repository import (
             FindActiveGitRepositoryAction,
         )
 
@@ -75,7 +75,7 @@ class TestFindActiveGitRepositoryAction:
         freecad_gui: GuiLike,
     ) -> None:
         """Test that action returns failure when document is not saved."""
-        from freecad.diff_wb.application.actions.find_active_git_repository import (
+        from freecad.history_wb.application.actions.find_active_git_repository import (
             FindActiveGitRepositoryAction,
         )
 
@@ -113,7 +113,7 @@ class TestFindActiveGitRepositoryAction:
         freecad_gui: GuiLike,
     ) -> None:
         """Test that action returns failure when no document is active."""
-        from freecad.diff_wb.application.actions.find_active_git_repository import (
+        from freecad.history_wb.application.actions.find_active_git_repository import (
             FindActiveGitRepositoryAction,
         )
 

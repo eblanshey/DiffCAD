@@ -1,12 +1,12 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
 # File responsibility: Tests for dependency injection container composition.
 
-from freecad.diff_wb.application.di.container import (
+from freecad.history_wb.application.di.container import (
     ApplicationContainer,
     create_application_container,
 )
-from freecad.diff_wb.domain.freecad_ports import FreeCadContext
-from freecad.diff_wb.domain.git.models import GitRepository
+from freecad.history_wb.domain.freecad_ports import FreeCadContext
+from freecad.history_wb.domain.git.models import GitRepository
 
 
 def test_container_returns_wired_application_container() -> None:

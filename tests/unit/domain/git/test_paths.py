@@ -5,8 +5,7 @@
 from unittest.mock import patch
 
 import pytest
-
-from freecad.diff_wb.domain.git.paths import git_path_name, is_fcstd_path, relative_git_path, to_git_path
+from freecad.history_wb.domain.git.paths import git_path_name, is_fcstd_path, relative_git_path, to_git_path
 
 
 def test_to_git_path_normalizes_windows_separators() -> None:
@@ -17,7 +16,7 @@ def test_to_git_path_normalizes_windows_separators() -> None:
 def test_relative_git_path_normalizes_os_relative_path() -> None:
     """Test relative paths are normalized after OS relpath computation."""
     with patch(
-        "freecad.diff_wb.domain.git.paths.relpath",
+        "freecad.history_wb.domain.git.paths.relpath",
         lambda path, root: "assemblies\\sub\\Widget.FCStd",
     ):
         assert relative_git_path("C:\\repo\\assemblies\\sub\\Widget.FCStd", "C:\\repo") == "assemblies/sub/Widget.FCStd"

@@ -7,15 +7,15 @@
 from typing import TypedDict
 from unittest.mock import MagicMock, patch
 
-from freecad.diff_wb.domain.freecad_ports import DocumentObjectLike
-from freecad.diff_wb.domain.snapshots.gui_extractor import (
+from freecad.history_wb.domain.freecad_ports import DocumentObjectLike
+from freecad.history_wb.domain.snapshots.gui_extractor import (
     GuiNotAvailableError,
     SnapshotExtractor,
     _get_property_group,
     _is_property_hidden,
 )
-from freecad.diff_wb.domain.snapshots.models import Snapshot
-from freecad.diff_wb.domain.tree.property import Property
+from freecad.history_wb.domain.snapshots.models import Snapshot
+from freecad.history_wb.domain.tree.property import Property
 
 
 def _extractor() -> SnapshotExtractor:
@@ -323,7 +323,7 @@ class TestSnapshotExtractor:
         extractor = _extractor()
 
         # Patch _init_gui_and_get_doc to return None (GUI unavailable)
-        with patch("freecad.diff_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
+        with patch("freecad.history_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
             mock_init_gui.return_value = None
             result = extractor.extract_tree(mock_doc)
 
@@ -383,7 +383,7 @@ class TestSnapshotExtractor:
         extractor = _extractor()
 
         # Patch _init_gui_and_get_doc to return our mock gui_doc
-        with patch("freecad.diff_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
+        with patch("freecad.history_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
             mock_init_gui.return_value = mock_gui_doc
             result = extractor.extract_tree(mock_doc)
 
@@ -405,7 +405,7 @@ class TestSnapshotExtractor:
         extractor = _extractor()
 
         # Patch _init_gui_and_get_doc to return None (GUI unavailable)
-        with patch("freecad.diff_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
+        with patch("freecad.history_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
             mock_init_gui.return_value = None
             result = extractor.extract_tree(mock_doc)
 
@@ -434,7 +434,7 @@ class TestSnapshotExtractor:
         extractor = _extractor()
 
         # Patch _init_gui_and_get_doc to return None (GUI unavailable)
-        with patch("freecad.diff_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
+        with patch("freecad.history_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
             mock_init_gui.return_value = None
             result = extractor.extract_tree(mock_doc)
 
@@ -467,7 +467,7 @@ class TestSnapshotExtractor:
         extractor = _extractor()
 
         # Patch _init_gui_and_get_doc to return None (GUI unavailable)
-        with patch("freecad.diff_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
+        with patch("freecad.history_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
             mock_init_gui.return_value = None
             result = extractor.extract_tree(mock_doc)
 
@@ -478,7 +478,7 @@ class TestSnapshotExtractor:
         assert "Length" in node["properties"]
         length_prop = node["properties"]["Length"]
         # The expression is stored in the PropertyPathValue within PrimitiveData
-        from freecad.diff_wb.domain.tree.data_path import PrimitiveData
+        from freecad.history_wb.domain.tree.data_path import PrimitiveData
 
         assert isinstance(length_prop.value, PrimitiveData)
         root_pv = length_prop.value.paths.get(".")
@@ -550,7 +550,7 @@ class TestSnapshotExtractor:
         extractor = _extractor()
 
         # Patch _init_gui_and_get_doc to return our mock gui_doc
-        with patch("freecad.diff_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
+        with patch("freecad.history_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
             mock_init_gui.return_value = mock_gui_doc
             result = extractor.extract_tree(mock_doc)
 
@@ -631,7 +631,7 @@ class TestSnapshotExtractor:
         extractor = _extractor()
 
         # Patch _init_gui_and_get_doc to return our mock gui_doc
-        with patch("freecad.diff_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
+        with patch("freecad.history_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
             mock_init_gui.return_value = mock_gui_doc
             result = extractor.extract_tree(mock_doc)
 
@@ -713,7 +713,7 @@ class TestSnapshotExtractor:
         extractor = _extractor()
 
         # Patch _init_gui_and_get_doc to return our mock gui_doc
-        with patch("freecad.diff_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
+        with patch("freecad.history_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
             mock_init_gui.return_value = mock_gui_doc
             result = extractor.extract_tree(mock_doc)
 
@@ -761,7 +761,7 @@ class TestSnapshotExtractor:
         extractor = _extractor()
 
         # Patch _init_gui_and_get_doc to return None (GUI unavailable)
-        with patch("freecad.diff_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
+        with patch("freecad.history_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
             mock_init_gui.return_value = None
             result = extractor.extract_tree(mock_doc)
 
@@ -798,7 +798,7 @@ class TestSnapshotExtractor:
         mock_doc.Objects = [sheet]
 
         extractor = _extractor()
-        with patch("freecad.diff_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
+        with patch("freecad.history_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
             mock_init_gui.return_value = None
             result = extractor.extract_tree(mock_doc)
 
@@ -848,7 +848,7 @@ class TestSnapshotExtractor:
         extractor = _extractor()
 
         # Patch _init_gui_and_get_doc to return None (GUI unavailable)
-        with patch("freecad.diff_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
+        with patch("freecad.history_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
             mock_init_gui.return_value = None
             result = extractor.extract_tree(mock_doc)
 
@@ -897,7 +897,7 @@ class TestSnapshotExtractor:
         extractor = _extractor()
 
         # Patch _init_gui_and_get_doc to return None (GUI unavailable)
-        with patch("freecad.diff_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
+        with patch("freecad.history_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
             mock_init_gui.return_value = None
             result = extractor.extract_tree(mock_doc)
 
@@ -944,7 +944,7 @@ class TestSnapshotExtractor:
         extractor = _extractor()
 
         # Patch _init_gui_and_get_doc to return None (GUI unavailable)
-        with patch("freecad.diff_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
+        with patch("freecad.history_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
             mock_init_gui.return_value = None
             result = extractor.extract_tree(mock_doc)
 
@@ -1010,7 +1010,7 @@ class TestSnapshotExtractor:
 
         extractor = _extractor()
 
-        with patch("freecad.diff_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
+        with patch("freecad.history_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
             mock_init_gui.return_value = mock_gui_doc
             result = extractor.extract_tree(mock_doc)
 
@@ -1055,7 +1055,7 @@ class TestSnapshotExtractor:
         extractor = _extractor()
 
         # Patch _init_gui_and_get_doc to raise GuiNotAvailableError
-        with patch("freecad.diff_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
+        with patch("freecad.history_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
             mock_init_gui.side_effect = GuiNotAvailableError("FreeCADGui not available")
             # Should raise the exception
             result = extractor.extract_tree(mock_doc)
@@ -1095,7 +1095,7 @@ class TestSnapshotExtractor:
 
         extractor = _extractor()
 
-        with patch("freecad.diff_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
+        with patch("freecad.history_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
             mock_init_gui.return_value = mock_gui_doc
             # Should not raise, should handle exception gracefully
             result = extractor.extract_tree(mock_doc)
@@ -1159,7 +1159,7 @@ class TestSnapshotExtractor:
 
         extractor = _extractor()
 
-        with patch("freecad.diff_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
+        with patch("freecad.history_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
             mock_init_gui.return_value = mock_gui_doc
             # Should not hang or cause infinite recursion - this is the key test
             result = extractor.extract_tree(mock_doc)
@@ -1199,7 +1199,7 @@ class TestSnapshotExtractor:
         mock_gui_doc.getViewProvider = lambda obj: obj.ViewObject
 
         extractor = _extractor()
-        with patch("freecad.diff_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
+        with patch("freecad.history_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
             mock_init_gui.return_value = mock_gui_doc
             result = extractor.extract_tree(mock_doc)
 
@@ -1239,7 +1239,7 @@ class TestSnapshotExtractor:
         mock_gui_doc.getViewProvider = lambda obj: obj.ViewObject
 
         extractor = _extractor()
-        with patch("freecad.diff_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
+        with patch("freecad.history_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
             mock_init_gui.return_value = mock_gui_doc
             result = extractor.extract_tree(mock_doc)
 
@@ -1288,7 +1288,7 @@ class TestSnapshotExtractor:
         extractor = _extractor()
 
         # Patch _init_gui_and_get_doc to return None (GUI unavailable)
-        with patch("freecad.diff_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
+        with patch("freecad.history_wb.domain.snapshots.gui_extractor._init_gui_and_get_doc") as mock_init_gui:
             mock_init_gui.return_value = None
             result = extractor.extract_tree(mock_doc)
 
@@ -1571,7 +1571,7 @@ class TestIsPropertyHidden:
         Example: ["Hidden", 27] means bit 3 (Hidden) and bit 27 (PropOutput) are set.
         The function should detect the "Hidden" string regardless of other values.
         """
-        from freecad.diff_wb.domain.snapshots.gui_extractor import _is_property_hidden
+        from freecad.history_wb.domain.snapshots.gui_extractor import _is_property_hidden
 
         # Create mock to return realistic mixed status lists
         class MockObjectWithMixedStatus:
@@ -1621,7 +1621,7 @@ class TestIsPropertyHidden:
         - Checks if prop->getType() & App::Prop_Hidden is true
         - Maps to getTypeOfProperty() returning a list containing 'Hidden'
         """
-        from freecad.diff_wb.domain.snapshots.gui_extractor import _is_property_hidden
+        from freecad.history_wb.domain.snapshots.gui_extractor import _is_property_hidden
 
         # Create object where Shape has "Hidden" in its getTypeOfProperty result
         obj = MockFreeCADObject(
@@ -1663,7 +1663,7 @@ class TestIsPropertyHidden:
 
     def test_hidden_property_detection_gettypeofproperty_filters_in_extraction(self) -> None:
         """Test that properties with Hidden in getTypeOfProperty are filtered out during extraction."""
-        from freecad.diff_wb.domain.snapshots.gui_extractor import _extract_visible_properties
+        from freecad.history_wb.domain.snapshots.gui_extractor import _extract_visible_properties
 
         # Create object mimicking a PartDesign::Body with Shape and ShapeMaterial
         obj = MockFreeCADObject(
@@ -1786,7 +1786,7 @@ class TestGetPropertyGroup:
 
     def test_property_group_in_extracted_properties(self) -> None:
         """Test that extracted properties include the group field."""
-        from freecad.diff_wb.domain.snapshots.gui_extractor import _extract_visible_properties
+        from freecad.history_wb.domain.snapshots.gui_extractor import _extract_visible_properties
 
         obj = MockFreeCADObject(
             name="Pad",

@@ -2,7 +2,7 @@
 # File responsibility: Unit tests for shared line-based settings text codec helpers.
 """Tests for settings text codec helpers."""
 
-from freecad.diff_wb.domain.settings.text_codec import (
+from freecad.history_wb.domain.settings.text_codec import (
     parse_by_type_lines,
     parse_list_lines,
     serialize_by_type_lines,

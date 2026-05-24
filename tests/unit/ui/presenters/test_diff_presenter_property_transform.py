@@ -6,15 +6,14 @@
 from unittest.mock import MagicMock
 
 import pytest
-
-from freecad.diff_wb.application.actions.create_document_diffs import CreateDocumentDiffsAction
-from freecad.diff_wb.application.actions.get_dirty_documents import GetDirtyDocumentsAction
-from freecad.diff_wb.application.actions.get_open_eligible_documents import GetOpenEligibleDocumentsAction
-from freecad.diff_wb.application.actions.open_visual_diff import OpenVisualDiffAction
-from freecad.diff_wb.application.actions.stage_documents import StageDocumentsAction
-from freecad.diff_wb.domain.diff.models import DiffState, NodeDiff, PropertyDiff
-from freecad.diff_wb.domain.tree import Property
-from freecad.diff_wb.domain.tree.data_path import (
+from freecad.history_wb.application.actions.create_document_diffs import CreateDocumentDiffsAction
+from freecad.history_wb.application.actions.get_dirty_documents import GetDirtyDocumentsAction
+from freecad.history_wb.application.actions.get_open_eligible_documents import GetOpenEligibleDocumentsAction
+from freecad.history_wb.application.actions.open_visual_diff import OpenVisualDiffAction
+from freecad.history_wb.application.actions.stage_documents import StageDocumentsAction
+from freecad.history_wb.domain.diff.models import DiffState, NodeDiff, PropertyDiff
+from freecad.history_wb.domain.tree import Property
+from freecad.history_wb.domain.tree.data_path import (
     ListData,
     PlacementData,
     PrimitiveData,
@@ -22,8 +21,9 @@ from freecad.diff_wb.domain.tree.data_path import (
     PropertyPathValue,
     VectorData,
 )
-from freecad.diff_wb.ui.presenters.diff_presenter import DiffPresenter
-from freecad.diff_wb.ui.state import UIState
+from freecad.history_wb.ui.presenters.diff_presenter import DiffPresenter
+from freecad.history_wb.ui.state import UIState
+
 from tests.fakes.fake_diff_view import FakeDiffView
 
 
