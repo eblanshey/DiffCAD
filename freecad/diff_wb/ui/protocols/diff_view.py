@@ -1,7 +1,7 @@
 """File responsibility: Diff view interface definition.
 
 This protocol defines the interface for diff views. Views handle both
-translation of templates (from translation_strings.py) AND parameter
+translation of UI templates/literals AND parameter
 substitution using Qt-style placeholders (%1, %2, etc.). Presenters pass
 raw data only - they never format user-facing messages.
 
@@ -10,7 +10,7 @@ Translation Strategy for Summary:
     The view should translate the label and combine it with the value:
 
         def show_summary(self, changed_docs: int) -> None:
-            changed_label = QCoreApplication.translate("DiffView", DIFF_SUMMARY_CHANGED_LABEL)
+            changed_label = translate("ProjectHistory", "Changed:")
             self._changed_label.setText(f"{changed_label} {changed_docs}")
 """
 
@@ -52,7 +52,7 @@ class DiffView(Protocol):
         Args:
             changed_docs: Number of changed documents.
 
-        The view should use DIFF_SUMMARY_CHANGED_LABEL and append the count.
+        The view should use translated "Changed:" label and append the count.
         """
 
     def show_property_diff(self, properties: list[PropertyPresentation]) -> None:

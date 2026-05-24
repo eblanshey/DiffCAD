@@ -2,7 +2,7 @@
 
 from collections.abc import Callable
 
-from PySide6.QtCore import QCoreApplication, QSize, Qt
+from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QBrush, QIcon
 from PySide6.QtWidgets import (
     QHBoxLayout,
@@ -17,8 +17,8 @@ from PySide6.QtWidgets import (
 
 from ...domain.diff.models import DiffState
 from ...resources import get_icon_path
+from ...utils import translate
 from ..presenters.presentation_models import DiffTreePresentation, DocumentStatusIndicator, NodePresentation
-from ..translation_strings import DIFF_SUMMARY_CHANGED_LABEL, STAGE_ALL_LABEL, STAGE_LABEL, VISUAL_DIFF_TOOLTIP
 from .diff_theme import DIFF_STATE_ROLE, DiffItemDelegate, background_for_state, foreground_for_background
 from .models import HistorySelection
 
@@ -64,7 +64,7 @@ class DocumentDiffTreeWidget(QWidget):
         summary_layout.addWidget(self._changed_label)
 
         self._stage_all_button = QToolButton()
-        self._stage_all_button.setText(QCoreApplication.translate("DiffView", STAGE_ALL_LABEL))
+        self._stage_all_button.setText(translate("ProjectHistory", "+ Mark All Reviewed"))
         self._stage_all_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextOnly)
         self._stage_all_button.setFixedSize(STAGE_ALL_BUTTON_WIDTH, TREE_ITEM_HEIGHT)
         self._stage_all_button.hide()
@@ -72,7 +72,7 @@ class DocumentDiffTreeWidget(QWidget):
         summary_layout.addWidget(self._stage_all_button)
 
         self._tree_widget = QTreeWidget()
-        self._tree_widget.setHeaderLabels(["Tree"])
+        self._tree_widget.setHeaderLabels([translate("ProjectHistory", "Tree")])
         self._tree_widget.setColumnCount(1)
         self._tree_widget.header().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self._diff_item_delegate = DiffItemDelegate(self._tree_widget)
@@ -145,7 +145,7 @@ class DocumentDiffTreeWidget(QWidget):
         if not nodes:
             return
 
-        top_level_text = git_path or "Unnamed Document"
+        top_level_text = git_path or translate("ProjectHistory", "Unnamed Document")
         root_item = QTreeWidgetItem([top_level_text])
         root_item.setSizeHint(0, QSize(0, TREE_ITEM_HEIGHT))
         root_item.setData(0, Qt.ItemDataRole.UserRole, git_path or top_level_text)
@@ -171,7 +171,7 @@ class DocumentDiffTreeWidget(QWidget):
             return
 
         for diff in diffs:
-            top_level_text = diff.git_path or "Unnamed Document"
+            top_level_text = diff.git_path or translate("ProjectHistory", "Unnamed Document")
 
             root_item = QTreeWidgetItem([top_level_text])
             root_item.setSizeHint(0, QSize(0, TREE_ITEM_HEIGHT))
@@ -192,7 +192,7 @@ class DocumentDiffTreeWidget(QWidget):
 
             if show_stage_button:
                 add_button = QToolButton()
-                add_button.setText(QCoreApplication.translate("DiffView", STAGE_LABEL))
+                add_button.setText(translate("ProjectHistory", "+ Reviewed"))
                 add_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextOnly)
                 add_button.setEnabled(diff.stage_button_enabled)
                 add_button.setFixedSize(STAGE_BUTTON_WIDTH, TREE_ITEM_HEIGHT)
@@ -214,7 +214,7 @@ class DocumentDiffTreeWidget(QWidget):
     def clear_doc_diffs(self) -> None:
         """Clear document diff tree and related controls."""
         self._tree_widget.clear()
-        self._changed_label.setText("No changes")
+        self._changed_label.setText(translate("ProjectHistory", "No changes"))
         self.set_stage_all_button_visible(False)
         self.set_stage_all_button_enabled(False)
         self._stage_buttons.clear()
@@ -232,7 +232,7 @@ class DocumentDiffTreeWidget(QWidget):
         for indicator in indicators:
             icon_label = QLabel()
             icon_label.setPixmap(indicator.icon.pixmap(16, 16))
-            icon_label.setToolTip(QCoreApplication.translate("DiffView", indicator.tooltip))
+            icon_label.setToolTip(translate("ProjectHistory", indicator.tooltip))
             layout.addWidget(icon_label)
 
     def _on_add_button_clicked(self, git_path: str) -> None:
@@ -319,7 +319,7 @@ class DocumentDiffTreeWidget(QWidget):
         button = QToolButton()
         button.setIcon(QIcon(str(get_icon_path("VisualDiff.svg"))))
         button.setIconSize(icon_size)
-        button.setToolTip(QCoreApplication.translate("DiffView", VISUAL_DIFF_TOOLTIP))
+        button.setToolTip(translate("ProjectHistory", "Open 3D comparison"))
         button.setAutoRaise(True)
         button.setStyleSheet(
             """
@@ -361,10 +361,10 @@ class DocumentDiffTreeWidget(QWidget):
             changed_docs: Number of changed documents.
         """
         if changed_docs == 0:
-            self._changed_label.setText("No changes")
+            self._changed_label.setText(translate("ProjectHistory", "No changes"))
             return
 
-        changed_text = QCoreApplication.translate("DiffView", DIFF_SUMMARY_CHANGED_LABEL)
+        changed_text = translate("ProjectHistory", "Changed:")
         self._changed_label.setText(f"{changed_text} {changed_docs}")
 
     def _on_stage_all_clicked(self) -> None:

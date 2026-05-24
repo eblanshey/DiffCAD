@@ -17,7 +17,7 @@ from PySide6.QtWidgets import (
 from ...domain.config import FLOAT_PRECISION as DEFAULT_FLOAT_PRECISION
 from ...domain.diff.models import DiffState
 from ...domain.settings import SettingsRepository
-from ...utils import format_float
+from ...utils import format_float, translate
 from ..presenters.presentation_models import PropertyPresentation
 from .diff_theme import DIFF_STATE_ROLE, DiffItemDelegate, background_for_state, foreground_for_background
 
@@ -149,7 +149,13 @@ class PropertyDiffTreeWidget(QTreeWidget):
 
     def _setup_tree(self) -> None:
         self.setColumnCount(3)
-        self.setHeaderLabels(["Property", "Old Value", "New Value"])
+        self.setHeaderLabels(
+            [
+                translate("ProjectHistory", "Property"),
+                translate("ProjectHistory", "Old Value"),
+                translate("ProjectHistory", "New Value"),
+            ]
+        )
         self.header().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.header().setStretchLastSection(True)
         self.setItemDelegate(self._property_value_delegate)
@@ -175,7 +181,7 @@ class PropertyDiffTreeWidget(QTreeWidget):
 
         groups: dict[str, list[PropertyPresentation]] = {}
         for prop in properties:
-            group_name = getattr(prop, "group", None) or "Properties"
+            group_name = getattr(prop, "group", None) or translate("ProjectHistory", "Properties")
             groups.setdefault(group_name, []).append(prop)
 
         for group_name in sorted(groups.keys()):

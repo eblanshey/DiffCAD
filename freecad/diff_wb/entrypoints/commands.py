@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, TypedDict
 from PySide6.QtCore import QT_TRANSLATE_NOOP
 
 from ..resources import ICONPATH
+from ..utils import translate
 
 
 if TYPE_CHECKING:
@@ -89,15 +90,13 @@ class _ConfigureGitCommand:
 
         from .._container import get_container
         from ..ui.registry import ui_registry
-        from ..ui.translation_strings import COMMIT_NO_REPOSITORY_MESSAGE, COMMIT_NO_REPOSITORY_TITLE
-
         container = get_container()
         repo = ui_registry.ui_state.git_repository
         if repo is None:
             QMessageBox.warning(
                 None,  # type: ignore[arg-type]
-                container.translate("Commit", COMMIT_NO_REPOSITORY_TITLE),
-                container.translate("Commit", COMMIT_NO_REPOSITORY_MESSAGE),
+                translate("ProjectHistory", "No Project"),
+                translate("ProjectHistory", "No project detected. Please open a document from a project."),
             )
             return
 
@@ -108,13 +107,6 @@ class _ConfigureGitCommand:
         from PySide6.QtWidgets import QMessageBox
 
         from ..domain.git.models import GitIdentity
-        from ..ui.translation_strings import (
-            COMMIT_FAILED_TITLE,
-            COMMIT_IDENTITY_REQUIRED_MESSAGE,
-            COMMIT_IDENTITY_SAVE_FAILED_MESSAGE,
-            CONFIGURE_GIT_GLOBAL_SAVE_FAILED_MESSAGE,
-        )
-
         retry_message: str | None = None
         initial_values = self._configured_identity_dialog_values(container, repo)
         global_config_writable = self._can_write_global_identity(container)
@@ -131,8 +123,8 @@ class _ConfigureGitCommand:
             if not dialog_result.author_name or not dialog_result.author_email:
                 QMessageBox.warning(
                     None,  # type: ignore[arg-type]
-                    container.translate("Commit", COMMIT_FAILED_TITLE),
-                    container.translate("Commit", COMMIT_IDENTITY_REQUIRED_MESSAGE),
+                    translate("ProjectHistory", "Save Iteration Failed"),
+                    translate("ProjectHistory", "Name and email are required to save iteration"),
                 )
                 return False
 
@@ -147,12 +139,16 @@ class _ConfigureGitCommand:
             if not dialog_result.should_save_globally:
                 QMessageBox.critical(
                     None,  # type: ignore[arg-type]
-                    container.translate("Commit", COMMIT_FAILED_TITLE),
-                    container.translate("Commit", COMMIT_IDENTITY_SAVE_FAILED_MESSAGE),
+                    translate("ProjectHistory", "Save Iteration Failed"),
+                    translate("ProjectHistory", "Git identity could not be saved"),
                 )
                 return False
 
-            retry_message = container.translate("Commit", CONFIGURE_GIT_GLOBAL_SAVE_FAILED_MESSAGE)
+            retry_message = translate(
+                "ProjectHistory",
+                "Could not save git identity for all projects. "
+                "Uncheck the global option to save it only for this project.",
+            )
             initial_values = dialog_result
 
     def _can_write_global_identity(self, container) -> bool:
@@ -194,21 +190,19 @@ class _ConfigureGitCommand:
             QVBoxLayout,
         )
 
-        from ..ui.translation_strings import (
-            COMMIT_EMAIL_LABEL,
-            COMMIT_NAME_LABEL,
-            COMMIT_REMEMBER_IDENTITY_LABEL,
-            CONFIGURE_GIT_DIALOG_TITLE,
-            CONFIGURE_GIT_GLOBAL_CONFIG_NOT_WRITABLE_MESSAGE,
-            CONFIGURE_GIT_IDENTITY_PROMPT,
-            DIALOG_CANCEL,
-            DIALOG_OK,
-        )
-
         dialog = QDialog(None)  # type: ignore[arg-type]
-        dialog.setWindowTitle(container.translate("Commit", CONFIGURE_GIT_DIALOG_TITLE))
+        dialog.setWindowTitle(translate("ProjectHistory", "Configure Git"))
         layout = QVBoxLayout(dialog)
-        layout.addWidget(QLabel(container.translate("Commit", CONFIGURE_GIT_IDENTITY_PROMPT), dialog))
+        layout.addWidget(
+            QLabel(
+                translate(
+                    "ProjectHistory",
+                    "Enter the name and email you'd like to use for your git identity, "
+                    "which is used for authoring project iterations.",
+                ),
+                dialog,
+            )
+        )
         if message:
             message_label = QLabel(message, dialog)
             message_label.setStyleSheet("color: red;")
@@ -216,7 +210,7 @@ class _ConfigureGitCommand:
         form_layout = QFormLayout()
         name_edit = QLineEdit(dialog)
         email_edit = QLineEdit(dialog)
-        remember_checkbox = QCheckBox(container.translate("Commit", COMMIT_REMEMBER_IDENTITY_LABEL), dialog)
+        remember_checkbox = QCheckBox(translate("ProjectHistory", "Configure globally for all projects"), dialog)
         if initial_values is not None:
             name_edit.setText(initial_values.author_name)
             email_edit.setText(initial_values.author_email)
@@ -225,21 +219,24 @@ class _ConfigureGitCommand:
             remember_checkbox.setChecked(False)
             remember_checkbox.setEnabled(False)
 
-        form_layout.addRow(container.translate("Commit", COMMIT_NAME_LABEL), name_edit)
-        form_layout.addRow(container.translate("Commit", COMMIT_EMAIL_LABEL), email_edit)
+        form_layout.addRow(translate("ProjectHistory", "Name:"), name_edit)
+        form_layout.addRow(translate("ProjectHistory", "Email:"), email_edit)
         layout.addLayout(form_layout)
         layout.addWidget(remember_checkbox)
         if not global_config_writable:
             global_config_label = QLabel(
-                container.translate("Commit", CONFIGURE_GIT_GLOBAL_CONFIG_NOT_WRITABLE_MESSAGE),
+                translate(
+                    "ProjectHistory",
+                    "Global configuration option disabled because global config file not writable.",
+                ),
                 dialog,
             )
             global_config_label.setStyleSheet("color: red;")
             layout.addWidget(global_config_label)
 
         button_layout = QHBoxLayout()
-        ok_button = QPushButton(container.translate("Common", DIALOG_OK))
-        cancel_button = QPushButton(container.translate("Common", DIALOG_CANCEL))
+        ok_button = QPushButton(translate("ProjectHistory", "OK"))
+        cancel_button = QPushButton(translate("ProjectHistory", "Cancel"))
         ok_button.clicked.connect(dialog.accept)
         cancel_button.clicked.connect(dialog.reject)
         button_layout.addStretch()
@@ -278,14 +275,6 @@ class _CommitCommand:
 
         from .._container import get_container
         from ..ui.registry import ui_registry
-        from ..ui.translation_strings import (
-            COMMIT_FAILED_TITLE,
-            COMMIT_NO_REPOSITORY_MESSAGE,
-            COMMIT_NO_REPOSITORY_TITLE,
-            COMMIT_NO_STAGED_FILES_MESSAGE,
-            COMMIT_NO_STAGED_FILES_TITLE,
-        )
-
         container = get_container()
 
         # Check if we have a git repository via UIState in registry
@@ -294,8 +283,8 @@ class _CommitCommand:
         if repo is None:
             QMessageBox.warning(
                 None,  # type: ignore[arg-type]
-                container.translate("Commit", COMMIT_NO_REPOSITORY_TITLE),
-                container.translate("Commit", COMMIT_NO_REPOSITORY_MESSAGE),
+                translate("ProjectHistory", "No Project"),
+                translate("ProjectHistory", "No project detected. Please open a document from a project."),
             )
             return
 
@@ -304,8 +293,8 @@ class _CommitCommand:
         if not staged_result.is_success or not staged_result.data:
             QMessageBox.information(
                 None,  # type: ignore[arg-type]
-                container.translate("Commit", COMMIT_NO_STAGED_FILES_TITLE),
-                container.translate("Commit", COMMIT_NO_STAGED_FILES_MESSAGE),
+                translate("ProjectHistory", "No Reviewed Files"),
+                translate("ProjectHistory", "There are no reviewed files to save."),
             )
             return
 
@@ -331,29 +320,24 @@ class _CommitCommand:
         else:
             QMessageBox.critical(
                 None,  # type: ignore[arg-type]
-                container.translate("Commit", COMMIT_FAILED_TITLE),
-                result.message or "Git commit failed",
+                translate("ProjectHistory", "Save Iteration Failed"),
+                result.message or translate("ProjectHistory", "Git commit failed"),
             )
 
-    def _validate_commit_dialog_result(self, container, dialog_result: CommitDialogResult) -> bool:
+    def _validate_commit_dialog_result(self, _container, dialog_result: CommitDialogResult) -> bool:
         """Validate commit dialog values and show warnings for invalid input."""
         from PySide6.QtWidgets import QMessageBox
-
-        from ..ui.translation_strings import (
-            COMMIT_EMPTY_MESSAGE,
-            COMMIT_EMPTY_MESSAGE_TITLE,
-        )
 
         if not dialog_result.message.strip():
             QMessageBox.warning(
                 None,  # type: ignore[arg-type]
-                container.translate("Commit", COMMIT_EMPTY_MESSAGE_TITLE),
-                container.translate("Commit", COMMIT_EMPTY_MESSAGE),
+                translate("ProjectHistory", "Empty Notes"),
+                translate("ProjectHistory", "Iteration notes cannot be empty"),
             )
             return False
         return True
 
-    def _show_commit_dialog(self, container) -> CommitDialogResult | None:
+    def _show_commit_dialog(self, _container) -> CommitDialogResult | None:
         """Show the commit dialog and return the message or None if cancelled.
 
         Args:
@@ -370,16 +354,8 @@ class _CommitCommand:
             QVBoxLayout,
         )
 
-        from ..ui.translation_strings import (
-            COMMIT_DIALOG_PLACEHOLDER,
-            COMMIT_DIALOG_PROMPT,
-            COMMIT_DIALOG_TITLE,
-            DIALOG_CANCEL,
-            DIALOG_OK,
-        )
-
         dialog = QDialog(None)  # type: ignore[arg-type]
-        dialog.setWindowTitle(container.translate("Commit", COMMIT_DIALOG_TITLE))
+        dialog.setWindowTitle(translate("ProjectHistory", "Save Iteration"))
 
         # Enable resize grip in bottom-right corner
         dialog.setSizeGripEnabled(True)
@@ -390,14 +366,16 @@ class _CommitCommand:
         # Add label
         from PySide6.QtWidgets import QLabel
 
-        label = QLabel(container.translate("Commit", COMMIT_DIALOG_PROMPT))
+        label = QLabel(translate("ProjectHistory", "Enter iteration notes:"))
         layout.addWidget(label)
 
         # Create a multi-line text editor that can resize vertically
         from PySide6.QtWidgets import QSizePolicy
 
         text_edit = QPlainTextEdit(dialog)
-        text_edit.setPlaceholderText(container.translate("Commit", COMMIT_DIALOG_PLACEHOLDER))
+        text_edit.setPlaceholderText(
+            translate("ProjectHistory", "Enter iteration notes (subject and optional body)...")
+        )
         text_edit.setTabStopDistance(40)  # Tab spacing in pixels
         text_edit.setMinimumHeight(100)  # Minimum height for initial usability
         # Allow the text edit to expand vertically when dialog is resized
@@ -406,8 +384,8 @@ class _CommitCommand:
 
         # Add OK and Cancel buttons
         button_layout = QHBoxLayout()
-        ok_button = QPushButton(container.translate("Common", DIALOG_OK))
-        cancel_button = QPushButton(container.translate("Common", DIALOG_CANCEL))
+        ok_button = QPushButton(translate("ProjectHistory", "OK"))
+        cancel_button = QPushButton(translate("ProjectHistory", "Cancel"))
 
         ok_button.clicked.connect(dialog.accept)
         cancel_button.clicked.connect(dialog.reject)
@@ -479,22 +457,18 @@ class _InitializeGitRepositoryCommand:
 
         from .._container import get_container
         from ..ui.registry import ui_registry
-        from ..ui.translation_strings import (
-            ERROR_UNKNOWN,
-            INITIALIZE_REPOSITORY_FAILED_TITLE,
-            INITIALIZE_REPOSITORY_NO_CANDIDATES_MESSAGE,
-            INITIALIZE_REPOSITORY_NO_CANDIDATES_TITLE,
-            INITIALIZE_REPOSITORY_SUCCESS_TEMPLATE,
-            INITIALIZE_REPOSITORY_SUCCESS_TITLE,
-        )
-
         container = get_container()
         candidates_result = container.get_git_repository_init_candidates_action.execute()
         if not candidates_result.is_success:
             QMessageBox.information(
                 None,  # type: ignore[arg-type]
-                container.translate("InitializeGitRepository", INITIALIZE_REPOSITORY_NO_CANDIDATES_TITLE),
-                container.translate("InitializeGitRepository", INITIALIZE_REPOSITORY_NO_CANDIDATES_MESSAGE),
+                translate("ProjectHistory", "No Directories Available"),
+                translate(
+                    "ProjectHistory",
+                    "No open documents are available for project initialization. "
+                    "Please open at least one saved document in the root location "
+                    "you'd like to initialize a new project.",
+                ),
             )
             return
 
@@ -506,22 +480,19 @@ class _InitializeGitRepositoryCommand:
         if not init_result.is_success:
             QMessageBox.critical(
                 None,  # type: ignore[arg-type]
-                container.translate("InitializeGitRepository", INITIALIZE_REPOSITORY_FAILED_TITLE),
-                init_result.message or container.translate("Common", ERROR_UNKNOWN),
+                translate("ProjectHistory", "Initialization Failed"),
+                init_result.message or translate("ProjectHistory", "Unknown error occurred"),
             )
             return
 
         repository = init_result.data
         self._store_initialized_repository(repository)
 
-        success_template = container.translate(
-            "InitializeGitRepository",
-            INITIALIZE_REPOSITORY_SUCCESS_TEMPLATE,
-        )
+        success_template = translate("ProjectHistory", "Initialized project: %1")
         success_message = success_template.replace("%1", repository.absolute_path)
         QMessageBox.information(
             None,  # type: ignore[arg-type]
-            container.translate("InitializeGitRepository", INITIALIZE_REPOSITORY_SUCCESS_TITLE),
+            translate("ProjectHistory", "Project Initialized"),
             success_message,
         )
         ui_registry.git_repository_presenter.refresh_repository_and_commits()
@@ -538,20 +509,19 @@ class _InitializeGitRepositoryCommand:
             QVBoxLayout,
         )
 
-        from ..ui.translation_strings import (
-            DIALOG_CANCEL,
-            INITIALIZE_REPOSITORY_BUTTON,
-            INITIALIZE_REPOSITORY_DIALOG_PROMPT,
-            INITIALIZE_REPOSITORY_DIALOG_TITLE,
-            INITIALIZE_REPOSITORY_DISABLED_REASON,
-            INITIALIZE_REPOSITORY_NO_AVAILABLE_MESSAGE,
-        )
-
         dialog = QDialog(None)  # type: ignore[arg-type]
-        dialog.setWindowTitle(container.translate("InitializeGitRepository", INITIALIZE_REPOSITORY_DIALOG_TITLE))
+        dialog.setWindowTitle(translate("ProjectHistory", "Initialize Project"))
         dialog.setSizeGripEnabled(True)
         layout = QVBoxLayout(dialog)
-        layout.addWidget(QLabel(container.translate("InitializeGitRepository", INITIALIZE_REPOSITORY_DIALOG_PROMPT)))
+        layout.addWidget(
+            QLabel(
+                translate(
+                    "ProjectHistory",
+                    "Choose a directory to initialize based on currently open documents. "
+                    "The selected directory will be the root of your project:",
+                )
+            )
+        )
 
         button_group = QButtonGroup(dialog)
         first_available_button = None
@@ -567,7 +537,7 @@ class _InitializeGitRepositoryCommand:
 
             if not candidate.is_available:
                 reason_label = QLabel(
-                    container.translate("InitializeGitRepository", INITIALIZE_REPOSITORY_DISABLED_REASON),
+                    translate("ProjectHistory", "Already inside project"),
                     dialog,
                 )
                 reason_label.setEnabled(False)
@@ -579,16 +549,13 @@ class _InitializeGitRepositoryCommand:
         if first_available_button is not None:
             first_available_button.setChecked(True)
         else:
-            no_available_text = container.translate(
-                "InitializeGitRepository",
-                INITIALIZE_REPOSITORY_NO_AVAILABLE_MESSAGE,
-            )
+            no_available_text = translate("ProjectHistory", "All listed directories are already inside projects.")
             layout.addWidget(QLabel(no_available_text))
 
         button_layout = QHBoxLayout()
-        initialize_button = QPushButton(container.translate("InitializeGitRepository", INITIALIZE_REPOSITORY_BUTTON))
+        initialize_button = QPushButton(translate("ProjectHistory", "Initialize"))
         initialize_button.setEnabled(first_available_button is not None)
-        cancel_button = QPushButton(container.translate("Common", DIALOG_CANCEL))
+        cancel_button = QPushButton(translate("ProjectHistory", "Cancel"))
         initialize_button.clicked.connect(dialog.accept)
         cancel_button.clicked.connect(dialog.reject)
 
@@ -640,19 +607,14 @@ class _OpenAllDocumentsInRepositoryCommand:
 
         from .._container import get_container
         from ..ui.registry import ui_registry
-        from ..ui.translation_strings import (
-            OPEN_ALL_DOCUMENTS_NO_REPOSITORY_MESSAGE,
-            OPEN_ALL_DOCUMENTS_NO_REPOSITORY_TITLE,
-        )
-
         container = get_container()
         repo = ui_registry.ui_state.git_repository
 
         if repo is None:
             QMessageBox.warning(
                 None,  # type: ignore[arg-type]
-                container.translate("OpenAllDocuments", OPEN_ALL_DOCUMENTS_NO_REPOSITORY_TITLE),
-                container.translate("OpenAllDocuments", OPEN_ALL_DOCUMENTS_NO_REPOSITORY_MESSAGE),
+                translate("ProjectHistory", "No Project"),
+                translate("ProjectHistory", "No project detected. Open a FreeCAD document in a project first."),
             )
             return
 

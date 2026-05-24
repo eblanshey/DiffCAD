@@ -6,7 +6,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from PySide6.QtCore import QCoreApplication
 from PySide6.QtWidgets import (
     QFormLayout,
     QGroupBox,
@@ -33,21 +32,7 @@ from ...domain.settings.text_codec import (
     serialize_by_type_lines,
     serialize_list_lines,
 )
-from ...utils import Log
-from ..translation_strings import (
-    PREFERENCES_FLOAT_PRECISION_LABEL,
-    PREFERENCES_GROUP_EXCLUDED_OBJECT_TYPES,
-    PREFERENCES_GROUP_EXCLUDED_PROPERTIES,
-    PREFERENCES_GROUP_NUMERIC_COMPARISON,
-    PREFERENCES_GROUP_TYPE_SPECIFIC_EXCLUDED_PROPERTIES,
-    PREFERENCES_HELPER_PROPERTY_NAME_PER_LINE,
-    PREFERENCES_HELPER_TYPE_ID_PER_LINE,
-    PREFERENCES_HELPER_TYPE_PROPERTY_MAPPING_PER_LINE,
-    PREFERENCES_PAGE_GENERAL,
-    PREFERENCES_RADIO_USE_CUSTOM_EXCLUSION_LIST,
-    PREFERENCES_RADIO_USE_DEFAULT_EXCLUSION_LIST,
-    PREFERENCES_RUNTIME_ONLY_NOTICE,
-)
+from ...utils import Log, translate
 
 
 @dataclass(frozen=True)
@@ -89,11 +74,14 @@ class DiffSettingsPreferencesPage:
         self._is_loading = False
 
         self.form = QWidget()
-        self.form.setWindowTitle(self._tr(PREFERENCES_PAGE_GENERAL))
+        self.form.setWindowTitle(translate("ProjectHistory", "General"))
         root_layout = QVBoxLayout(self.form)
 
         info_text = QLabel(
-            self._tr(PREFERENCES_RUNTIME_ONLY_NOTICE),
+            translate(
+                "ProjectHistory",
+                "Settings apply only during tree comparisons. Saved tree snapshots are unaffected by these settings.",
+            ),
             self.form,
         )
         info_text.setWordWrap(True)
@@ -101,33 +89,33 @@ class DiffSettingsPreferencesPage:
 
         self._excluded_types_controls = self._build_list_group(
             "excluded_types",
-            self._tr(PREFERENCES_HELPER_TYPE_ID_PER_LINE),
+            translate("ProjectHistory", "One TypeId per line."),
         )
         root_layout.addWidget(
             self._wrap_group(
-                self._tr(PREFERENCES_GROUP_EXCLUDED_OBJECT_TYPES),
+                translate("ProjectHistory", "Excluded object types"),
                 self._excluded_types_controls,
             )
         )
 
         self._excluded_properties_controls = self._build_list_group(
             "excluded_properties",
-            self._tr(PREFERENCES_HELPER_PROPERTY_NAME_PER_LINE),
+            translate("ProjectHistory", "One property name per line."),
         )
         root_layout.addWidget(
             self._wrap_group(
-                self._tr(PREFERENCES_GROUP_EXCLUDED_PROPERTIES),
+                translate("ProjectHistory", "Excluded properties"),
                 self._excluded_properties_controls,
             )
         )
 
         self._excluded_by_type_controls = self._build_list_group(
             "excluded_properties_by_type",
-            self._tr(PREFERENCES_HELPER_TYPE_PROPERTY_MAPPING_PER_LINE),
+            translate("ProjectHistory", "One line per mapping: TypeId -> Property"),
         )
         root_layout.addWidget(
             self._wrap_group(
-                self._tr(PREFERENCES_GROUP_TYPE_SPECIFIC_EXCLUDED_PROPERTIES),
+                translate("ProjectHistory", "Type-specific excluded properties"),
                 self._excluded_by_type_controls,
             )
         )
@@ -136,8 +124,8 @@ class DiffSettingsPreferencesPage:
         self._float_precision_spin.setRange(0, 12)
         self._float_precision_spin.setSingleStep(1)
         precision_layout = QFormLayout()
-        precision_layout.addRow(self._tr(PREFERENCES_FLOAT_PRECISION_LABEL), self._float_precision_spin)
-        precision_group = QGroupBox(self._tr(PREFERENCES_GROUP_NUMERIC_COMPARISON), self.form)
+        precision_layout.addRow(translate("ProjectHistory", "Float precision"), self._float_precision_spin)
+        precision_group = QGroupBox(translate("ProjectHistory", "Numeric comparison"), self.form)
         precision_group.setLayout(precision_layout)
         root_layout.addWidget(precision_group)
         root_layout.addStretch(1)
@@ -213,10 +201,6 @@ class DiffSettingsPreferencesPage:
         self._excluded_properties_controls.default_radio.toggled.connect(lambda _checked: self._sync_visibility())
         self._excluded_by_type_controls.default_radio.toggled.connect(lambda _checked: self._sync_visibility())
 
-    def _tr(self, text: str) -> str:
-        """Translate text in PreferencesView context."""
-        return QCoreApplication.translate("PreferencesView", text)
-
     def _sync_visibility(self) -> None:
         self._excluded_types_controls.text_edit.setVisible(self._excluded_types_controls.custom_radio.isChecked())
         self._excluded_properties_controls.text_edit.setVisible(
@@ -282,8 +266,8 @@ class DiffSettingsPreferencesPage:
         controls.text_edit.setPlainText(serialize_by_type_lines(defaults))
 
     def _build_list_group(self, textarea_name: str, helper_text: str) -> _ListControls:
-        default_radio = QRadioButton(self._tr(PREFERENCES_RADIO_USE_DEFAULT_EXCLUSION_LIST), self.form)
-        custom_radio = QRadioButton(self._tr(PREFERENCES_RADIO_USE_CUSTOM_EXCLUSION_LIST), self.form)
+        default_radio = QRadioButton(translate("ProjectHistory", "Use default exclusion list"), self.form)
+        custom_radio = QRadioButton(translate("ProjectHistory", "Use custom exclusion list"), self.form)
 
         text_edit = QTextEdit(self.form)
         text_edit.setObjectName(textarea_name)

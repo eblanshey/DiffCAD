@@ -3,7 +3,7 @@
 from collections.abc import Callable
 from datetime import datetime, timedelta
 
-from PySide6.QtCore import QCoreApplication, QSize, Qt
+from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -20,14 +20,7 @@ from PySide6.QtWidgets import (
 from ...application.actions.result_models import SnapshotSummary
 from ...domain.git.models import GitCommit, GitRepository
 from ...resources import get_icon_path
-from ..translation_strings import (
-    HISTORY_STAGING_LABEL,
-    HISTORY_WORKING_TREE_LABEL,
-    ITERATION_LABEL,
-    REFRESH_REPOSITORY_TOOLTIP,
-    REPOSITORY_INFO_TEMPLATE,
-    REPOSITORY_NO_REPO_MESSAGE,
-)
+from ...utils import translate
 from .models import HistorySelection
 
 
@@ -118,7 +111,7 @@ class HistoryPanelWidget(QWidget):
         self._history_list.setWordWrap(True)
         self._history_list.setSpacing(0)
 
-        history_placeholder = QLabel(ITERATION_LABEL)
+        history_placeholder = QLabel(translate("ProjectHistory", "Iterations"))
         history_placeholder.setAlignment(Qt.AlignmentFlag.AlignLeft)
 
         self._repository_label = QLabel("")
@@ -128,7 +121,7 @@ class HistoryPanelWidget(QWidget):
         self._refresh_button = QPushButton()
         self._refresh_button.setIcon(_REFRESH_ICON)
         self._refresh_button.setIconSize(QSize(24, 24))
-        refresh_tooltip = QCoreApplication.translate("DiffView", REFRESH_REPOSITORY_TOOLTIP)
+        refresh_tooltip = translate("ProjectHistory", "Refresh Project and Iterations")
         self._refresh_button.setToolTip(refresh_tooltip)
 
         repository_header_layout = QHBoxLayout()
@@ -222,8 +215,8 @@ class HistoryPanelWidget(QWidget):
         # These are always present, even if no commits are provided
 
         # Add "In Progress" item
-        working_tree_text = QCoreApplication.translate("DiffView", HISTORY_WORKING_TREE_LABEL)
-        staging_text = QCoreApplication.translate("DiffView", HISTORY_STAGING_LABEL)
+        working_tree_text = translate("ProjectHistory", "In Progress")
+        staging_text = translate("ProjectHistory", "Reviewed")
 
         working_tree_item = QListWidgetItem(working_tree_text)
         working_tree_item.setData(Qt.ItemDataRole.TextAlignmentRole, Qt.AlignmentFlag.AlignCenter)
@@ -436,7 +429,8 @@ class HistoryPanelWidget(QWidget):
             return _time(local_timestamp)
 
         if local_timestamp.date() == (now - timedelta(days=1)).date():
-            return f"Yesterday {_time(local_timestamp)}"
+            yesterday_label = translate("ProjectHistory", "Yesterday")
+            return f"{yesterday_label} {_time(local_timestamp)}"
 
         if local_timestamp.year == now.year:
             return local_timestamp.strftime("%b %d ").replace(" 0", " ") + _time(local_timestamp)
@@ -451,14 +445,14 @@ class HistoryPanelWidget(QWidget):
                   If None, shows "No git repository detected".
         """
         if repo is None:
-            text = QCoreApplication.translate("Common", REPOSITORY_NO_REPO_MESSAGE)
+            text = translate("ProjectHistory", "No project detected")
             self._repository_label.setText(text)
             self._repository_label.setToolTip("")
             self._repository_label.setStyleSheet("font-size: 11px; color: gray; font-style: italic;")
         else:
             name = repo.name
             path = repo.absolute_path
-            template = QCoreApplication.translate("Common", REPOSITORY_INFO_TEMPLATE)
+            template = translate("ProjectHistory", "Project: %1")
             # Replace Qt-style placeholders (%1) with repository name
             text = template.replace("%1", name)
             self._repository_label.setText(text)

@@ -3,18 +3,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, cast
 
+from PySide6.QtCore import QT_TRANSLATE_NOOP
 from PySide6.QtGui import QIcon
 
 from ...domain.diff.models import DiffState
 from ...resources import get_icon_path
-from ..translation_strings import (
-    DOC_STATUS_INVALID_SNAPSHOT_TOOLTIP,
-    DOC_STATUS_NEW_DOCUMENT_TOOLTIP,
-    DOC_STATUS_OLD_SNAPSHOT_MISSING_TOOLTIP,
-    DOC_STATUS_SNAPSHOT_MISSING_TOOLTIP,
-)
 
 
 __all__ = [
@@ -45,7 +40,7 @@ class NewFileIndicator(DocumentStatusIndicator):
 
     def __init__(self) -> None:
         super().__init__(
-            tooltip=DOC_STATUS_NEW_DOCUMENT_TOOLTIP,
+            tooltip=cast(str, QT_TRANSLATE_NOOP("ProjectHistory", "New document")),
             icon=QIcon(str(get_icon_path("DocumentStatusNewFile.svg"))),
         )
 
@@ -56,7 +51,10 @@ class OldSnapshotMissingIndicator(DocumentStatusIndicator):
 
     def __init__(self) -> None:
         super().__init__(
-            tooltip=DOC_STATUS_OLD_SNAPSHOT_MISSING_TOOLTIP,
+            tooltip=cast(
+                str,
+                QT_TRANSLATE_NOOP("ProjectHistory", "Cannot find old snapshot. Tree comparison cannot be generated."),
+            ),
             icon=QIcon(str(get_icon_path("DocumentStatusOldSnapshotMissing.svg"))),
         )
 
@@ -67,7 +65,12 @@ class SnapshotMissingIndicator(DocumentStatusIndicator):
 
     def __init__(self) -> None:
         super().__init__(
-            tooltip=DOC_STATUS_SNAPSHOT_MISSING_TOOLTIP,
+            tooltip=cast(
+                str,
+                QT_TRANSLATE_NOOP(
+                    "ProjectHistory", "The selected iteration does not have a snapshot for this document"
+                ),
+            ),
             icon=QIcon(str(get_icon_path("DocumentStatusSnapshotMissing.svg"))),
         )
 
@@ -78,7 +81,12 @@ class InvalidSnapshotIndicator(DocumentStatusIndicator):
 
     def __init__(self) -> None:
         super().__init__(
-            tooltip=DOC_STATUS_INVALID_SNAPSHOT_TOOLTIP,
+            tooltip=cast(
+                str,
+                QT_TRANSLATE_NOOP(
+                    "ProjectHistory", "The older snapshot is invalid, so a tree comparison cannot be generated."
+                ),
+            ),
             icon=QIcon(str(get_icon_path("DocumentStatusInvalidSnapshot.svg"))),
         )
 
@@ -89,7 +97,7 @@ class DiffComputationFailedIndicator(DocumentStatusIndicator):
 
     def __init__(self) -> None:
         super().__init__(
-            tooltip="Diff computation failed",
+            tooltip=cast(str, QT_TRANSLATE_NOOP("ProjectHistory", "Diff computation failed")),
             icon=QIcon(str(get_icon_path("DocumentStatusDiffFailed.svg"))),
         )
 
