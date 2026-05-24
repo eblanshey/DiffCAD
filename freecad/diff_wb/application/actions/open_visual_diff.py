@@ -11,12 +11,6 @@ from ...domain.diff.visual_diff import FreeCADVisualDiffPort
 from ...domain.freecad_ports import FreeCadFileManagerPort
 from ...domain.git.git_service import GitService
 from ...domain.git.models import GitRepository
-from ...ui.translation_strings import (
-    VISUAL_DIFF_IMPORT_FAILURE_MESSAGE,
-    VISUAL_DIFF_INVALID_REQUEST_MESSAGE,
-    VISUAL_DIFF_MISSING_BREP_MESSAGE,
-    VISUAL_DIFF_MISSING_FCSTD_MESSAGE,
-)
 from ...utils import Log
 from .result_models import Result
 
@@ -27,6 +21,15 @@ class VisualDiffRequestType(Enum):
     WORKING = "working"
     STAGING = "staging"
     COMMIT = "commit"
+
+
+class VisualDiffFailureReason(Enum):
+    """Internal failure reason codes for visual diff orchestration."""
+
+    INVALID_REQUEST = "visual_diff.invalid_request"
+    MISSING_FCSTD = "visual_diff.missing_fcstd"
+    MISSING_BREP = "visual_diff.missing_brep"
+    IMPORT_FAILURE = "visual_diff.import_failure"
 
 
 @dataclass(frozen=True)
@@ -63,15 +66,15 @@ class OpenVisualDiffAction:
             revisions = self._request_revisions(request)
         except RuntimeError as err:
             Log.warning(f"Invalid visual diff request: {err}")
-            return Result.failure(VISUAL_DIFF_INVALID_REQUEST_MESSAGE)
+            return Result.failure(VisualDiffFailureReason.INVALID_REQUEST.value)
 
         extract_root_old, extract_root_new = self._prepare_revisions(request, revisions)
         if extract_root_old is None and extract_root_new is None:
-            return Result.failure(VISUAL_DIFF_MISSING_FCSTD_MESSAGE)
+            return Result.failure(VisualDiffFailureReason.MISSING_FCSTD.value)
 
         old_brep, new_brep = self._find_breps(request, object_name, extract_root_old, extract_root_new)
         if old_brep is None and new_brep is None:
-            return Result.failure(VISUAL_DIFF_MISSING_BREP_MESSAGE)
+            return Result.failure(VisualDiffFailureReason.MISSING_BREP.value)
 
         document_name = self._construct_document_name(request, object_name)
         try:
@@ -82,7 +85,7 @@ class OpenVisualDiffAction:
             )
         except Exception as err:  # noqa: BLE001
             Log.warning(f"Failed to open visual diff document: {err}")
-            return Result.failure(VISUAL_DIFF_IMPORT_FAILURE_MESSAGE)
+            return Result.failure(VisualDiffFailureReason.IMPORT_FAILURE.value)
 
         return Result.success(True)
 

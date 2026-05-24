@@ -16,6 +16,14 @@ UNCHANGED_COLOR: Color = (0.6, 0.6, 0.6, 1.0)
 ADDED_COLOR: Color = (0.0, 0.8, 0.0, 1.0)
 REMOVED_COLOR: Color = (0.9, 0.0, 0.0, 1.0)
 
+# Stable technical identifiers for document objects. Keep untranslated.
+OLD_VISUAL_OBJECT_NAME = "Old_Visual"
+NEW_VISUAL_OBJECT_NAME = "New_Visual"
+DIFF_GROUP_OBJECT_NAME = "Diff"
+UNCHANGED_VISUAL_OBJECT_NAME = "Unchanged_Visual"
+ADDED_VISUAL_OBJECT_NAME = "Added_Visual"
+REMOVED_VISUAL_OBJECT_NAME = "Removed_Visual"
+
 
 class FreeCADVisualDiffCreator:
     """Open a new FreeCAD document importing old/new BREP as features."""
@@ -55,41 +63,41 @@ class FreeCADVisualDiffCreator:
 
     def _add_single_visual(self, document: Any, old_shape: object | None, new_shape: object | None) -> None:
         visual_shape = old_shape if old_shape is not None else new_shape
-        visual_name = "Old_Visual" if old_shape is not None else "New_Visual"
+        visual_name = OLD_VISUAL_OBJECT_NAME if old_shape is not None else NEW_VISUAL_OBJECT_NAME
         visual_feature = cast(Any, document.addObject("Part::Feature", visual_name))
         visual_feature.Label = visual_name
         visual_feature.Shape = visual_shape
 
     def _add_diff_visuals(self, document: Any, old_shape: object, new_shape: object) -> None:
-        old_feature = cast(Any, document.addObject("Part::Feature", "Old_Visual"))
-        old_feature.Label = "Old_Visual"
+        old_feature = cast(Any, document.addObject("Part::Feature", OLD_VISUAL_OBJECT_NAME))
+        old_feature.Label = OLD_VISUAL_OBJECT_NAME
         old_feature.Shape = old_shape
         old_feature.ViewObject.Visibility = False
 
-        new_feature = cast(Any, document.addObject("Part::Feature", "New_Visual"))
-        new_feature.Label = "New_Visual"
+        new_feature = cast(Any, document.addObject("Part::Feature", NEW_VISUAL_OBJECT_NAME))
+        new_feature.Label = NEW_VISUAL_OBJECT_NAME
         new_feature.Shape = new_shape
         new_feature.ViewObject.Visibility = False
 
-        diff_folder = cast(Any, document.addObject("App::DocumentObjectGroup", "Diff"))
-        diff_folder.Label = "Diff"
+        diff_folder = cast(Any, document.addObject("App::DocumentObjectGroup", DIFF_GROUP_OBJECT_NAME))
+        diff_folder.Label = DIFF_GROUP_OBJECT_NAME
 
-        unchanged_feature = cast(Any, document.addObject("Part::Feature", "Unchanged_Visual"))
-        unchanged_feature.Label = "Unchanged_Visual"
+        unchanged_feature = cast(Any, document.addObject("Part::Feature", UNCHANGED_VISUAL_OBJECT_NAME))
+        unchanged_feature.Label = UNCHANGED_VISUAL_OBJECT_NAME
         unchanged_feature.Shape = cast(Any, old_shape).common(new_shape)
         self._set_color(unchanged_feature, UNCHANGED_COLOR)
         unchanged_feature.ViewObject.Transparency = DIFF_FEATURE_TRANSPARENCY
         diff_folder.addObject(unchanged_feature)
 
-        added_feature = cast(Any, document.addObject("Part::Feature", "Added_Visual"))
-        added_feature.Label = "Added_Visual"
+        added_feature = cast(Any, document.addObject("Part::Feature", ADDED_VISUAL_OBJECT_NAME))
+        added_feature.Label = ADDED_VISUAL_OBJECT_NAME
         added_feature.Shape = cast(Any, new_shape).cut(old_shape)
         added_feature.ViewObject.Transparency = DIFF_FEATURE_TRANSPARENCY
         self._set_color(added_feature, ADDED_COLOR)
         diff_folder.addObject(added_feature)
 
-        removed_feature = cast(Any, document.addObject("Part::Feature", "Removed_Visual"))
-        removed_feature.Label = "Removed_Visual"
+        removed_feature = cast(Any, document.addObject("Part::Feature", REMOVED_VISUAL_OBJECT_NAME))
+        removed_feature.Label = REMOVED_VISUAL_OBJECT_NAME
         removed_feature.Shape = cast(Any, old_shape).cut(new_shape)
         removed_feature.ViewObject.Transparency = DIFF_FEATURE_TRANSPARENCY
         self._set_color(removed_feature, REMOVED_COLOR)

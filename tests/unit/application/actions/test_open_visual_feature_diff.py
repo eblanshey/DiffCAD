@@ -8,12 +8,12 @@ from pathlib import Path
 from freecad.diff_wb.application.actions.open_visual_diff import (
     OpenVisualDiffAction,
     OpenVisualDiffRequest,
+    VisualDiffFailureReason,
     VisualDiffRequestType,
 )
 from freecad.diff_wb.domain.freecad_ports import FreeCadFileManagerPort
 from freecad.diff_wb.domain.git.git_service import GitService
 from freecad.diff_wb.domain.git.models import GitRepository
-from freecad.diff_wb.ui.translation_strings import VISUAL_DIFF_INVALID_REQUEST_MESSAGE
 from tests.fakes.fake_git_port import FakeGitPort
 
 
@@ -183,6 +183,22 @@ def test_execute_fails_when_brep_missing_from_both_sides(tmp_path: Path) -> None
     result = action.execute(OpenVisualDiffRequest(repo, "doc.FCStd", "Body/Pad", VisualDiffRequestType.WORKING))
 
     assert result.is_success is False
+    assert result.message == VisualDiffFailureReason.MISSING_BREP.value
+
+
+def test_execute_fails_when_fcstd_missing_on_both_sides() -> None:
+    repo = GitRepository(name="repo", absolute_path="/repo")
+    fake_port = FakeGitPort()
+    visual_diff = FakeVisualDiff()
+    file_manager = FakeFileManager()
+    file_manager.set_prepared_root("staging", None)
+    file_manager.set_prepared_root("working", None)
+
+    action = _action(fake_port, visual_diff, file_manager)
+    result = action.execute(OpenVisualDiffRequest(repo, "doc.FCStd", "Body/Pad", VisualDiffRequestType.WORKING))
+
+    assert result.is_success is False
+    assert result.message == VisualDiffFailureReason.MISSING_FCSTD.value
 
 
 def test_execute_uses_head_and_staging_for_staging_request(tmp_path: Path) -> None:
@@ -235,5 +251,5 @@ def test_execute_fails_when_commit_request_missing_commits() -> None:
     result = action.execute(OpenVisualDiffRequest(repo, "doc.FCStd", "Body/Pad", VisualDiffRequestType.COMMIT))
 
     assert result.is_success is False
-    assert result.message == VISUAL_DIFF_INVALID_REQUEST_MESSAGE
+    assert result.message == VisualDiffFailureReason.INVALID_REQUEST.value
     assert file_manager.prepared_revisions == []
