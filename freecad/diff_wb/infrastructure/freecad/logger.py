@@ -27,7 +27,7 @@ class FreeCADLogger(Logger):
         Args:
             freecad_port: FreeCadPort instance for logging
         """
-        self._port = freecad_port
+        self._port: FreeCadPort = freecad_port
 
     def info(self, message: str) -> None:
         """Log an informational message."""
@@ -40,3 +40,7 @@ class FreeCADLogger(Logger):
     def error(self, message: str) -> None:
         """Log an error message."""
         self._port.log(message)  # Using log() for errors
+
+    def debug(self, message: str) -> None:
+        """Log a debug message."""
+        self._port.debug(message)

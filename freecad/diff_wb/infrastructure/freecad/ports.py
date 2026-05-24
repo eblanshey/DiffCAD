@@ -102,6 +102,9 @@ class FreeCadPortAdapter:
     def message(self, text: str) -> None:
         self._ctx.app.Console.PrintMessage(text + "\n")
 
+    def debug(self, text: str) -> None:
+        self._ctx.app.Console.PrintDebug(text + "\n")
+
     def translate(self, context: str, text: str) -> str:
         try:
             qt_obj = self._ctx.app.Qt
