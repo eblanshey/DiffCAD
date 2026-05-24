@@ -57,5 +57,3 @@ class TestOpenAllDocumentsInRepositoryCommand:
 
         mock_container.open_all_documents_in_repository_action.execute.assert_called_once_with(repo)
         mock_message_box.warning.assert_not_called()
-
- 

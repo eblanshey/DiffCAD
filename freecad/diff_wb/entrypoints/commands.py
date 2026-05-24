@@ -9,13 +9,23 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypedDict
+
+from PySide6.QtCore import QT_TRANSLATE_NOOP
 
 from ..resources import ICONPATH
 
 
 if TYPE_CHECKING:
     from ..domain.git.models import GitRepositoryInitCandidate
+
+
+class CommandResources(TypedDict):
+    """Shape of FreeCAD command metadata returned by GetResources."""
+
+    MenuText: object
+    ToolTip: object
+    Pixmap: str
 
 
 @dataclass(frozen=True)
@@ -37,11 +47,11 @@ class GitConfigDialogResult:
 class _SwapColumnsCommand:
     """Command to swap left/right columns in the diff view."""
 
-    def GetResources(self) -> dict[str, str]:
+    def GetResources(self) -> CommandResources:
         """Return FreeCAD command metadata for UI integration."""
         return {
-            "MenuText": "Swap Columns",
-            "ToolTip": "Swap the left and right columns",
+            "MenuText": QT_TRANSLATE_NOOP("DiffSwapColumns", "Swap Columns"),
+            "ToolTip": QT_TRANSLATE_NOOP("DiffSwapColumns", "Swap the left and right columns"),
             "Pixmap": os.path.join(ICONPATH, "SwapColumns.svg"),
         }
 
@@ -61,11 +71,11 @@ class _SwapColumnsCommand:
 class _ConfigureGitCommand:
     """Command to configure git author identity."""
 
-    def GetResources(self) -> dict[str, str]:
+    def GetResources(self) -> CommandResources:
         """Return FreeCAD command metadata for UI integration."""
         return {
-            "MenuText": "Configure Git",
-            "ToolTip": "Configure git author name and email",
+            "MenuText": QT_TRANSLATE_NOOP("DiffConfigureGitCommand", "Configure Git"),
+            "ToolTip": QT_TRANSLATE_NOOP("DiffConfigureGitCommand", "Configure git author name and email"),
             "Pixmap": os.path.join(ICONPATH, "ConfigureGit.svg"),
         }
 
@@ -250,11 +260,11 @@ class _ConfigureGitCommand:
 class _CommitCommand:
     """Command to save iteration."""
 
-    def GetResources(self) -> dict[str, str]:
+    def GetResources(self) -> CommandResources:
         """Return FreeCAD command metadata for UI integration."""
         return {
-            "MenuText": "Save Iteration",
-            "ToolTip": "Save reviewed changes as an iteration",
+            "MenuText": QT_TRANSLATE_NOOP("DiffCommit", "Save Iteration"),
+            "ToolTip": QT_TRANSLATE_NOOP("DiffCommit", "Save reviewed changes as an iteration"),
             "Pixmap": os.path.join(ICONPATH, "Commit.svg"),
         }
 
@@ -419,13 +429,18 @@ class _CommitCommand:
 class _RefreshRepositoryCommand:
     """Command to refresh project detection and reload iterations."""
 
-    def GetResources(self) -> dict[str, str]:
+    def GetResources(self) -> CommandResources:
         """Return FreeCAD command metadata for UI integration."""
         return {
-            "MenuText": "Refresh Project",
-            "ToolTip": "Refresh the detected project and reload iterations.\nOpen at least one FreeCAD document "
-            "located within a project before running this command.\nHow it works: open FreeCAD "
-            "documents are checked one by one until one is found to be located within a project.",
+            "MenuText": QT_TRANSLATE_NOOP("DiffRefreshRepository", "Refresh Project"),
+            "ToolTip": QT_TRANSLATE_NOOP(
+                "DiffRefreshRepository",
+                "Refresh the detected project and reload iterations.\n"
+                "Open at least one FreeCAD document "
+                "located within a project before running this command.\n"
+                "How it works: open FreeCAD "
+                "documents are checked one by one until one is found to be located within a project.",
+            ),
             "Pixmap": os.path.join(ICONPATH, "RefreshRepository.svg"),
         }
 
@@ -443,15 +458,14 @@ class _RefreshRepositoryCommand:
 class _InitializeGitRepositoryCommand:
     """Command to initialize a git repository from open document directories."""
 
-    def GetResources(self) -> dict[str, str]:
+    def GetResources(self) -> CommandResources:
         """Return FreeCAD command metadata for UI integration."""
-        from .._container import get_container
-        from ..ui.translation_strings import INITIALIZE_REPOSITORY_MENU_TEXT, INITIALIZE_REPOSITORY_TOOLTIP
-
-        container = get_container()
         return {
-            "MenuText": container.translate("InitializeGitRepository", INITIALIZE_REPOSITORY_MENU_TEXT),
-            "ToolTip": container.translate("InitializeGitRepository", INITIALIZE_REPOSITORY_TOOLTIP),
+            "MenuText": QT_TRANSLATE_NOOP("DiffInitializeGitRepository", "Initialize Git Repository"),
+            "ToolTip": QT_TRANSLATE_NOOP(
+                "DiffInitializeGitRepository",
+                "Initialize a git repository in the selected directory",
+            ),
             "Pixmap": os.path.join(ICONPATH, "CreateGitRepository.svg"),
         }
 
@@ -605,11 +619,14 @@ class _InitializeGitRepositoryCommand:
 class _OpenAllDocumentsInRepositoryCommand:
     """Command to open all .FCStd documents under detected repository."""
 
-    def GetResources(self) -> dict[str, str]:
+    def GetResources(self) -> CommandResources:
         """Return FreeCAD command metadata for UI integration."""
         return {
-            "MenuText": "Open All Documents in Project",
-            "ToolTip": ("Open every .FCStd file found in the project. Useful for generating en masse."),
+            "MenuText": QT_TRANSLATE_NOOP("DiffOpenAllDocumentsInRepository", "Open All Documents in Project"),
+            "ToolTip": QT_TRANSLATE_NOOP(
+                "DiffOpenAllDocumentsInRepository",
+                "Open every .FCStd file found in the project. Useful for generating en masse.",
+            ),
             "Pixmap": os.path.join(ICONPATH, "OpenAllDocuments.svg"),
         }
 
@@ -645,11 +662,11 @@ class _OpenAllDocumentsInRepositoryCommand:
 class _RecomputeAllOpenDocumentsCommand:
     """Command to recompute all open documents in FreeCAD."""
 
-    def GetResources(self) -> dict[str, str]:
+    def GetResources(self) -> CommandResources:
         """Return FreeCAD command metadata for UI integration."""
         return {
-            "MenuText": "Recompute All",
-            "ToolTip": "Recompute every open document",
+            "MenuText": QT_TRANSLATE_NOOP("DiffRecomputeAllOpenDocuments", "Recompute All"),
+            "ToolTip": QT_TRANSLATE_NOOP("DiffRecomputeAllOpenDocuments", "Recompute every open document"),
             "Pixmap": os.path.join(ICONPATH, "RecomputeAll.svg"),
         }
 
@@ -668,11 +685,11 @@ class _RecomputeAllOpenDocumentsCommand:
 class _RecomputeActiveDocumentCommand:
     """Command to recompute the active document in FreeCAD."""
 
-    def GetResources(self) -> dict[str, str]:
+    def GetResources(self) -> CommandResources:
         """Return FreeCAD command metadata for UI integration."""
         return {
-            "MenuText": "Recompute Active Document",
-            "ToolTip": "Recompute the active document",
+            "MenuText": QT_TRANSLATE_NOOP("DiffRecomputeActiveDocument", "Recompute Active Document"),
+            "ToolTip": QT_TRANSLATE_NOOP("DiffRecomputeActiveDocument", "Recompute the active document"),
             "Pixmap": "view-refresh",  # FreeCAD's standard recompute icon (from Std_Recompute)
         }
 
@@ -693,11 +710,11 @@ class _RecomputeActiveDocumentCommand:
 class _OpenDiffWindowCommand:
     """Command to open or focus the history panel."""
 
-    def GetResources(self) -> dict[str, str]:
+    def GetResources(self) -> CommandResources:
         """Return FreeCAD command metadata for UI integration."""
         return {
-            "MenuText": "Open History Panel",
-            "ToolTip": "Open project history view",
+            "MenuText": QT_TRANSLATE_NOOP("DiffOpenDiffWindow", "Open History Panel"),
+            "ToolTip": QT_TRANSLATE_NOOP("DiffOpenDiffWindow", "Open project history view"),
             "Pixmap": os.path.join(ICONPATH, "Logo.svg"),
         }
 
@@ -718,11 +735,14 @@ class _OpenDiffWindowCommand:
 class _CloseDiffWindowsCommand:
     """Command to close all Compare_* windows without saving."""
 
-    def GetResources(self) -> dict[str, str]:
+    def GetResources(self) -> CommandResources:
         """Return FreeCAD command metadata for UI integration."""
         return {
-            "MenuText": "Close Comparison Windows",
-            "ToolTip": "Close every document starting with 'Compare_' without saving",
+            "MenuText": QT_TRANSLATE_NOOP("DiffCloseDiffWindows", "Close Comparison Windows"),
+            "ToolTip": QT_TRANSLATE_NOOP(
+                "DiffCloseDiffWindows",
+                "Close every document starting with 'Compare_' without saving",
+            ),
             "Pixmap": os.path.join(ICONPATH, "DiffCloseDiffWindows.svg"),
         }
 

@@ -9,10 +9,12 @@ and activate the workbench.
 
 import os
 import traceback
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
+
+from PySide6.QtCore import QT_TRANSLATE_NOOP
 
 from ..resources import ICONPATH
-from ..utils import Log, set_logger
+from ..utils import Log, set_logger, translate
 
 
 if TYPE_CHECKING:
@@ -60,8 +62,8 @@ if Gui is not None:
 
         def __init__(self):
             super().__init__()
-            self.MenuText = "History"
-            self.ToolTip = "Track project iterations and history"
+            self.MenuText = cast(str, QT_TRANSLATE_NOOP("Workbench", "History"))
+            self.ToolTip = cast(str, QT_TRANSLATE_NOOP("Workbench", "Track project iterations and history"))
             self._subwindow = None  # Store reference to MDI subwindow
 
         def GetClassName(self) -> str:
@@ -70,7 +72,6 @@ if Gui is not None:
 
         def Initialize(self) -> None:
             """Called at first activation; create container and register commands."""
-            import FreeCAD as App  # pylint: disable=import-error
 
             from .._container import set_container
             from ..application.di.container import create_application_container
@@ -106,9 +107,14 @@ if Gui is not None:
 
             # Setup toolbar and menu
             Log.info("Switching to diff_wb")
-            qt_translate_noop = App.Qt.QT_TRANSLATE_NOOP
-            self.appendToolbar(qt_translate_noop("Workbench", "Project History Workbench"), self.toolbar_commands)
-            self.appendMenu(qt_translate_noop("Workbench", "Project History Workbench"), self.menu_commands)
+            self.appendToolbar(
+                cast(str, QT_TRANSLATE_NOOP("Workbench", "Project History Workbench")),
+                self.toolbar_commands,
+            )
+            self.appendMenu(
+                cast(str, QT_TRANSLATE_NOOP("Workbench", "Project History Workbench")),
+                self.menu_commands,
+            )
 
         @classmethod
         def _register_preferences_page(cls) -> None:
@@ -127,7 +133,7 @@ if Gui is not None:
 
             from ..ui.views.settings_preferences_page import DiffSettingsPreferencesPage
 
-            Gui.addPreferencePage(DiffSettingsPreferencesPage, "Project History")
+            Gui.addPreferencePage(DiffSettingsPreferencesPage, translate("Workbench", "Project History"))
             registry.add(_PREFERENCES_PAGE_ID)
             cls._preferences_page_registered = True
 
@@ -182,7 +188,7 @@ if Gui is not None:
 
                 # Add as MDI subwindow
                 self._subwindow = mdi_area.addSubWindow(view)
-                self._subwindow.setWindowTitle("History Panel")
+                self._subwindow.setWindowTitle(translate("ProjectHistory", "History Panel"))
                 self._subwindow.setWindowIcon(QIcon(os.path.join(ICONPATH, "Logo.svg")))
                 self._subwindow.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, True)
                 self._subwindow.resize(900, 600)

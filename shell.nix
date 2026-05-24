@@ -1,6 +1,6 @@
 { pkgs ? import <nixpkgs> {} }:
 
-# System packages needed to run tests with Qt, which requires 
+# System packages needed to run tests with Qt, which requires
 let
   libs = with pkgs; [
     # OpenGL
@@ -37,7 +37,14 @@ let
   ];
 in
 pkgs.mkShell {
-  packages = with pkgs; [ uv python311 go-task ];
+  packages = with pkgs; [
+    uv
+    python311
+    go-task
+
+    # Include qttools for lrelease, lupdate commands
+    qt6.qttools
+  ];
 
   LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath libs;
 

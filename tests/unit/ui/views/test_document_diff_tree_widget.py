@@ -626,6 +626,3 @@ class TestSetStageButtonEnabled:
 
         widget.set_stage_button_enabled("parts/A.FCStd", False)
         assert not stage_button.isEnabled()
-
-
-

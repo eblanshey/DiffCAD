@@ -2,7 +2,8 @@
 # File responsibility: Utility functions and classes for the Diff Workbench.
 """Utility functions and classes for the Diff Workbench.
 
-This module contains shared utilities including the unified logging system.
+This module contains shared utilities including the unified logging system
+and translation helper for FreeCAD UI text.
 """
 
 import traceback
@@ -183,6 +184,38 @@ def float_values_equal(v1: float, v2: float, precision: int) -> bool:
     return round(v1, precision) == round(v2, precision)
 
 
+def translate(context: str, text: str) -> str:
+    """Translate UI text for FreeCAD workbench.
+
+    This helper calls FreeCAD.Qt.translate() at runtime to get the translated
+    string for the given context and text. When FreeCAD or Qt translation
+    is unavailable (e.g., in unit test environments), it returns the source
+    text unchanged.
+
+    Usage:
+        from ..utils import translate
+        label = translate("ProjectHistory", "History Panel")
+
+    For strings stored in data structures and translated later, use
+    QT_TRANSLATE_NOOP at the definition point instead.
+
+    Args:
+        context: The translation context (e.g., "Workbench", "ProjectHistory",
+                 or exact command name like "DiffCommit").
+        text: The English text to translate.
+
+    Returns:
+        Translated text if available, otherwise the original source text.
+    """
+    try:
+        import FreeCAD as App  # pylint: disable=import-error
+
+        return App.Qt.translate(context, text)
+    except (ImportError, AttributeError):
+        # FreeCAD or Qt not available; return source text
+        return text
+
+
 __all__ = [
     "LoggerProtocol",
     "StdoutLogger",
@@ -191,4 +224,5 @@ __all__ = [
     "set_logger",
     "format_float",
     "float_values_equal",
+    "translate",
 ]

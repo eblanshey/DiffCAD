@@ -10,8 +10,6 @@ test files.
 from unittest.mock import MagicMock, Mock, patch
 
 from freecad.diff_wb.entrypoints.commands import (
-    _OpenDiffWindowCommand,
-    _RecomputeActiveDocumentCommand,
     _RecomputeAllOpenDocumentsCommand,
     _RefreshRepositoryCommand,
     _SwapColumnsCommand,
@@ -57,8 +55,6 @@ class TestRefreshRepositoryCommand:
 
         mock_presenter.refresh_repository_and_commits.assert_called_once_with()
 
- 
-
 
 class TestRecomputeAllOpenDocumentsCommand:
     """Tests for _RecomputeAllOpenDocumentsCommand."""
@@ -75,16 +71,10 @@ class TestRecomputeAllOpenDocumentsCommand:
 
         mock_container.recompute_all_open_documents_action.execute.assert_called_once_with()
 
- 
-
 
 class TestRecomputeActiveDocumentCommand:
     """Tests for _RecomputeActiveDocumentCommand."""
 
- 
-
 
 class TestOpenDiffWindowCommand:
     """Tests for _OpenDiffWindowCommand."""
-
- 

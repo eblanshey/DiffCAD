@@ -92,6 +92,10 @@ class FakeFreeCadPort(FreeCadPort):
         """Log the call (not actually messaging)."""
         self._call_log.append(f"message:{text}")
 
+    def debug(self, text: str) -> None:
+        """Log the call (not actually debugging)."""
+        self._call_log.append(f"debug:{text}")
+
     def translate(self, context: str, text: str) -> str:
         """Return text unchanged (not implementing translation)."""
         self._call_log.append(f"translate:{context}:{text}")

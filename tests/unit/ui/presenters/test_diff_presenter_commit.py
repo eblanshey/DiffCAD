@@ -23,7 +23,7 @@ from freecad.diff_wb.domain.diff.models import DiffResult
 from freecad.diff_wb.domain.git.models import GitRepository
 from freecad.diff_wb.domain.snapshots.models import Snapshot
 from freecad.diff_wb.ui.presenters.diff_presenter import DiffPresenter
-from freecad.diff_wb.ui.presenters.presentation_models import NewFileIndicator, OldSnapshotMissingIndicator
+from freecad.diff_wb.ui.presenters.presentation_models import NewFileIndicator
 from freecad.diff_wb.ui.state import UIState
 from freecad.diff_wb.ui.views.models import HistorySelection
 from tests.fakes.fake_diff_view import FakeDiffView
@@ -105,8 +105,6 @@ class TestDiffPresenterCommitSelection:
         assert presentations[0].nodes == []
         assert isinstance(presentations[0].indicators[0], NewFileIndicator)
         assert presentations[0].indicators[0].tooltip == "New document"
-
- 
 
 
 class TestDiffPresenterStageSingleDocument:
