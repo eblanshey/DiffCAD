@@ -8,9 +8,10 @@ and infinite scroll support.
 from __future__ import annotations
 
 from datetime import datetime
+from unittest.mock import patch
 
 import pytest
-from freecad.history_wb.qt import QtCore, QtWidgets
+from freecad.history_wb.qt import QtCore, QtGui, QtWidgets
 from freecad.history_wb.ui.views.history_panel_widget import HistoryPanelWidget
 
 
@@ -144,6 +145,27 @@ class TestHistoryPanelWidgetShowRepository:
         assert "italic" in stylesheet
         assert "gray" in stylesheet
         assert widget._repository_label.toolTip() == ""
+
+    def test_repository_label_click_opens_project_directory(self, widget) -> None:  # type: ignore[no-untyped-def]
+        """Clicking repository label opens project directory in native file browser."""
+        from freecad.history_wb.domain.git.models import GitRepository
+
+        repo = GitRepository(name="test_project", absolute_path="/home/user/test_project")
+        widget.show_repository(repo)
+
+        with patch.object(QtGui.QDesktopServices, "openUrl", return_value=True) as open_url:
+            widget._repository_label.open_repository_directory()
+
+        open_url.assert_called_once_with(QtCore.QUrl.fromLocalFile("/home/user/test_project"))
+
+    def test_repository_label_click_does_nothing_without_project(self, widget) -> None:  # type: ignore[no-untyped-def]
+        """Clicking label does not try to open directory when no project is shown."""
+        widget.show_repository(None)
+
+        with patch.object(QtGui.QDesktopServices, "openUrl", return_value=True) as open_url:
+            widget._repository_label.open_repository_directory()
+
+        open_url.assert_not_called()
 
 
 class TestShowCommitsSpecialItems:

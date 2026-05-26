@@ -76,6 +76,26 @@ class _HistoryListItemWidget(QtWidgets.QWidget):
         layout.addWidget(separator)
 
 
+class _ClickableRepositoryLabel(QtWidgets.QLabel):
+    """Repository label that opens the project path on click."""
+
+    def __init__(self, get_path: Callable[[], str | None]) -> None:
+        super().__init__("")
+        self._get_path = get_path
+
+    def mousePressEvent(self, event: QtGui.QMouseEvent) -> None:
+        """Open repository directory when label is clicked."""
+        if event.button() == QtCore.Qt.MouseButton.LeftButton:
+            self.open_repository_directory()
+        super().mousePressEvent(event)
+
+    def open_repository_directory(self) -> None:
+        """Open repository path in OS file explorer when available."""
+        path = self._get_path()
+        if path:
+            QtGui.QDesktopServices.openUrl(QtCore.QUrl.fromLocalFile(path))
+
+
 class HistoryPanelWidget(QtWidgets.QWidget):
     """Left-column widget for repository header and history list."""
 
@@ -86,6 +106,7 @@ class HistoryPanelWidget(QtWidgets.QWidget):
         self._on_refresh_callback: Callable[[], None] | None = None
         self._on_selection_changed_callback: Callable[[HistorySelection | None], None] | None = None
         self._current_selection: HistorySelection | None = None
+        self._current_repository_path: str | None = None
         self._history_scroll_bottom_armed = True
         self._setup_ui()
 
@@ -104,7 +125,7 @@ class HistoryPanelWidget(QtWidgets.QWidget):
         history_placeholder = QtWidgets.QLabel(translate("History", "Iterations"))
         history_placeholder.setAlignment(QtCore.Qt.AlignmentFlag.AlignLeft)
 
-        self._repository_label = QtWidgets.QLabel("")
+        self._repository_label = _ClickableRepositoryLabel(self._get_repository_path)
         self._repository_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignLeft)
         self._repository_label.setStyleSheet("font-size: 11px; color: gray; font-style: italic;")
 
@@ -452,18 +473,26 @@ class HistoryPanelWidget(QtWidgets.QWidget):
                   If None, shows "No git repository detected".
         """
         if repo is None:
+            self._current_repository_path = None
             text = translate("History", "No project detected")
             self._repository_label.setText(text)
             self._repository_label.setToolTip("")
+            self._repository_label.setCursor(QtCore.Qt.CursorShape.ArrowCursor)
             self._repository_label.setStyleSheet("font-size: 11px; color: gray; font-style: italic;")
         else:
             name = repo.name
             path = repo.absolute_path
+            self._current_repository_path = path
             template = translate("History", "Project: %1")
             # Replace Qt-style placeholders (%1) with repository name
             text = template.replace("%1", name)
             self._repository_label.setText(text)
             # Set tooltip with full directory path
             self._repository_label.setToolTip(path)
+            self._repository_label.setCursor(QtCore.Qt.CursorShape.PointingHandCursor)
             # Style with underline to indicate clickable/tooltip
             self._repository_label.setStyleSheet("font-size: 11px; font-weight: bold; text-decoration: underline;")
+
+    def _get_repository_path(self) -> str | None:
+        """Return current repository absolute path."""
+        return self._current_repository_path
