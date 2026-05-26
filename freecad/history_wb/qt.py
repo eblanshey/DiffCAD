@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     from PySide6 import QtCore as QtCore, QtGui as QtGui, QtWidgets as QtWidgets
 else:
     try:
+        # Prefer FreeCAD's bundled PySide.
         from PySide import QtCore as QtCore, QtGui as QtGui, QtWidgets as QtWidgets
     except ImportError:
         # Unit tests run without FreeCAD, so FreeCAD's PySide wrapper modules are unavailable.

@@ -17,7 +17,7 @@ from ..utils import translate
 
 
 if TYPE_CHECKING:
-    from PySide6.QtWidgets import QWidget
+    QWidget = QtWidgets.QWidget
 
     from ..domain.git.models import GitRepositoryInitCandidate
 
