@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""Project Metrics Summary Script.
+"""File responsibility: Generate local development metrics summary.
+
+Project Metrics Summary Script.
 
 Provides a concise overview of project statistics including:
 - Source code metrics (files, SLOC, complexity)
@@ -146,8 +148,6 @@ def get_coverage_metrics(package: str, tests_paths: list[Path]) -> dict[str, Any
             "uv",
             "run",
             "pytest",
-            "--timeout",
-            "30",
             *_path_list_to_str_parts(tests_paths),
             f"--cov={package}",
             "--cov-report=json:coverage.json",
@@ -226,6 +226,7 @@ def main() -> None:
 
     src_paths = [Path("freecad/history_wb")]
     tests_paths = [Path("tests")]
+    coverage_tests_paths = [Path("tests/unit")]
 
     # Gather metrics
     output("Gathering metrics...")
@@ -237,7 +238,7 @@ def main() -> None:
 
     test_metrics = gather_test_metrics(tests_paths, package)
 
-    coverage_metrics = get_coverage_metrics(package, tests_paths)
+    coverage_metrics = get_coverage_metrics(package, coverage_tests_paths)
 
     # Report
     report_summary(src_metrics, complexity_metrics, test_metrics, coverage_metrics)
