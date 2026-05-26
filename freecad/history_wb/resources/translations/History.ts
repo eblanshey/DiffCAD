@@ -182,11 +182,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../entrypoints/workbench.py" line="204"/>
-        <source>History Panel</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../../ui/presenters/presentation_models.py" line="41"/>
         <source>New document</source>
         <translation type="unfinished"></translation>
@@ -368,6 +363,11 @@
         <source>Use custom exclusion list</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <location filename="../../entrypoints/workbench.py" line="204"/>
+        <source>History</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>HistoryCloseDiffWindows</name>
@@ -492,6 +492,8 @@ How it works: open FreeCAD documents are checked one by one until one is found t
     <name>Workbench</name>
     <message>
         <location filename="../../entrypoints/workbench.py" line="63"/>
+        <location filename="../../entrypoints/workbench.py" line="81"/>
+        <location filename="../../entrypoints/workbench.py" line="85"/>
         <location filename="../../entrypoints/workbench.py" line="106"/>
         <source>History</source>
         <translation type="unfinished"></translation>
@@ -499,12 +501,6 @@ How it works: open FreeCAD documents are checked one by one until one is found t
     <message>
         <location filename="../../entrypoints/workbench.py" line="64"/>
         <source>Track project iterations and history</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../entrypoints/workbench.py" line="81"/>
-        <location filename="../../entrypoints/workbench.py" line="85"/>
-        <source>History Workbench</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

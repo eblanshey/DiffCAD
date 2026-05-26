@@ -78,11 +78,11 @@ if Gui is not None:
 
             # Setup toolbar and menu
             self.appendToolbar(
-                cast(str, QtCore.QT_TRANSLATE_NOOP("Workbench", "History Workbench")),
+                cast(str, QtCore.QT_TRANSLATE_NOOP("Workbench", "History")),
                 self.toolbar_commands,
             )
             self.appendMenu(
-                cast(str, QtCore.QT_TRANSLATE_NOOP("Workbench", "History Workbench")),
+                cast(str, QtCore.QT_TRANSLATE_NOOP("Workbench", "History")),
                 self.menu_commands,
             )
 
@@ -201,7 +201,7 @@ if Gui is not None:
 
                 # Add as MDI subwindow
                 self._subwindow = mdi_area.addSubWindow(view)
-                self._subwindow.setWindowTitle(translate("History", "History Panel"))
+                self._subwindow.setWindowTitle(translate("History", "History"))
                 self._subwindow.setWindowIcon(QtGui.QIcon(os.path.join(ICONPATH, "Logo.svg")))
                 self._subwindow.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose, True)
                 self._subwindow.resize(900, 600)
