@@ -37,8 +37,8 @@ class TestRecomputeAllOpenDocumentsAction:
 
     def test_execute_recomputes_every_open_document(self) -> None:
         """Action calls recompute once for every open document."""
-        first_doc = _RecomputableDocument("/tmp/first.FCStd")
-        second_doc = _RecomputableDocument("/tmp/second.FCStd")
+        first_doc = _RecomputableDocument("/home/user/dir/first.FCStd")
+        second_doc = _RecomputableDocument("/home/user/dir/second.FCStd")
         fake_port = FakeFreeCadPort(
             open_documents=[
                 cast(DocumentLike, first_doc),
@@ -51,7 +51,7 @@ class TestRecomputeAllOpenDocumentsAction:
         result = action.execute()
 
         assert result.is_success is True
-        assert result.data == ["/tmp/first.FCStd", "/tmp/second.FCStd"]
+        assert result.data == ["/home/user/dir/first.FCStd", "/home/user/dir/second.FCStd"]
         assert first_doc.recompute_call_count == 1
         assert second_doc.recompute_call_count == 1
 

@@ -50,7 +50,7 @@ class TestFindActiveGitRepositoryAction:
     def test_execute_fails_when_document_not_in_git_repo(self) -> None:
         fake_freecad = FakeFreeCadPort()
         mock_doc = MagicMock()
-        mock_doc.FileName = "/tmp/unsaved.FCStd"
+        mock_doc.FileName = "/home/user/dir/unsaved.FCStd"
         fake_freecad._open_documents = [mock_doc]
 
         service = GitService(FakeGitPort())

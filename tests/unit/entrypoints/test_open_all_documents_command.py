@@ -48,7 +48,7 @@ class TestOpenAllDocumentsInRepositoryCommand:
         mock_container = MagicMock()
         mock_get_container.return_value = mock_container
 
-        repo = GitRepository(name="repo", absolute_path="/tmp/repo")
+        repo = GitRepository(name="repo", absolute_path="/home/user/dir/repo")
         mock_ui_registry.ui_state.git_repository = repo
 
         command = _OpenAllDocumentsInRepositoryCommand()

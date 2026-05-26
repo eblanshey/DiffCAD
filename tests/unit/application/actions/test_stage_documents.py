@@ -23,7 +23,7 @@ class TestStageDocumentsActionEmptyList:
         git_service = MagicMock(spec=GitService)
         freecad_port = MagicMock(spec=FreeCadPort)
         action = StageDocumentsAction(git_service=git_service, freecad_port=freecad_port)
-        repo = GitRepository(name="test_repo", absolute_path="/tmp/test_repo")
+        repo = GitRepository(name="test_repo", absolute_path="/home/user/dir/test_repo")
 
         # When execute is called with empty snapshots
         result = action.execute(repo, [])
@@ -47,7 +47,7 @@ class TestStageDocumentsActionSnapshotYaml:
         freecad_port.get_all_open_documents.return_value = []
         git_service.get_eligible_docs.return_value = []
         action = StageDocumentsAction(git_service=git_service, freecad_port=freecad_port)
-        repo = GitRepository(name="test_repo", absolute_path="/tmp/test_repo")
+        repo = GitRepository(name="test_repo", absolute_path="/home/user/dir/test_repo")
 
         # Create a test snapshot
         snapshot = Snapshot(
@@ -60,12 +60,15 @@ class TestStageDocumentsActionSnapshotYaml:
         )
 
         # Mock the SnapshotYamlSerializer
-        with patch("freecad.history_wb.application.actions.stage_documents.SnapshotYamlSerializer") as mock_serializer:
+        with (
+            patch("freecad.history_wb.application.actions.stage_documents.SnapshotYamlSerializer") as mock_serializer,
+            patch("pathlib.Path.mkdir"),
+        ):
             # When execute is called with repo and list of snapshots
             result = action.execute(repo, [snapshot])
 
             # Then SnapshotYamlSerializer.to_yaml is called with correct path
-            expected_yaml_path = Path("/tmp/test_repo/path/to/.snapshots/mydoc.yaml")
+            expected_yaml_path = Path("/home/user/dir/test_repo/path/to/.snapshots/mydoc.yaml")
             mock_serializer.to_yaml.assert_called_once_with(snapshot, expected_yaml_path)
             assert result.is_success is True
 
@@ -82,7 +85,7 @@ class TestStageDocumentsActionStaging:
         freecad_port.get_all_open_documents.return_value = []
         git_service.get_eligible_docs.return_value = []
         action = StageDocumentsAction(git_service=git_service, freecad_port=freecad_port)
-        repo = GitRepository(name="test_repo", absolute_path="/tmp/test_repo")
+        repo = GitRepository(name="test_repo", absolute_path="/home/user/dir/test_repo")
 
         snapshot = Snapshot(
             snapshot_id="test-uuid-123",
@@ -115,7 +118,7 @@ class TestStageDocumentsActionStaging:
         freecad_port.get_all_open_documents.return_value = []
         git_service.get_eligible_docs.return_value = []
         action = StageDocumentsAction(git_service=git_service, freecad_port=freecad_port)
-        repo = GitRepository(name="test_repo", absolute_path="/tmp/test_repo")
+        repo = GitRepository(name="test_repo", absolute_path="/home/user/dir/test_repo")
 
         snapshot1 = Snapshot(
             snapshot_id="uuid-1",
@@ -159,12 +162,12 @@ class TestStageDocumentsActionStaging:
         freecad_port = MagicMock(spec=FreeCadPort)
 
         mock_doc = MagicMock()
-        mock_doc.FileName = "/tmp/test_repo/path/to/mydoc.FCStd"
+        mock_doc.FileName = "/home/user/dir/test_repo/path/to/mydoc.FCStd"
         freecad_port.get_all_open_documents.return_value = [mock_doc]
         git_service.get_eligible_docs.return_value = [mock_doc]
 
         action = StageDocumentsAction(git_service=git_service, freecad_port=freecad_port)
-        repo = GitRepository(name="test_repo", absolute_path="/tmp/test_repo")
+        repo = GitRepository(name="test_repo", absolute_path="/home/user/dir/test_repo")
         snapshot = Snapshot(
             snapshot_id="test-uuid-123",
             document_name="MyDocument",
@@ -196,7 +199,7 @@ class TestStageDocumentsActionSuccess:
         freecad_port.get_all_open_documents.return_value = []
         git_service.get_eligible_docs.return_value = []
         action = StageDocumentsAction(git_service=git_service, freecad_port=freecad_port)
-        repo = GitRepository(name="test_repo", absolute_path="/tmp/test_repo")
+        repo = GitRepository(name="test_repo", absolute_path="/home/user/dir/test_repo")
 
         snapshot = Snapshot(
             snapshot_id="test-uuid",
@@ -232,7 +235,7 @@ class TestStageDocumentsActionFailure:
         freecad_port.get_all_open_documents.return_value = []
         git_service.get_eligible_docs.return_value = []
         action = StageDocumentsAction(git_service=git_service, freecad_port=freecad_port)
-        repo = GitRepository(name="test_repo", absolute_path="/tmp/test_repo")
+        repo = GitRepository(name="test_repo", absolute_path="/home/user/dir/test_repo")
 
         snapshot = Snapshot(
             snapshot_id="test-uuid",
@@ -244,7 +247,10 @@ class TestStageDocumentsActionFailure:
         )
 
         # Mock YAML serialization to raise an exception
-        with patch("freecad.history_wb.application.actions.stage_documents.SnapshotYamlSerializer") as mock_serializer:
+        with (
+            patch("freecad.history_wb.application.actions.stage_documents.SnapshotYamlSerializer") as mock_serializer,
+            patch("pathlib.Path.mkdir"),
+        ):
             mock_serializer.to_yaml.side_effect = Exception("Serialization failed")
             # When execute is called
             result = action.execute(repo, [snapshot])
@@ -262,13 +268,13 @@ class TestStageDocumentsActionFailure:
         freecad_port = MagicMock(spec=FreeCadPort)
 
         mock_doc = MagicMock()
-        mock_doc.FileName = "/tmp/test_repo/mydoc.FCStd"
+        mock_doc.FileName = "/home/user/dir/test_repo/mydoc.FCStd"
         freecad_port.get_all_open_documents.return_value = [mock_doc]
         git_service.get_eligible_docs.return_value = [mock_doc]
         freecad_port.save_document_if_modified.side_effect = Exception("save failed")
 
         action = StageDocumentsAction(git_service=git_service, freecad_port=freecad_port)
-        repo = GitRepository(name="test_repo", absolute_path="/tmp/test_repo")
+        repo = GitRepository(name="test_repo", absolute_path="/home/user/dir/test_repo")
         snapshot = Snapshot(
             snapshot_id="test-uuid",
             document_name="MyDocument",
@@ -293,7 +299,7 @@ class TestStageDocumentsActionFailure:
         freecad_port.get_all_open_documents.return_value = []
         git_service.get_eligible_docs.return_value = []
         action = StageDocumentsAction(git_service=git_service, freecad_port=freecad_port)
-        repo = GitRepository(name="test_repo", absolute_path="/tmp/test_repo")
+        repo = GitRepository(name="test_repo", absolute_path="/home/user/dir/test_repo")
 
         snapshot = Snapshot(
             snapshot_id="test-uuid",
@@ -325,7 +331,7 @@ class TestStageDocumentsActionFailure:
         freecad_port.get_all_open_documents.return_value = []
         git_service.get_eligible_docs.return_value = []
         action = StageDocumentsAction(git_service=git_service, freecad_port=freecad_port)
-        repo = GitRepository(name="test_repo", absolute_path="/tmp/test_repo")
+        repo = GitRepository(name="test_repo", absolute_path="/home/user/dir/test_repo")
 
         snapshot = Snapshot(
             snapshot_id="test-uuid",
@@ -357,7 +363,7 @@ class TestStageDocumentsActionFailure:
         freecad_port.get_all_open_documents.return_value = []
         git_service.get_eligible_docs.return_value = []
         action = StageDocumentsAction(git_service=git_service, freecad_port=freecad_port)
-        repo = GitRepository(name="test_repo", absolute_path="/tmp/test_repo")
+        repo = GitRepository(name="test_repo", absolute_path="/home/user/dir/test_repo")
 
         snapshot = Snapshot(
             snapshot_id="test-uuid",

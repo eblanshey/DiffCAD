@@ -30,7 +30,7 @@ def test_get_commits_action_executes_through_container() -> None:
     ctx = FreeCadContext(app=None, gui=object())  # type: ignore[arg-type]
     container = create_application_container(ctx)
 
-    repo = GitRepository(name="test_project", absolute_path="/tmp/test_project")
+    repo = GitRepository(name="test_project", absolute_path="/home/user/dir/test_project")
     result = container.get_commits_action.execute(repo=repo)
 
     assert result is not None

@@ -49,7 +49,7 @@ def _make_presenter() -> tuple[FakeDiffView, DiffPresenter, MagicMock]:
 class TestDiffPresenterCommitSelection:
     def test_commit_selection_calls_document_diffs_action(self) -> None:
         view, presenter, create_document_diffs_action = _make_presenter()
-        repo = GitRepository(name="repo", absolute_path="/tmp/repo")
+        repo = GitRepository(name="repo", absolute_path="/home/user/dir/repo")
         presenter._ui_state.git_repository = repo
         create_document_diffs_action.execute.return_value = Result.success([])
 
@@ -61,7 +61,7 @@ class TestDiffPresenterCommitSelection:
 
     def test_staging_selection_calls_document_diffs_action(self) -> None:
         view, presenter, create_document_diffs_action = _make_presenter()
-        repo = GitRepository(name="repo", absolute_path="/tmp/repo")
+        repo = GitRepository(name="repo", absolute_path="/home/user/dir/repo")
         presenter._ui_state.git_repository = repo
         create_document_diffs_action.execute.return_value = Result.success([])
 
@@ -75,7 +75,7 @@ class TestDiffPresenterCommitSelection:
         from tests.fakes.fake_freecad_port import DocumentLike
 
         view, presenter, create_document_diffs_action = _make_presenter()
-        repo = GitRepository(name="repo", absolute_path="/tmp/repo")
+        repo = GitRepository(name="repo", absolute_path="/home/user/dir/repo")
         presenter._ui_state.git_repository = repo
         doc = MagicMock(spec=DocumentLike)
         presenter._get_eligible_docs.execute.return_value = Result.success([doc])
@@ -90,7 +90,7 @@ class TestDiffPresenterCommitSelection:
 
     def test_commit_selection_renders_new_status_indicator_without_tree(self) -> None:
         view, presenter, create_document_diffs_action = _make_presenter()
-        repo = GitRepository(name="repo", absolute_path="/tmp/repo")
+        repo = GitRepository(name="repo", absolute_path="/home/user/dir/repo")
         presenter._ui_state.git_repository = repo
         create_document_diffs_action.execute.return_value = Result.success(
             [DocumentDiffResult(git_path="doc.FCStd", status=DocumentDiffStatus.NEW_FILE)]
@@ -111,7 +111,7 @@ class TestDiffPresenterCommitSelection:
 class TestDiffPresenterStageSingleDocument:
     def test_stage_click_clears_property_panel(self) -> None:
         view, presenter, _ = _make_presenter()
-        repo = GitRepository(name="repo", absolute_path="/tmp/repo")
+        repo = GitRepository(name="repo", absolute_path="/home/user/dir/repo")
         presenter._ui_state.git_repository = repo
 
         snapshot = Snapshot(
@@ -134,7 +134,7 @@ class TestDiffPresenterStageSingleDocument:
 class TestVisualDiffClickHandling:
     def test_visual_diff_click_builds_working_tree_request(self) -> None:
         view, presenter, _ = _make_presenter()
-        repo = GitRepository(name="repo", absolute_path="/tmp/repo")
+        repo = GitRepository(name="repo", absolute_path="/home/user/dir/repo")
         presenter._ui_state.git_repository = repo
         presenter._current_history_selection = HistorySelection(item_kind="WORKING_TREE", commit_hash=None)
 
@@ -157,7 +157,7 @@ class TestVisualDiffClickHandling:
 
     def test_visual_diff_click_builds_commit_request(self) -> None:
         view, presenter, _ = _make_presenter()
-        repo = GitRepository(name="repo", absolute_path="/tmp/repo")
+        repo = GitRepository(name="repo", absolute_path="/home/user/dir/repo")
         presenter._ui_state.git_repository = repo
         presenter._current_history_selection = HistorySelection(item_kind="COMMIT", commit_hash="abc123")
 

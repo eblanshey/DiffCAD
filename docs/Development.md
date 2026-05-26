@@ -254,6 +254,8 @@ Location: `tests/unit/`
 
 Use unit tests for fast feedback on pure behavior. Unit tests should not require FreeCAD to be running. Follow the ownership rules above: domain algorithms, application orchestration, infrastructure adapters (without real subprocess or git), and UI presenter logic with fakes.
 
+Do not use `/tmp` or `/var/tmp` paths in tests. Use stable fake paths such as `/home/user/dir/...` to prevent FreeCAD Addons Report static analyzer failures for insecure temporary path usage.
+
 Run tests (includes unit and integration):
 
 ```bash

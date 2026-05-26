@@ -26,7 +26,7 @@ class TestGitPortAdapter:
         "path",
         [
             "/home/user/project",
-            "/tmp/test_repo",
+            "/home/user/dir/test_repo",
             "./relative/path",
             "/absolute/path/to/repo",
         ],
@@ -694,8 +694,8 @@ class TestGitPortAdapterIsPathInRepository:
             # Path exactly at git root
             ("/home/user/project", "/home/user/project", True),
             # Paths outside repo
+            ("/home/user/project", "/home/user/unrelated/file.py", False),
             ("/home/user/project", "/home/user/other/file.py", False),
-            ("/home/user/project", "/tmp/file.py", False),
             ("/home/user/project", "/home/user/project-sibling/file.py", False),
             # Trailing slashes
             ("/home/user/project/", "/home/user/project/src/file.py", True),

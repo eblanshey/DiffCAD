@@ -93,7 +93,7 @@ class TestGetOpenEligibleDocumentsActionEmptyResults:
         fake_freecad_port = FakeFreeCadPort(
             open_documents=[
                 MockDocument("/home/user/other_project/doc.FCStd"),
-                MockDocument("/tmp/doc.FCStd"),
+                MockDocument("/home/user/temp/doc.FCStd"),
             ]
         )
 
@@ -143,7 +143,7 @@ class TestGetOpenEligibleDocumentsActionFiltering:
                 MockDocument("/home/user/my_project/in_repo.FCStd"),  # In repo
                 MockDocument("/home/user/other_project/outside.FCStd"),  # Outside
                 MockDocument("/home/user/my_project/subdir/nested.FCStd"),  # In repo
-                MockDocument("/tmp/temp.FCStd"),  # Outside
+                MockDocument("/home/user/temp/temp.FCStd"),  # Outside
             ]
         )
 

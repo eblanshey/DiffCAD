@@ -123,9 +123,9 @@ class TestGetEligibleDocs:
 
         documents = [
             MockDocument("/home/user/project/doc1.FCStd"),
-            MockDocument("/tmp/outside.FCStd"),
+            MockDocument("/home/user/outside/outside.FCStd"),
             MockDocument("/home/user/project/src/doc2.FCStd"),
-            MockDocument("/var/tmp/neither.FCStd"),
+            MockDocument("/home/user/neither/neither.FCStd"),
         ]
 
         result = service.get_eligible_docs(repo=repo, documents=documents)
