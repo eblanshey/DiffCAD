@@ -994,3 +994,56 @@ class TestHistoryPanelWidgetSelection:
         assert isinstance(received_selection, HistorySelection)
         assert received_selection.item_kind == "COMMIT"
         assert received_selection.commit_hash == commit_hash
+
+    def test_right_click_does_not_change_current_selection(self, widget) -> None:  # type: ignore[no-untyped-def]
+        """Right-clicking a row does not update current selection."""
+        from freecad.history_wb.domain.git.models import GitCommit
+
+        commits = [
+            GitCommit(
+                id="a1b2c3d4e5f67890",
+                message="First commit",
+                author="Test",
+                timestamp=datetime.fromisoformat("2024-01-15T10:30:00+00:00"),
+            ),
+            GitCommit(
+                id="b2c3d4e5f6789012",
+                message="Second commit",
+                author="Test",
+                timestamp=datetime.fromisoformat("2024-01-14T10:30:00+00:00"),
+            ),
+        ]
+        widget.show_commits(commits)
+
+        first_commit_row = 2
+        second_commit_row = 3
+        widget.history_list.setCurrentRow(first_commit_row)
+        assert widget.history_list.currentRow() == first_commit_row
+
+        target_item = widget.history_list.item(second_commit_row)
+        target_rect = widget.history_list.visualItemRect(target_item)
+        click_pos = target_rect.center()
+        local_pos = QtCore.QPointF(click_pos)
+        global_pos = QtCore.QPointF(widget.history_list.viewport().mapToGlobal(click_pos))
+
+        press_event = QtGui.QMouseEvent(
+            QtCore.QEvent.Type.MouseButtonPress,
+            local_pos,
+            global_pos,
+            QtCore.Qt.MouseButton.RightButton,
+            QtCore.Qt.MouseButton.RightButton,
+            QtCore.Qt.KeyboardModifier.NoModifier,
+        )
+        release_event = QtGui.QMouseEvent(
+            QtCore.QEvent.Type.MouseButtonRelease,
+            local_pos,
+            global_pos,
+            QtCore.Qt.MouseButton.RightButton,
+            QtCore.Qt.MouseButton.NoButton,
+            QtCore.Qt.KeyboardModifier.NoModifier,
+        )
+
+        QtWidgets.QApplication.sendEvent(widget.history_list.viewport(), press_event)
+        QtWidgets.QApplication.sendEvent(widget.history_list.viewport(), release_event)
+
+        assert widget.history_list.currentRow() == first_commit_row

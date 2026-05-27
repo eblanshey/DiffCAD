@@ -97,6 +97,17 @@ class _ClickableRepositoryLabel(QtWidgets.QLabel):
             QtGui.QDesktopServices.openUrl(QtCore.QUrl.fromLocalFile(path))
 
 
+class _HistoryListWidget(QtWidgets.QListWidget):
+    """History list widget that keeps selection unchanged on right-click."""
+
+    def mousePressEvent(self, event: QtGui.QMouseEvent) -> None:
+        """Ignore right-button press so context menu does not change selection."""
+        if event.button() == QtCore.Qt.MouseButton.RightButton:
+            event.accept()
+            return
+        super().mousePressEvent(event)
+
+
 class HistoryPanelWidget(QtWidgets.QWidget):
     """Left-column widget for repository header and history list."""
 
@@ -120,7 +131,7 @@ class HistoryPanelWidget(QtWidgets.QWidget):
         return self._history_list
 
     def _setup_ui(self) -> None:
-        self._history_list = QtWidgets.QListWidget()
+        self._history_list = _HistoryListWidget()
         self._history_list.setMinimumWidth(150)
         self._history_list.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.SingleSelection)
         self._history_list.setWordWrap(True)
