@@ -83,8 +83,8 @@ History Workbench works with a Project: a folder on your computer that contains 
 3. **Initialize the Project:** Click <img src="freecad/history_wb/resources/icons/CreateGitRepository.svg" width="16" alt="" /> **Initialize Project** in the History Workbench, select the folder that contains your project files, and click "Initialize".
 4. **Open project documents:** Click <img src="freecad/history_wb/resources/icons/RefreshRepository.svg" width="16" alt="" /> **Refresh Project**, then click <img src="freecad/history_wb/resources/icons/OpenAllDocuments.svg" width="16" alt="" /> **Open All Documents** to open all FreeCAD documents in the project folder.
 5. **Recompute documents:** Click <img src="freecad/history_wb/resources/icons/RecomputeAll.svg" width="16" alt="" /> **Recompute All** to make sure document state is current. Ensure there aren't recomputation errors.
-6. **Review in-progress state:** Select **In Progress** in the history list. Large projects may take some time while comparison data is generated.
-7. **Mark everything reviewed:** Click **Mark All Reviewed**. The workbench saves documents and records the review data needed for future comparisons.
+6. **Review current file state:** Select **Current Files** in the history list. Large projects may take some time while comparison data is generated.
+7. **Mark everything reviewed:** Click **Mark All Reviewed**. The workbench saves documents and records the tree structure data needed for future comparisons.
 8. **Save the baseline iteration:** Use <img src="freecad/history_wb/resources/icons/Commit.svg" width="16" alt="" /> **Save Iteration** or your regular version-control client.
 
 After that baseline iteration, continue modeling normally and use the Daily Workflow instructions below to review your work.
@@ -95,11 +95,11 @@ Use History Workbench as a review loop after normal CAD work.
 
 1. **Work in FreeCAD as usual:** Model, recompute, save, and edit your project files normally. Recompute your document(s) and ensure there are no errors.
 2. **Refresh the project:** In the History workbench, click <img src="freecad/history_wb/resources/icons/RefreshRepository.svg" width="16" alt="" /> **Refresh Project** so the history list and document status reflect the latest files.
-3. **Review in-progress changes:** Click the **In Progress** iteration item in the list. The document tree shows added, removed, and modified objects since the last reviewed state.
+3. **Review file changes:** Click the **Current Files** iteration item in the list. The document tree shows added, removed, and modified objects since the last reviewed state.
 4. **Inspect detailed properties:** Click a changed object in the model tree. The property panel shows changed dimensions, placements, expressions, constraints, quantities, links, and other editable properties.
 5. **Open 3D comparisons:** For changed Part, PartDesign, or Sketcher objects, click <img src="freecad/history_wb/resources/icons/VisualDiff.svg" width="16" alt="" /> **3D Comparison** next to the object to open a separate comparison document. Removed material is shown in red, added material in green, and unchanged material in gray. You may use FreeCAD's unified measurement tool to measure changes.
 6. **Mark documents reviewed:** Click the **Reviewed** button on individual documents when they are ready, or click **Mark All Reviewed** after reviewing all of them. This supports incremental review across multiple related files, such as assemblies.
-7. **Keep working if needed:** Return to the CAD model and make more edits, if needed. The next **In Progress** comparison is made against the documents you already marked as reviewed.
+7. **Keep working if needed:** Return to the CAD model and make more edits, if needed. The next **Current Files** comparison is made against the documents you already marked as reviewed.
 8. **Verify reviewed work:** Click the **Reviewed** iteration item in the history list to confirm exactly what will be saved in the next iteration.
 9.  **Save an iteration:** Click <img src="freecad/history_wb/resources/icons/Commit.svg" width="16" alt="" /> **Save Iteration**, enter a description of the changes, and confirm.
 
@@ -124,7 +124,7 @@ To preserve project history, previous iterations cannot be altered once they are
 
 ## Roadmap
 
-- [ ] Move reviewed documents back to in-progress from inside History Workbench
+- [x] Move reviewed documents back to Current Files from inside History Workbench
 - [x] Initialize new project history repositories from inside History Workbench
 - [ ] Move/rename review data when an `.FCStd` file is moved or renamed
 - [x] 3D view comparisons

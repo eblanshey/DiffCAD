@@ -271,7 +271,7 @@
     </message>
     <message>
         <location filename="../../ui/views/history_panel_widget.py" line="236"/>
-        <source>In Progress</source>
+        <source>Current Files</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

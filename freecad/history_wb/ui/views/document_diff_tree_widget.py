@@ -91,7 +91,7 @@ class DocumentDiffTreeWidget(QtWidgets.QWidget):
         layout.addWidget(self._tree_widget)
 
     def set_current_history_selection(self, selection: HistorySelection | None) -> None:
-        """Set current history selection for conditional In Progress controls."""
+        """Set current history selection for conditional Current Files controls."""
         self._current_selection = selection
 
     def set_node_selection_callback(self, callback: Callable[[str, str], None]) -> None:
@@ -228,7 +228,7 @@ class DocumentDiffTreeWidget(QtWidgets.QWidget):
         return container
 
     def _is_working_tree_selected(self) -> bool:
-        """Return True when In Progress history row selected."""
+        """Return True when Current Files history row selected."""
         return self._current_selection is not None and self._current_selection.item_kind == "WORKING_TREE"
 
     def _is_staging_selected(self) -> bool:

@@ -685,7 +685,7 @@ class DiffPresenter:
         ]
 
         if not snapshots:
-            # Normal no-op case (for example, In Progress context action with nothing to stage).
+            # Normal no-op case (for example, Current Files context action with nothing to stage).
             return
 
         # Stage all documents

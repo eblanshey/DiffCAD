@@ -88,7 +88,7 @@ class DiffView(Protocol):
 
         Args:
             commits: List of GitCommit objects to display.
-            show_special_items: Whether to include top "In Progress" and
+            show_special_items: Whether to include top "Current Files" and
                 "Reviewed" rows before commit rows.
         """
 
@@ -168,7 +168,7 @@ class DiffView(Protocol):
         """Set callback for Remove All from Reviewed action."""
 
     def set_mark_all_reviewed_from_in_progress_callback(self, callback: Callable[[], None]) -> None:
-        """Set callback for Mark All Reviewed action from In Progress context menu."""
+        """Set callback for Mark All Reviewed action from Current Files context menu."""
 
     def set_stage_all_button_visible(self, visible: bool) -> None:
         """Show or hide the 'Stage All' button.

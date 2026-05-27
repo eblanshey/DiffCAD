@@ -210,7 +210,7 @@ class HistoryPanelWidget(QtWidgets.QWidget):
     def show_commits(self, commits: list[GitCommit], show_special_items: bool = True) -> None:
         """Display git commits in the history list.
 
-        The list can start with two special items: "In Progress" and "Reviewed"
+        The list can start with two special items: "Current Files" and "Reviewed"
         when displaying git commits. These items use HistorySelection dataclass
         to distinguish them from actual GitCommits.
 
@@ -219,7 +219,7 @@ class HistoryPanelWidget(QtWidgets.QWidget):
                 in DESC order (newest first) with 7-char hash, author, timestamp
                 on line 1, and first line of message on line 2. Full commit
                 message is shown in tooltip.
-            show_special_items: Whether to include top "In Progress" and
+            show_special_items: Whether to include top "Current Files" and
                 "Reviewed" rows before commit rows.
         """
         # Preserve previous selection so refresh can restore it if still present.
@@ -229,11 +229,11 @@ class HistoryPanelWidget(QtWidgets.QWidget):
         self._history_list.clear()
 
         if show_special_items:
-            # Add special items first: "In Progress" and "Reviewed"
+            # Add special items first: "Current Files" and "Reviewed"
             # These are always present when special items are enabled.
 
-            # Add "In Progress" item
-            working_tree_text = translate("History", "In Progress")
+            # Add "Current Files" item
+            working_tree_text = translate("History", "Current Files")
             staging_text = translate("History", "Reviewed")
 
             working_tree_item = QtWidgets.QListWidgetItem(working_tree_text)
@@ -311,7 +311,7 @@ class HistoryPanelWidget(QtWidgets.QWidget):
         self._on_remove_all_from_reviewed_callback = callback
 
     def set_mark_all_reviewed_from_in_progress_callback(self, callback: Callable[[], None]) -> None:
-        """Set callback for Mark All Reviewed context action on In Progress row."""
+        """Set callback for Mark All Reviewed context action on Current Files row."""
         self._on_mark_all_reviewed_from_in_progress_callback = callback
 
     def append_commits(self, commits: list[GitCommit]) -> None:

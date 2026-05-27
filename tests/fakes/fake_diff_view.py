@@ -193,7 +193,7 @@ class FakeDiffView:
         self._remove_all_from_reviewed_callback = callback
 
     def set_mark_all_reviewed_from_in_progress_callback(self, callback: Callable[[], None]) -> None:
-        """Capture mark-all-reviewed callback registration from In Progress context menu."""
+        """Capture mark-all-reviewed callback registration from Current Files context menu."""
         self._record_call("set_mark_all_reviewed_from_in_progress_callback", callback=callback)
         self._mark_all_reviewed_from_in_progress_callback = callback
 

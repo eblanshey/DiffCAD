@@ -173,7 +173,7 @@ class TestShowCommitsSpecialItems:
     """Tests for the special "Working Tree" and "Staging" items in show_commits."""
 
     def test_show_commits_always_shows_in_progress_and_reviewed_at_top(self, widget) -> None:  # type: ignore[no-untyped-def]
-        """Test that In Progress and Reviewed items are always present at the top of the list."""
+        """Test that Current Files and Reviewed items are always present at the top of the list."""
         from freecad.history_wb.domain.git.models import GitCommit
 
         commits = [
@@ -187,13 +187,13 @@ class TestShowCommitsSpecialItems:
 
         widget.show_commits(commits)
 
-        # Verify there are 3 items: In Progress, Reviewed, and the commit
+        # Verify there are 3 items: Current Files, Reviewed, and the commit
         assert widget.history_list.count() == 3
 
-        # Verify In Progress is first
+        # Verify Current Files is first
         working_tree_item = widget.history_list.item(0)
         assert working_tree_item is not None
-        assert _history_row_text(widget, 0) == "In Progress"
+        assert _history_row_text(widget, 0) == "Current Files"
 
         # Verify Reviewed is second
         staging_item = widget.history_list.item(1)
@@ -206,16 +206,16 @@ class TestShowCommitsSpecialItems:
         assert "a1b2c3d" in _history_row_text(widget, 2)
 
     def test_show_commits_shows_special_items_even_with_empty_commits(self, widget) -> None:  # type: ignore[no-untyped-def]
-        """Test that In Progress and Reviewed items are present even when no commits are provided."""
+        """Test that Current Files and Reviewed items are present even when no commits are provided."""
         widget.show_commits([])
 
-        # Verify there are exactly 2 items: In Progress and Reviewed
+        # Verify there are exactly 2 items: Current Files and Reviewed
         assert widget.history_list.count() == 2
 
-        # Verify In Progress is first
+        # Verify Current Files is first
         working_tree_item = widget.history_list.item(0)
         assert working_tree_item is not None
-        assert _history_row_text(widget, 0) == "In Progress"
+        assert _history_row_text(widget, 0) == "Current Files"
 
         # Verify Reviewed is second
         staging_item = widget.history_list.item(1)
@@ -303,7 +303,7 @@ class TestShowCommitsSpecialItems:
         ]
         widget.show_commits(commits1)
         assert widget.history_list.count() == 3
-        assert _history_row_text(widget, 0) == "In Progress"
+        assert _history_row_text(widget, 0) == "Current Files"
         assert _history_row_text(widget, 1) == "Reviewed"
 
         # Second call with different commits
@@ -325,7 +325,7 @@ class TestShowCommitsSpecialItems:
 
         # Verify special items are still at top
         assert widget.history_list.count() == 4  # 2 special + 2 commits
-        assert _history_row_text(widget, 0) == "In Progress"
+        assert _history_row_text(widget, 0) == "Current Files"
         assert _history_row_text(widget, 1) == "Reviewed"
         assert "Second commit" in _history_row_text(widget, 2)
         assert "Third commit" in _history_row_text(widget, 3)
@@ -460,9 +460,9 @@ class TestReviewedContextMenu:
     def test_show_commits_empty_list(self, widget) -> None:  # type: ignore[no-untyped-def]
         """Test that empty commit list shows only special items."""
         widget.show_commits([])
-        # Special items (In Progress, Reviewed) are always present
+        # Special items (Current Files, Reviewed) are always present
         assert widget.history_list.count() == 2
-        assert _history_row_text(widget, 0) == "In Progress"
+        assert _history_row_text(widget, 0) == "Current Files"
         assert _history_row_text(widget, 1) == "Reviewed"
 
     def test_show_commits_tooltip_has_full_message(self, widget) -> None:  # type: ignore[no-untyped-def]
@@ -508,7 +508,7 @@ class TestReviewedContextMenu:
 
         # List should contain special items + new commit (not old commit)
         assert widget.history_list.count() == 3
-        assert _history_row_text(widget, 0) == "In Progress"
+        assert _history_row_text(widget, 0) == "Current Files"
         assert _history_row_text(widget, 1) == "Reviewed"
         assert "Test commit" in _history_row_text(widget, 2)
 
@@ -574,7 +574,7 @@ class TestReviewedContextMenu:
         # Verify order matches input (pre-sorted) + special items at top
         assert widget.history_list.count() == 5  # 2 special + 3 commits
         # Special items at top
-        assert _history_row_text(widget, 0) == "In Progress"
+        assert _history_row_text(widget, 0) == "Current Files"
         assert _history_row_text(widget, 1) == "Reviewed"
         # Commits start at row 2
         assert "New commit" in _history_row_text(widget, 2)
@@ -842,7 +842,7 @@ class TestHistoryInfiniteScroll:
     """Tests for history infinite scroll support."""
 
     def test_append_commits_keeps_special_rows(self, widget) -> None:  # type: ignore[no-untyped-def]
-        """append_commits() appends without clearing existing In Progress/Reviewed rows."""
+        """append_commits() appends without clearing existing Current Files/Reviewed rows."""
         from freecad.history_wb.domain.git.models import GitCommit
 
         widget.show_commits([])
@@ -858,7 +858,7 @@ class TestHistoryInfiniteScroll:
         widget.append_commits(commits)
 
         assert widget.history_list.count() == 3
-        assert _history_row_text(widget, 0) == "In Progress"
+        assert _history_row_text(widget, 0) == "Current Files"
         assert _history_row_text(widget, 1) == "Reviewed"
         assert "Older commit" in _history_row_text(widget, 2)
 

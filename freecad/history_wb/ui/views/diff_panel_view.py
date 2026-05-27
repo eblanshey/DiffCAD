@@ -93,7 +93,7 @@ class DiffPanelView(QtWidgets.QWidget):
                 in DESC order (newest first) with 7-char hash, author, timestamp
                 on line 1, and first line of message on line 2. Full commit
                 message is shown in tooltip.
-            show_special_items: Whether to include top "In Progress" and
+            show_special_items: Whether to include top "Current Files" and
                 "Reviewed" rows before commit rows.
         """
         self._history_panel.show_commits(commits, show_special_items=show_special_items)
@@ -173,7 +173,7 @@ class DiffPanelView(QtWidgets.QWidget):
         self._history_panel.set_remove_all_from_reviewed_callback(callback)
 
     def set_mark_all_reviewed_from_in_progress_callback(self, callback: Callable[[], None]) -> None:
-        """Set callback for In Progress context action Mark All Reviewed."""
+        """Set callback for Current Files context action Mark All Reviewed."""
         self._history_panel.set_mark_all_reviewed_from_in_progress_callback(callback)
 
     def set_stage_all_button_visible(self, visible: bool) -> None:
