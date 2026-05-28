@@ -33,6 +33,10 @@ def _mock_container() -> MagicMock:
     mock.open_visual_feature_diff_action = MagicMock()
     mock.get_staged_file_paths_action = MagicMock()
     mock.get_committed_file_paths_action = MagicMock()
+    mock.commit_staging_action = MagicMock()
+    mock.get_git_identity_action = MagicMock()
+    mock.save_git_identity_action = MagicMock()
+    mock.can_write_global_git_identity_action = MagicMock()
     mock.find_active_git_repository_action = MagicMock()
     mock.get_commits_action = MagicMock()
     mock.settings_repo = MagicMock()
@@ -111,6 +115,14 @@ def test_compose_wires_action_dependencies_and_callbacks() -> None:
         git_kwargs = MockGitPresenter.call_args.kwargs
         assert git_kwargs["find_git_repo_action"] is mock_container.find_active_git_repository_action
         assert git_kwargs["get_commits_action"] is mock_container.get_commits_action
+        assert git_kwargs["get_staged_file_paths_action"] is mock_container.get_staged_file_paths_action
+        assert git_kwargs["commit_staging_action"] is mock_container.commit_staging_action
+        assert git_kwargs["get_git_identity_action"] is mock_container.get_git_identity_action
+        assert git_kwargs["save_git_identity_action"] is mock_container.save_git_identity_action
+        assert (
+            git_kwargs["can_write_global_git_identity_action"]
+            is mock_container.can_write_global_git_identity_action
+        )
 
         # set_node_selection_callback wired to presenter
         mock_view.set_node_selection_callback.assert_called_once_with(mock_diff_presenter.on_node_selected)
