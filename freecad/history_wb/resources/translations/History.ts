@@ -5,6 +5,7 @@
     <name>History</name>
     <message>
         <location filename="../../entrypoints/commands.py" line="337"/>
+        <location filename="../../entrypoints/commands.py" line="375"/>
         <location filename="../../ui/presenters/git_repository_presenter.py" line="111"/>
         <location filename="../../ui/presenters/git_repository_presenter.py" line="159"/>
         <source>No Project</source>
@@ -118,6 +119,7 @@ Saved history is not affected.</source>
     </message>
     <message>
         <location filename="../../entrypoints/commands.py" line="276"/>
+        <location filename="../../entrypoints/commands.py" line="416"/>
         <location filename="../../ui/views/diff_panel_view.py" line="369"/>
         <location filename="../../ui/views/diff_panel_view.py" line="441"/>
         <location filename="../../ui/views/diff_panel_view.py" line="468"/>
@@ -199,6 +201,8 @@ Saved history is not affected.</source>
     </message>
     <message>
         <location filename="../../entrypoints/commands.py" line="212"/>
+        <location filename="../../entrypoints/commands.py" line="385"/>
+        <location filename="../../entrypoints/commands.py" line="431"/>
         <source>Unknown error occurred</source>
         <translation type="unfinished"></translation>
     </message>
@@ -239,7 +243,43 @@ Saved history is not affected.</source>
     </message>
     <message>
         <location filename="../../entrypoints/commands.py" line="338"/>
+        <location filename="../../entrypoints/commands.py" line="376"/>
         <source>No project detected. Open a FreeCAD document in a project first.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../entrypoints/commands.py" line="384"/>
+        <source>Failed to Read Ignored Files</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../entrypoints/commands.py" line="390"/>
+        <source>Edit Ignored Files</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../entrypoints/commands.py" line="438"/>
+        <source>Updated ignored files list.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../entrypoints/commands.py" line="412"/>
+        <source>Save</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../entrypoints/commands.py" line="395"/>
+        <source>Update the ignored files list. Lines starting with a &quot;#&quot; are considered comments. Click &lt;a href=&quot;%1&quot;&gt;here&lt;/a&gt; to learn about the full syntax.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../entrypoints/commands.py" line="430"/>
+        <source>Failed to Save Ignored Files</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../entrypoints/commands.py" line="437"/>
+        <source>Ignored Files Updated</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -482,7 +522,7 @@ Saved history is not affected.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../entrypoints/workbench.py" line="204"/>
+        <location filename="../../entrypoints/workbench.py" line="205"/>
         <source>History</source>
         <translation type="unfinished"></translation>
     </message>
@@ -505,12 +545,12 @@ Saved history is not affected.</source>
 <context>
     <name>HistoryCloseDiffWindows</name>
     <message>
-        <location filename="../../entrypoints/commands.py" line="424"/>
+        <location filename="../../entrypoints/commands.py" line="521"/>
         <source>Close Comparison Windows</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../entrypoints/commands.py" line="425"/>
+        <location filename="../../entrypoints/commands.py" line="522"/>
         <source>Close every document starting with &apos;Diff_&apos; without saving</source>
         <translation type="unfinished"></translation>
     </message>
@@ -570,12 +610,12 @@ Saved history is not affected.</source>
 <context>
     <name>HistoryOpenDiffWindow</name>
     <message>
-        <location filename="../../entrypoints/commands.py" line="399"/>
+        <location filename="../../entrypoints/commands.py" line="496"/>
         <source>Open History Panel</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../entrypoints/commands.py" line="400"/>
+        <location filename="../../entrypoints/commands.py" line="497"/>
         <source>Open history panel view</source>
         <translation type="unfinished"></translation>
     </message>
@@ -583,12 +623,12 @@ Saved history is not affected.</source>
 <context>
     <name>HistoryRecomputeActiveDocument</name>
     <message>
-        <location filename="../../entrypoints/commands.py" line="374"/>
+        <location filename="../../entrypoints/commands.py" line="471"/>
         <source>Recompute Active Document</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../entrypoints/commands.py" line="375"/>
+        <location filename="../../entrypoints/commands.py" line="472"/>
         <source>Recompute the active document</source>
         <translation type="unfinished"></translation>
     </message>
@@ -596,12 +636,12 @@ Saved history is not affected.</source>
 <context>
     <name>HistoryRecomputeAllOpenDocuments</name>
     <message>
-        <location filename="../../entrypoints/commands.py" line="351"/>
+        <location filename="../../entrypoints/commands.py" line="448"/>
         <source>Recompute All</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../entrypoints/commands.py" line="352"/>
+        <location filename="../../entrypoints/commands.py" line="449"/>
         <source>Recompute every open document</source>
         <translation type="unfinished"></translation>
     </message>
@@ -622,17 +662,30 @@ How it works: open FreeCAD documents are checked one by one until one is found t
     </message>
 </context>
 <context>
+    <name>HistoryUpdateGitIgnore</name>
+    <message>
+        <location filename="../../entrypoints/commands.py" line="351"/>
+        <source>Edit Ignored Files</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../entrypoints/commands.py" line="352"/>
+        <source>Edit project ignored files list (.gitignore)</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>Workbench</name>
     <message>
-        <location filename="../../entrypoints/workbench.py" line="63"/>
-        <location filename="../../entrypoints/workbench.py" line="81"/>
-        <location filename="../../entrypoints/workbench.py" line="85"/>
-        <location filename="../../entrypoints/workbench.py" line="106"/>
+        <location filename="../../entrypoints/workbench.py" line="64"/>
+        <location filename="../../entrypoints/workbench.py" line="82"/>
+        <location filename="../../entrypoints/workbench.py" line="86"/>
+        <location filename="../../entrypoints/workbench.py" line="107"/>
         <source>History</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../entrypoints/workbench.py" line="64"/>
+        <location filename="../../entrypoints/workbench.py" line="65"/>
         <source>Track project iterations and history</source>
         <translation type="unfinished"></translation>
     </message>

@@ -11,6 +11,7 @@ from .get_commits import GetCommitsAction
 from .get_diff_settings import GetDiffSettingsAction
 from .get_git_identity import GetGitIdentityAction
 from .get_git_repository_init_candidates import GetGitRepositoryInitCandidatesAction
+from .get_gitignore_content import GetGitIgnoreContentAction
 from .get_open_eligible_documents import GetOpenEligibleDocumentsAction
 from .initialize_git_repository import InitializeGitRepositoryAction
 from .open_all_documents_in_repository import OpenAllDocumentsInRepositoryAction
@@ -30,6 +31,7 @@ from .result_models import (
 from .save_diff_settings import SaveDiffSettingsAction
 from .save_git_identity import SaveGitIdentityAction
 from .unstage_documents import UnstageDocumentsAction
+from .update_gitignore import UpdateGitIgnoreAction
 
 
 __all__ = [
@@ -41,6 +43,7 @@ __all__ = [
     "GetCommitsAction",
     "GetDiffSettingsAction",
     "GetGitIdentityAction",
+    "GetGitIgnoreContentAction",
     "GetOpenEligibleDocumentsAction",
     "GetGitRepositoryInitCandidatesAction",
     "InitializeGitRepositoryAction",
@@ -55,6 +58,7 @@ __all__ = [
     "CreateDiffAction",
     "CreateDocumentDiffsAction",
     "UnstageDocumentsAction",
+    "UpdateGitIgnoreAction",
     # Result models
     "Result",
     "SnapshotResult",

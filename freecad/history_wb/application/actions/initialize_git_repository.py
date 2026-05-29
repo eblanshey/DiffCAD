@@ -9,13 +9,16 @@ import os
 
 from ...domain.git.git_service import GitService
 from .result_models import Result
+from .update_gitignore import UpdateGitIgnoreAction
 
 
 class InitializeGitRepositoryAction:
     """Initialize git repository in selected directory."""
 
-    def __init__(self, git_service: GitService) -> None:
+    def __init__(self, git_service: GitService, update_gitignore_action: UpdateGitIgnoreAction) -> None:
+        """Initialize dependencies for repository initialization workflow."""
         self._git_service = git_service
+        self._update_gitignore_action = update_gitignore_action
 
     def execute(self, path: str) -> Result:
         """Initialize repository at path and return GitRepository on success."""
@@ -29,5 +32,9 @@ class InitializeGitRepositoryAction:
         repository = self._git_service.initialize_repository(normalized_path)
         if repository is None:
             return Result.failure("Failed to initialize git repository")
+
+        gitignore_result = self._update_gitignore_action.execute(repository)
+        if not gitignore_result.is_success:
+            return Result.failure(gitignore_result.message or "Failed to update .gitignore")
 
         return Result.success(repository)

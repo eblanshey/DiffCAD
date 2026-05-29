@@ -342,6 +342,103 @@ class _OpenAllDocumentsInRepositoryCommand:
         container.open_all_documents_in_repository_action.execute(repo)
 
 
+class _UpdateGitIgnoreCommand:
+    """Command to edit repository .gitignore content."""
+
+    def GetResources(self) -> CommandResources:
+        """Return FreeCAD command metadata for UI integration."""
+        return {
+            "MenuText": QtCore.QT_TRANSLATE_NOOP("HistoryUpdateGitIgnore", "Edit Ignored Files"),
+            "ToolTip": QtCore.QT_TRANSLATE_NOOP(
+                "HistoryUpdateGitIgnore",
+                "Edit project ignored files list (.gitignore)",
+            ),
+            "Pixmap": os.path.join(ICONPATH, "GitIgnore.svg"),
+        }
+
+    def IsActive(self) -> bool:
+        """Return whether the command should be enabled."""
+        return True
+
+    def Activated(self) -> None:
+        """FreeCAD calls this when user clicks toolbar button."""
+        from .._container import get_container
+        from ..ui.registry import ui_registry
+
+        container = get_container()
+        parent = _main_window_parent(container)
+        repo = ui_registry.ui_state.git_repository
+
+        if repo is None:
+            QtWidgets.QMessageBox.warning(
+                parent,  # type: ignore[arg-type]
+                translate("History", "No Project"),
+                translate("History", "No project detected. Open a FreeCAD document in a project first."),
+            )
+            return
+
+        content_result = container.get_gitignore_content_action.execute(repo)
+        if not content_result.is_success:
+            QtWidgets.QMessageBox.critical(
+                parent,  # type: ignore[arg-type]
+                translate("History", "Failed to Read Ignored Files"),
+                content_result.message or translate("History", "Unknown error occurred"),
+            )
+            return
+
+        dialog = QtWidgets.QDialog(parent)  # type: ignore[arg-type]
+        dialog.setWindowTitle(translate("History", "Edit Ignored Files"))
+        dialog.setMinimumWidth(680)
+        dialog.setMinimumHeight(460)
+
+        layout = QtWidgets.QVBoxLayout(dialog)
+        help_template = translate(
+            "History",
+            'Update the ignored files list. Lines starting with a "#" are considered comments. '
+            'Click <a href="%1">here</a> to learn about the full syntax.',
+        )
+        help_label = QtWidgets.QLabel(
+            help_template.replace("%1", "https://www.w3schools.com/git/git_ignore.asp")
+        )
+        help_label.setOpenExternalLinks(True)
+        layout.addWidget(help_label)
+
+        text_edit = QtWidgets.QPlainTextEdit(dialog)
+        text_edit.setPlainText(str(content_result.data))
+        layout.addWidget(text_edit)
+
+        button_box = QtWidgets.QDialogButtonBox(dialog)
+        save_button = button_box.addButton(
+            translate("History", "Save"),
+            QtWidgets.QDialogButtonBox.ButtonRole.AcceptRole,
+        )
+        cancel_button = button_box.addButton(
+            translate("History", "Cancel"),
+            QtWidgets.QDialogButtonBox.ButtonRole.RejectRole,
+        )
+        save_button.clicked.connect(dialog.accept)
+        cancel_button.clicked.connect(dialog.reject)
+        layout.addWidget(button_box)
+
+        if dialog.exec() != 1:
+            return
+
+        save_result = container.update_gitignore_action.execute(repo, text_edit.toPlainText())
+        if not save_result.is_success:
+            QtWidgets.QMessageBox.critical(
+                parent,  # type: ignore[arg-type]
+                translate("History", "Failed to Save Ignored Files"),
+                save_result.message or translate("History", "Unknown error occurred"),
+            )
+            return
+
+        QtWidgets.QMessageBox.information(
+            parent,  # type: ignore[arg-type]
+            translate("History", "Ignored Files Updated"),
+            translate("History", "Updated ignored files list."),
+        )
+
+
 class _RecomputeAllOpenDocumentsCommand:
     """Command to recompute all open documents in FreeCAD."""
 
@@ -453,6 +550,7 @@ def register_commands() -> None:
     Gui.addCommand("HistoryCommit", _CommitCommand())
     Gui.addCommand("HistoryRefreshRepository", _RefreshRepositoryCommand())
     Gui.addCommand("HistoryInitializeGitRepository", _InitializeGitRepositoryCommand())
+    Gui.addCommand("HistoryUpdateGitIgnore", _UpdateGitIgnoreCommand())
     Gui.addCommand("HistoryOpenAllDocumentsInRepository", _OpenAllDocumentsInRepositoryCommand())
     Gui.addCommand("HistoryRecomputeAllOpenDocuments", _RecomputeAllOpenDocumentsCommand())
     Gui.addCommand("HistoryRecomputeActiveDocument", _RecomputeActiveDocumentCommand())

@@ -56,6 +56,7 @@ if Gui is not None:
         menu_commands = [
             *toolbar_commands,
             "HistoryConfigureAuthorCommand",
+            "HistoryUpdateGitIgnore",
         ]
 
         def __init__(self):

@@ -73,6 +73,7 @@ class FakeGitPort:
         self._last_restore_call: tuple[str, str | None, list[str]] | None = None
         self._all_fcstd_paths: dict[tuple[str, str | None], list[str]] = {}
         self._current_saved_fcstd_paths: dict[str, list[str]] = {}
+        self._last_stage_files_call: tuple[str, list[str]] | None = None
 
     def add_git_repo(self, root_path: str) -> None:
         """Add a simulated git repository root.
@@ -237,6 +238,7 @@ class FakeGitPort:
         Returns:
             True if not configured to fail, False otherwise.
         """
+        self._last_stage_files_call = (git_root, paths)
         return not self._fail_stage
 
     def get_dirty_paths(self, git_root: str) -> list[str]:

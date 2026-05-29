@@ -140,6 +140,7 @@ To preserve project history, previous iterations cannot be altered once they are
 | Close Comparison Windows | <img src="freecad/history_wb/resources/icons/DiffCloseDiffWindows.svg" width="32" alt="" /> | Close every document starting with `Diff_` without saving. Use it when you want to quickly clean up comparison windows after reviewing 3D diffs. |
 | Save Iteration | <img src="freecad/history_wb/resources/icons/Commit.svg" width="32" alt="" /> | Save reviewed changes as an iteration. Use it after reviewing and marking documents as reviewed to save the result. |
 | Configure Author | <img src="freecad/history_wb/resources/icons/ConfigureGit.svg" width="32" alt="" /> | Configure iteration author name and email. Visible in the menu only. |
+| Edit Ignored Files | <img src="freecad/history_wb/resources/icons/GitIgnore.svg" width="32" alt="" /> | Edit project's ignored files list (`.gitignore` content). Visible in the menu only. |
 
 ## Roadmap
 

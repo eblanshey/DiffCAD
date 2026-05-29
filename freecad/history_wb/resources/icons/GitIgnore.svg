@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+  <!-- File body -->
+  <path d="M5 2 L20 2 L27 9 L27 30 L5 30 Z" fill="#fff8e1" stroke="#aaa" stroke-width="1.5"/>
+  <!-- Folded corner -->
+  <path d="M20 2 L20 9 L27 9 Z" fill="#ffe082" stroke="#aaa" stroke-width="1.5"/>
+  <!-- File lines -->
+  <line x1="9" y1="14" x2="23" y2="14" stroke="#ddd" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="9" y1="18" x2="23" y2="18" stroke="#ddd" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="9" y1="22" x2="17" y2="22" stroke="#ddd" stroke-width="1.5" stroke-linecap="round"/>
+  <!-- Mask overlay -->
+  <ellipse cx="16" cy="17" rx="9" ry="6" fill="#7e57c2" opacity="0.93"/>
+  <!-- Mask eye holes -->
+  <ellipse cx="12.5" cy="16" rx="2.2" ry="2.5" fill="white"/>
+  <ellipse cx="19.5" cy="16" rx="2.2" ry="2.5" fill="white"/>
+  <!-- Mask tie string left -->
+  <path d="M7 17 Q5 17 5 19" stroke="#5e35b1" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+  <!-- Mask tie string right -->
+  <path d="M25 17 Q27 17 27 19" stroke="#5e35b1" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+</svg>

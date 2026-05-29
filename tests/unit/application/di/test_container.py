@@ -20,6 +20,8 @@ def test_container_returns_wired_application_container() -> None:
     assert container.unstage_documents_action is not None
     assert container.get_dirty_documents_action is not None
     assert container.find_active_git_repository_action is not None
+    assert container.get_gitignore_content_action is not None
+    assert container.update_gitignore_action is not None
     assert container.get_commits_action is not None
     assert container.open_all_documents_in_repository_action is not None
     assert container.recompute_all_open_documents_action is not None

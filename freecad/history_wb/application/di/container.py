@@ -34,6 +34,7 @@ from ..actions.get_diff_settings import GetDiffSettingsAction
 from ..actions.get_dirty_documents import GetDirtyDocumentsAction
 from ..actions.get_git_identity import GetGitIdentityAction
 from ..actions.get_git_repository_init_candidates import GetGitRepositoryInitCandidatesAction
+from ..actions.get_gitignore_content import GetGitIgnoreContentAction
 from ..actions.get_open_eligible_documents import GetOpenEligibleDocumentsAction
 from ..actions.get_staged_file_paths import GetStagedFilePathsAction
 from ..actions.initialize_git_repository import InitializeGitRepositoryAction
@@ -45,6 +46,7 @@ from ..actions.save_diff_settings import SaveDiffSettingsAction
 from ..actions.save_git_identity import SaveGitIdentityAction
 from ..actions.stage_documents import StageDocumentsAction
 from ..actions.unstage_documents import UnstageDocumentsAction
+from ..actions.update_gitignore import UpdateGitIgnoreAction
 
 
 __all__ = [
@@ -99,6 +101,8 @@ class ApplicationContainer:
     find_active_git_repository_action: FindActiveGitRepositoryAction
     get_git_repository_init_candidates_action: GetGitRepositoryInitCandidatesAction
     initialize_git_repository_action: InitializeGitRepositoryAction
+    get_gitignore_content_action: GetGitIgnoreContentAction
+    update_gitignore_action: UpdateGitIgnoreAction
     get_commits_action: GetCommitsAction
     open_all_documents_in_repository_action: OpenAllDocumentsInRepositoryAction
     recompute_all_open_documents_action: RecomputeAllOpenDocumentsAction
@@ -166,7 +170,15 @@ def create_application_container(ctx: FreeCadContext) -> ApplicationContainer:
         freecad_port=freecad_port,
         git_service=git_service,
     )
-    initialize_git_repository_action = InitializeGitRepositoryAction(git_service=git_service)
+    get_gitignore_content_action = GetGitIgnoreContentAction()
+    update_gitignore_action = UpdateGitIgnoreAction(
+        git_service=git_service,
+        get_gitignore_content_action=get_gitignore_content_action,
+    )
+    initialize_git_repository_action = InitializeGitRepositoryAction(
+        git_service=git_service,
+        update_gitignore_action=update_gitignore_action,
+    )
 
     get_commits_action = GetCommitsAction(git_service=git_service)
     open_all_documents_in_repository_action = OpenAllDocumentsInRepositoryAction(
@@ -244,6 +256,8 @@ def create_application_container(ctx: FreeCadContext) -> ApplicationContainer:
         find_active_git_repository_action=find_active_git_repository_action,
         get_git_repository_init_candidates_action=get_git_repository_init_candidates_action,
         initialize_git_repository_action=initialize_git_repository_action,
+        get_gitignore_content_action=get_gitignore_content_action,
+        update_gitignore_action=update_gitignore_action,
         get_commits_action=get_commits_action,
         open_all_documents_in_repository_action=open_all_documents_in_repository_action,
         recompute_all_open_documents_action=recompute_all_open_documents_action,
