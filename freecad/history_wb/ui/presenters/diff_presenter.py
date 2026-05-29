@@ -694,6 +694,7 @@ class DiffPresenter:
                 in (
                     DocumentDiffStatus.NEW_FILE,
                     DocumentDiffStatus.DELETED_FILE,
+                    DocumentDiffStatus.DELETED_FILE_OLD_SNAPSHOT_MISSING,
                     DocumentDiffStatus.OLD_SNAPSHOT_MISSING,
                     DocumentDiffStatus.SNAPSHOT_MISSING,
                     DocumentDiffStatus.INVALID_SNAPSHOT,
@@ -917,6 +918,7 @@ class DiffPresenter:
         return status in (
             DocumentDiffStatus.NEW_FILE,
             DocumentDiffStatus.DELETED_FILE,
+            DocumentDiffStatus.DELETED_FILE_OLD_SNAPSHOT_MISSING,
             DocumentDiffStatus.OLD_SNAPSHOT_MISSING,
             DocumentDiffStatus.SNAPSHOT_MISSING,
             DocumentDiffStatus.INVALID_SNAPSHOT,
@@ -999,7 +1001,7 @@ class DiffPresenter:
     def _show_summary(self, document_statuses: dict[str, DocumentDiffStatus]) -> None:
         """Show per-status summary counts derived from document status."""
         modified_docs = self._count_status(document_statuses, DocumentDiffStatus.MODIFIED)
-        deleted_docs = self._count_status(document_statuses, DocumentDiffStatus.DELETED_FILE)
+        deleted_docs = self._count_deleted_statuses(document_statuses)
         added_docs = self._count_status(document_statuses, DocumentDiffStatus.NEW_FILE)
         self._view.show_summary(modified_docs=modified_docs, deleted_docs=deleted_docs, added_docs=added_docs)
 
@@ -1007,9 +1009,20 @@ class DiffPresenter:
         """Count documents matching target status."""
         return sum(1 for status in statuses.values() if status == target)
 
+    def _count_deleted_statuses(self, statuses: dict[str, DocumentDiffStatus]) -> int:
+        """Count documents in deleted-document states."""
+        return sum(
+            1
+            for status in statuses.values()
+            if status in (DocumentDiffStatus.DELETED_FILE, DocumentDiffStatus.DELETED_FILE_OLD_SNAPSHOT_MISSING)
+        )
+
     def _get_document_indicators(self, status: DocumentDiffStatus) -> list[DocumentStatusIndicator]:
         """Build UI indicators for document-level status."""
-        if status == DocumentDiffStatus.OLD_SNAPSHOT_MISSING:
+        if status in (
+            DocumentDiffStatus.OLD_SNAPSHOT_MISSING,
+            DocumentDiffStatus.DELETED_FILE_OLD_SNAPSHOT_MISSING,
+        ):
             return [OldSnapshotMissingIndicator()]
         if status == DocumentDiffStatus.SNAPSHOT_MISSING:
             return [SnapshotMissingIndicator()]
@@ -1023,7 +1036,7 @@ class DiffPresenter:
         """Map document status to document row diff state."""
         if status == DocumentDiffStatus.NEW_FILE:
             return DiffState.ADDED
-        if status == DocumentDiffStatus.DELETED_FILE:
+        if status in (DocumentDiffStatus.DELETED_FILE, DocumentDiffStatus.DELETED_FILE_OLD_SNAPSHOT_MISSING):
             return DiffState.DELETED
         return DiffState.UNCHANGED
 

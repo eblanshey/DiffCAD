@@ -258,7 +258,7 @@ def test_staging_mode_deleted_file_returns_deleted_status_with_diff() -> None:
     assert result.data[0].snapshot_diff is not None
 
 
-def test_deleted_file_with_old_snapshot_missing_returns_old_snapshot_missing_status_only() -> None:
+def test_deleted_file_with_old_snapshot_missing_returns_deleted_missing_old_snapshot_status_only() -> None:
     repo = GitRepository(name="r", absolute_path="/repo")
     snapshot_mapping = {
         ("c1", "deleted.FCStd"): SnapshotLoadResult(None, SnapshotLoadStatus.DOCUMENT_MISSING),
@@ -268,7 +268,7 @@ def test_deleted_file_with_old_snapshot_missing_returns_old_snapshot_missing_sta
 
     result = action.execute(CreateDocumentDiffsRequest(mode=DocumentDiffMode.COMMIT, repo=repo, commit_hash="c1"))
     assert result.data is not None
-    assert result.data[0].status == DocumentDiffStatus.OLD_SNAPSHOT_MISSING
+    assert result.data[0].status == DocumentDiffStatus.DELETED_FILE_OLD_SNAPSHOT_MISSING
     assert result.data[0].snapshot_diff is None
 
 

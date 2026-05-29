@@ -147,6 +147,23 @@ class TestDiffPresenterCommitSelection:
         assert presentations[0].document_state == DiffState.UNCHANGED
         assert len(presentations[0].indicators) == 1
 
+    def test_commit_selection_deleted_file_with_old_snapshot_missing_shows_deleted_state_and_indicator(self) -> None:
+        view, presenter, create_document_diffs_action = _make_presenter()
+        repo = GitRepository(name="repo", absolute_path="/home/user/dir/repo")
+        presenter._ui_state.git_repository = repo
+        create_document_diffs_action.execute.return_value = Result.success(
+            [DocumentDiffResult(git_path="doc.FCStd", status=DocumentDiffStatus.DELETED_FILE_OLD_SNAPSHOT_MISSING)]
+        )
+
+        presenter._on_commit_selected("abc123")
+
+        show_trees_call = next((c for c in view.get_calls() if c["method"] == "show_doc_diffs"), None)
+        assert show_trees_call is not None
+        presentations = show_trees_call["diff_trees"]
+        assert len(presentations) == 1
+        assert presentations[0].document_state == DiffState.DELETED
+        assert len(presentations[0].indicators) == 1
+
     def test_summary_uses_document_status_counts(self) -> None:
         view, presenter, _ = _make_presenter()
         presenter.present_diffs(
@@ -155,6 +172,7 @@ class TestDiffPresenterCommitSelection:
             document_statuses={
                 "mod.FCStd": DocumentDiffStatus.MODIFIED,
                 "del.FCStd": DocumentDiffStatus.DELETED_FILE,
+                "del-old-missing.FCStd": DocumentDiffStatus.DELETED_FILE_OLD_SNAPSHOT_MISSING,
                 "add.FCStd": DocumentDiffStatus.NEW_FILE,
                 "same.FCStd": DocumentDiffStatus.UNCHANGED,
             },
@@ -163,7 +181,7 @@ class TestDiffPresenterCommitSelection:
         summary_call = next((c for c in view.get_calls() if c["method"] == "show_summary"), None)
         assert summary_call is not None
         assert summary_call["modified_docs"] == 1
-        assert summary_call["deleted_docs"] == 1
+        assert summary_call["deleted_docs"] == 2
         assert summary_call["added_docs"] == 1
 
 

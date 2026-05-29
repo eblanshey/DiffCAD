@@ -36,6 +36,9 @@ class CreateDocumentDiffsAction:
     - DELETED_FILE:
       old side has snapshot; new side FCStd is missing.
       Diff tree is computed as old snapshot -> empty-new.
+    - DELETED_FILE_OLD_SNAPSHOT_MISSING:
+      new side FCStd is missing and old side snapshot YAML is missing.
+      Status-only result with deleted document state; tree cannot be generated.
     - OLD_SNAPSHOT_MISSING:
       old side FCStd exists but old snapshot YAML is missing.
       Status-only result, no document-row added/deleted highlight.
@@ -237,7 +240,7 @@ class CreateDocumentDiffsAction:
                 mode=f"deleted-file {mode}",
             )
         if old_load.status == SnapshotLoadStatus.SNAPSHOT_MISSING:
-            return self._compute_status_only_result(git_path, DocumentDiffStatus.OLD_SNAPSHOT_MISSING)
+            return self._compute_status_only_result(git_path, DocumentDiffStatus.DELETED_FILE_OLD_SNAPSHOT_MISSING)
         if old_load.status == SnapshotLoadStatus.INVALID_SNAPSHOT:
             return self._compute_status_only_result(git_path, DocumentDiffStatus.INVALID_SNAPSHOT)
         return self._compute_status_only_result(git_path, DocumentDiffStatus.SNAPSHOT_MISSING)
@@ -253,7 +256,7 @@ class CreateDocumentDiffsAction:
 
         Case handling:
         - new DOCUMENT_MISSING + old snapshot present -> DELETED_FILE (+ deleted-node tree)
-        - new DOCUMENT_MISSING + old SNAPSHOT_MISSING -> OLD_SNAPSHOT_MISSING (status-only)
+        - new DOCUMENT_MISSING + old SNAPSHOT_MISSING -> DELETED_FILE_OLD_SNAPSHOT_MISSING (status-only)
         - new SNAPSHOT_MISSING -> SNAPSHOT_MISSING (status-only)
         - old DOCUMENT_MISSING + new snapshot present -> NEW_FILE (+ added-node tree)
         - old SNAPSHOT_MISSING -> OLD_SNAPSHOT_MISSING (status-only)

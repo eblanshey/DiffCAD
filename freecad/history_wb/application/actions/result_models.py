@@ -48,6 +48,7 @@ class DocumentDiffStatus(Enum):
     UNCHANGED = auto()
     NEW_FILE = auto()
     DELETED_FILE = auto()
+    DELETED_FILE_OLD_SNAPSHOT_MISSING = auto()
     OLD_SNAPSHOT_MISSING = auto()
     SNAPSHOT_MISSING = auto()
     INVALID_SNAPSHOT = auto()
