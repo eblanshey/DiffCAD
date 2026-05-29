@@ -73,7 +73,7 @@ When upgrading from an existing Addon Manager installation:
 
 History Workbench works with a Project: a folder on your computer that contains the FreeCAD files you want to track together. For an existing folder of CAD files, initialize it as a Project first, then save a baseline iteration before making new CAD changes so tree comparisons have a starting point.
 
-1. **(Optional) FreeCAD compression:** To keep project history more storage-efficient, see the FreeCAD Version Storage Tips section below.
+1. **(Recommended) FreeCAD compression:** To keep project history more storage-efficient, see the FreeCAD Version Storage Tips section below.
 2. **Open a FreeCAD file:** Start FreeCAD and open any document from the folder you want to use as the root of your Project.
 3. **Initialize the Project:** Click <img src="freecad/history_wb/resources/icons/CreateGitRepository.svg" width="16" alt="" /> **Initialize Project** in the History Workbench, select the folder that contains your project files, and click "Initialize".
 4. **Open project documents:** Click <img src="freecad/history_wb/resources/icons/RefreshRepository.svg" width="16" alt="" /> **Refresh Project**, then click <img src="freecad/history_wb/resources/icons/OpenAllDocuments.svg" width="16" alt="" /> **Open All Documents** to open all FreeCAD documents in the project folder.
@@ -138,9 +138,16 @@ To preserve project history, previous iterations cannot be altered once they are
 
 ## Roadmap
 
+- [ ] Detect `.FCStd` file renames and moves, and update snapshots to match
+- [ ] Create a more in-depth public documentation site
+- [ ] Implement "File Save History" to be able to restore any previous file save (include configurable retention and diffing)
+- [ ] Track and compare non-FCStd files in the project
+- [ ] Ability to regenerate historical snapshots (discussion in https://github.com/eblanshey/HistoryWorkbench/issues/5)
+
+Done:
+
 - [x] Move reviewed documents back to Current Files from inside History Workbench
 - [x] Initialize new project history repositories from inside History Workbench
-- [ ] Move/rename review data when an `.FCStd` file is moved or renamed
 - [x] 3D view comparisons
 
 ## Configuration
@@ -212,11 +219,11 @@ Advanced Git usage can help with tasks such as:
 - Backing up a Project to a remote repository (Git remote), such as GitHub, GitLab, or a private Git server.
 - Inspecting project history from external Git clients when you need lower-level version-control tools.
 
-History Workbench still needs to be used to mark FreeCAD documents as **Reviewed**. That step stores YAML snapshot files in the Project repository, and those snapshots are required for tree comparisons.
+History Workbench still needs to be used to mark FreeCAD documents as **Reviewed** (staged). This step stores YAML snapshot files in the Project repository, which are needed to display the document tree.
 
 ## Contributors
 
-This workbench is made for you, the community. Please open an issue to report bugs, confusing comparisons, setup problems, documentation gaps, or feature requests. Development so far has happened on Linux, so additional platform setup notes and test instructions are also welcome as contributions.
+This workbench is made for all FreeCAD users. Please open an issue to report bugs, confusing comparisons, setup problems, documentation gaps, or feature requests. Development so far has happened on Linux, so additional platform setup notes and test instructions are also welcome as contributions.
 
 - [Development setup](docs/DevSetup.md): Set up a live FreeCAD workbench checkout, install dependencies, and configure the FreeCAD AppImage runtime for tests.
 - [Development guidelines](docs/Development.md): Coding standards, testing strategy, logging, translations, dependency injection, and common contributor workflows.
