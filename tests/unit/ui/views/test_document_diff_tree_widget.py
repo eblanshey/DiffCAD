@@ -172,6 +172,59 @@ class TestShowDocDiffsWithStageButtons:
         assert root_item is not None
         assert root_item.text(0) == "parts/A.FCStd"
 
+    @pytest.mark.parametrize("state", [DiffState.ADDED, DiffState.DELETED])
+    def test_show_doc_diffs_applies_document_row_diff_state(self, widget, state) -> None:  # type: ignore[no-untyped-def]
+        from freecad.history_wb.ui.presenters.presentation_models import DiffTreePresentation
+
+        widget.show_doc_diffs(
+            [
+                DiffTreePresentation(
+                    nodes=[],
+                    git_path="parts/A.FCStd",
+                    indicators=[],
+                    document_state=state,
+                )
+            ]
+        )
+
+        root_item = widget.tree_widget.topLevelItem(0)
+        assert root_item is not None
+        assert root_item.data(0, DIFF_STATE_ROLE) == state
+        row_widget = widget.tree_widget.itemWidget(root_item, 0)
+        assert row_widget is not None
+        assert "background-color" in row_widget.styleSheet()
+
+    def test_visual_diff_row_widget_keeps_diff_state_styling(self, widget) -> None:  # type: ignore[no-untyped-def]
+        from freecad.history_wb.ui.presenters.presentation_models import DiffTreePresentation, NodePresentation
+
+        widget.show_doc_diffs(
+            [
+                DiffTreePresentation(
+                    nodes=[
+                        NodePresentation(
+                            path="Body/Pad",
+                            type_id="PartDesign::Pad",
+                            label="Pad",
+                            state=DiffState.ADDED,
+                            has_changes=True,
+                            visual_diff_enabled=True,
+                            children=[],
+                        )
+                    ],
+                    git_path="parts/A.FCStd",
+                    indicators=[],
+                )
+            ]
+        )
+
+        root_item = widget.tree_widget.topLevelItem(0)
+        assert root_item is not None
+        child_item = root_item.child(0)
+        assert child_item is not None
+        row_widget = widget.tree_widget.itemWidget(child_item, 0)
+        assert row_widget is not None
+        assert "background-color" in row_widget.styleSheet()
+
     def test_stage_buttons_only_appear_when_working_tree_selected(self, widget) -> None:  # type: ignore[no-untyped-def]
         """Stage buttons only appear when current selection is WORKING_TREE."""
         from freecad.history_wb.ui.presenters.presentation_models import (
@@ -582,13 +635,13 @@ class TestShowSummary:
 
     def test_show_summary_with_zero_changes(self, widget) -> None:  # type: ignore[no-untyped-def]
         """show_summary(0) displays 'No changes'."""
-        widget.show_summary(0)
+        widget.show_summary(0, 0, 0)
         assert widget._changed_label.text() == "No changes"
 
-    def test_show_summary_with_positive_count(self, widget) -> None:  # type: ignore[no-untyped-def]
-        """show_summary(n) displays 'Changed: n' for n > 0."""
-        widget.show_summary(3)
-        assert widget._changed_label.text() == "Changed: 3"
+    def test_show_summary_with_per_status_counts(self, widget) -> None:  # type: ignore[no-untyped-def]
+        """show_summary() displays Modified/Deleted/Added counts."""
+        widget.show_summary(2, 1, 3)
+        assert widget._changed_label.text() == "Modified: 2  Deleted: 1  Added: 3"
 
 
 class TestSetStageAllButtonVisibilityAndEnabled:

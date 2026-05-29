@@ -4,8 +4,8 @@
 
 from freecad.history_wb.application.actions.get_gitignore_content import GetGitIgnoreContentAction
 from freecad.history_wb.application.actions.update_gitignore import UpdateGitIgnoreAction
-from freecad.history_wb.domain.git.models import GitRepository
 from freecad.history_wb.domain.git.git_service import GitService
+from freecad.history_wb.domain.git.models import GitRepository
 from tests.fakes.fake_git_port import FakeGitPort
 
 

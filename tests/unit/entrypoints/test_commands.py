@@ -9,12 +9,12 @@ test files.
 
 from unittest.mock import MagicMock, Mock, patch
 
+from freecad.history_wb.domain.git.models import GitRepository
 from freecad.history_wb.entrypoints.commands import (
     _RecomputeAllOpenDocumentsCommand,
     _RefreshRepositoryCommand,
     _UpdateGitIgnoreCommand,
 )
-from freecad.history_wb.domain.git.models import GitRepository
 
 
 class TestRefreshRepositoryCommand:

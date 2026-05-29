@@ -26,4 +26,4 @@ class TestDiffPanelView:
 
         # Methods execute without errors
         panel.show_doc_diff([])
-        panel.show_summary(0)
+        panel.show_summary(0, 0, 0)

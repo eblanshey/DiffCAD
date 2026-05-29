@@ -237,7 +237,9 @@ class DocumentDiffTreeWidget(QtWidgets.QWidget):
             root_item = QtWidgets.QTreeWidgetItem([top_level_text])
             root_item.setSizeHint(0, QtCore.QSize(0, TREE_ITEM_HEIGHT))
             root_item.setData(0, QtCore.Qt.ItemDataRole.UserRole, diff.git_path or top_level_text)
+            self._apply_diff_state(root_item, diff.document_state)
             container = self._create_doc_row_widget(diff, top_level_text)
+            self._apply_diff_state_to_widget(container, diff.document_state)
 
             self._tree_widget.addTopLevelItem(root_item)
             self._tree_widget.setItemWidget(root_item, 0, container)
@@ -413,6 +415,8 @@ class DocumentDiffTreeWidget(QtWidgets.QWidget):
         self._apply_diff_state(item, node.state)
 
         row_widget = self._create_node_row_widget(item, node, text, git_path)
+        if row_widget is not None:
+            self._apply_diff_state_to_widget(row_widget, node.state)
 
         for child in node.children:
             self._add_tree_item(item, child, git_path)
@@ -476,18 +480,37 @@ class DocumentDiffTreeWidget(QtWidgets.QWidget):
         item.setBackground(0, QtGui.QBrush(background))
         item.setForeground(0, QtGui.QBrush(foreground_for_background(background, self._tree_widget.palette())))
 
-    def show_summary(self, changed_docs: int) -> None:
-        """Display count of documents that contain changes.
+    def _apply_diff_state_to_widget(self, widget: QtWidgets.QWidget, state: DiffState) -> None:
+        """Apply diff state colors to custom row widgets."""
+        if state == DiffState.UNCHANGED:
+            widget.setStyleSheet("")
+            return
+
+        background = background_for_state(state, self._tree_widget.palette())
+        if background is None:
+            widget.setStyleSheet("")
+            return
+        foreground = foreground_for_background(background, self._tree_widget.palette())
+        widget.setStyleSheet(f"QWidget {{background-color: {background.name()};color: {foreground.name()};}}")
+
+    def show_summary(self, modified_docs: int, deleted_docs: int, added_docs: int) -> None:
+        """Display per-status document counts.
 
         Args:
-            changed_docs: Number of changed documents.
+            modified_docs: Number of modified documents.
+            deleted_docs: Number of deleted documents.
+            added_docs: Number of added documents.
         """
-        if changed_docs == 0:
+        if (modified_docs + deleted_docs + added_docs) == 0:
             self._changed_label.setText(translate("History", "No changes"))
             return
 
-        changed_text = translate("History", "Changed:")
-        self._changed_label.setText(f"{changed_text} {changed_docs}")
+        modified_text = translate("History", "Modified:")
+        deleted_text = translate("History", "Deleted:")
+        added_text = translate("History", "Added:")
+        self._changed_label.setText(
+            f"{modified_text} {modified_docs}  {deleted_text} {deleted_docs}  {added_text} {added_docs}"
+        )
 
     def _on_stage_all_clicked(self) -> None:
         """Handle Stage All button click by invoking the callback."""

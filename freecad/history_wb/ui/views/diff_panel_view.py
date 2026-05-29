@@ -294,15 +294,17 @@ class DiffPanelView(QtWidgets.QWidget):
         self._document_diff_tree.clear_doc_diffs()
         self.clear_property_diff()
 
-    def show_summary(self, changed_docs: int) -> None:
-        """Display count of documents that contain changes.
+    def show_summary(self, modified_docs: int, deleted_docs: int, added_docs: int) -> None:
+        """Display per-status document counts.
 
         Delegates to DocumentDiffTreeWidget.
 
         Args:
-            changed_docs: Number of changed documents.
+            modified_docs: Number of modified documents.
+            deleted_docs: Number of deleted documents.
+            added_docs: Number of added documents.
         """
-        self._document_diff_tree.show_summary(changed_docs)
+        self._document_diff_tree.show_summary(modified_docs, deleted_docs, added_docs)
 
     def show_property_diff(self, properties: list[PropertyPresentation]) -> None:
         """Display property diffs in the properties tree widget.

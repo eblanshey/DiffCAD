@@ -23,11 +23,10 @@ from freecad.history_wb.application.actions.result_models import (
 )
 from freecad.history_wb.application.actions.stage_documents import StageDocumentsAction
 from freecad.history_wb.application.actions.unstage_documents import UnstageDocumentsAction
-from freecad.history_wb.domain.diff.models import DiffResult
+from freecad.history_wb.domain.diff.models import DiffResult, DiffState
 from freecad.history_wb.domain.git.models import GitRepository
 from freecad.history_wb.domain.snapshots.models import Snapshot
 from freecad.history_wb.ui.presenters.diff_presenter import DiffPresenter
-from freecad.history_wb.ui.presenters.presentation_models import NewFileIndicator
 from freecad.history_wb.ui.state import UIState
 from freecad.history_wb.ui.views.models import HistorySelection
 from tests.fakes.fake_diff_view import FakeDiffView
@@ -95,7 +94,7 @@ class TestDiffPresenterCommitSelection:
             CreateDocumentDiffsRequest(mode=DocumentDiffMode.WORKING_TREE, repo=repo, documents=[doc])
         )
 
-    def test_commit_selection_renders_new_status_indicator_without_tree(self) -> None:
+    def test_commit_selection_renders_new_document_state_without_indicator(self) -> None:
         view, presenter, create_document_diffs_action = _make_presenter()
         repo = GitRepository(name="repo", absolute_path="/home/user/dir/repo")
         presenter._ui_state.git_repository = repo
@@ -111,8 +110,61 @@ class TestDiffPresenterCommitSelection:
         assert len(presentations) == 1
         assert presentations[0].git_path == "doc.FCStd"
         assert presentations[0].nodes == []
-        assert isinstance(presentations[0].indicators[0], NewFileIndicator)
-        assert presentations[0].indicators[0].tooltip == "New document"
+        assert presentations[0].document_state == DiffState.ADDED
+        assert presentations[0].indicators == []
+
+    def test_commit_selection_renders_deleted_document_state_without_indicator(self) -> None:
+        view, presenter, create_document_diffs_action = _make_presenter()
+        repo = GitRepository(name="repo", absolute_path="/home/user/dir/repo")
+        presenter._ui_state.git_repository = repo
+        create_document_diffs_action.execute.return_value = Result.success(
+            [DocumentDiffResult(git_path="doc.FCStd", status=DocumentDiffStatus.DELETED_FILE)]
+        )
+
+        presenter._on_commit_selected("abc123")
+
+        show_trees_call = next((c for c in view.get_calls() if c["method"] == "show_doc_diffs"), None)
+        assert show_trees_call is not None
+        presentations = show_trees_call["diff_trees"]
+        assert len(presentations) == 1
+        assert presentations[0].document_state == DiffState.DELETED
+        assert presentations[0].indicators == []
+
+    def test_commit_selection_old_snapshot_missing_keeps_indicator_and_unchanged_document_state(self) -> None:
+        view, presenter, create_document_diffs_action = _make_presenter()
+        repo = GitRepository(name="repo", absolute_path="/home/user/dir/repo")
+        presenter._ui_state.git_repository = repo
+        create_document_diffs_action.execute.return_value = Result.success(
+            [DocumentDiffResult(git_path="doc.FCStd", status=DocumentDiffStatus.OLD_SNAPSHOT_MISSING)]
+        )
+
+        presenter._on_commit_selected("abc123")
+
+        show_trees_call = next((c for c in view.get_calls() if c["method"] == "show_doc_diffs"), None)
+        assert show_trees_call is not None
+        presentations = show_trees_call["diff_trees"]
+        assert len(presentations) == 1
+        assert presentations[0].document_state == DiffState.UNCHANGED
+        assert len(presentations[0].indicators) == 1
+
+    def test_summary_uses_document_status_counts(self) -> None:
+        view, presenter, _ = _make_presenter()
+        presenter.present_diffs(
+            diff_results=[],
+            dirty_paths=set(),
+            document_statuses={
+                "mod.FCStd": DocumentDiffStatus.MODIFIED,
+                "del.FCStd": DocumentDiffStatus.DELETED_FILE,
+                "add.FCStd": DocumentDiffStatus.NEW_FILE,
+                "same.FCStd": DocumentDiffStatus.UNCHANGED,
+            },
+        )
+
+        summary_call = next((c for c in view.get_calls() if c["method"] == "show_summary"), None)
+        assert summary_call is not None
+        assert summary_call["modified_docs"] == 1
+        assert summary_call["deleted_docs"] == 1
+        assert summary_call["added_docs"] == 1
 
 
 class TestDiffPresenterStageSingleDocument:

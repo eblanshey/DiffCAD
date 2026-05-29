@@ -51,7 +51,6 @@ from .presentation_models import (
     DiffTreePresentation,
     DocumentStatusIndicator,
     InvalidSnapshotIndicator,
-    NewFileIndicator,
     NodePresentation,
     OldSnapshotMissingIndicator,
     PropertyPresentation,
@@ -694,6 +693,7 @@ class DiffPresenter:
                 or self._document_status_by_path.get(result.new_snapshot.git_path, DocumentDiffStatus.UNCHANGED)
                 in (
                     DocumentDiffStatus.NEW_FILE,
+                    DocumentDiffStatus.DELETED_FILE,
                     DocumentDiffStatus.OLD_SNAPSHOT_MISSING,
                     DocumentDiffStatus.SNAPSHOT_MISSING,
                     DocumentDiffStatus.INVALID_SNAPSHOT,
@@ -846,10 +846,11 @@ class DiffPresenter:
         Args:
             diff_results: List of DiffResult objects to present.
             dirty_paths: Set of git paths that have git-tracked changes.
-            document_statuses: Optional status map keyed by git path.
+            document_statuses: Status map keyed by git path.
         """
         dirty_paths = dirty_paths or set()
-        document_statuses = document_statuses or {}
+        if document_statuses is None:
+            raise ValueError("document_statuses is required")
 
         if not diff_results and not document_statuses:
             self.clear_doc_diff()
@@ -875,7 +876,7 @@ class DiffPresenter:
 
         self._view.show_doc_diffs(presentations)
         self._configure_summary_buttons(presentations)
-        self._show_summary(diff_results)
+        self._show_summary(document_statuses)
 
     def _build_presentations(
         self,
@@ -890,6 +891,7 @@ class DiffPresenter:
             git_path = diff_result.new_snapshot.git_path or diff_result.new_snapshot.document_name
             status = document_statuses.get(git_path, DocumentDiffStatus.UNCHANGED)
             indicators = self._get_document_indicators(status)
+            document_state = self._get_document_state(status)
 
             nodes = [self._format_node(node) for node in diff_result.hierarchy.roots]
             has_changes = any(node.has_changes for node in nodes)
@@ -904,6 +906,7 @@ class DiffPresenter:
                     nodes=nodes,
                     git_path=git_path,
                     indicators=indicators,
+                    document_state=document_state,
                     stage_button_enabled=stage_button_enabled,
                 )
             )
@@ -913,6 +916,7 @@ class DiffPresenter:
         """Check if status requires a status indicator."""
         return status in (
             DocumentDiffStatus.NEW_FILE,
+            DocumentDiffStatus.DELETED_FILE,
             DocumentDiffStatus.OLD_SNAPSHOT_MISSING,
             DocumentDiffStatus.SNAPSHOT_MISSING,
             DocumentDiffStatus.INVALID_SNAPSHOT,
@@ -944,6 +948,7 @@ class DiffPresenter:
                     nodes=[],
                     git_path=git_path,
                     indicators=self._get_document_indicators(status),
+                    document_state=self._get_document_state(status),
                     stage_button_enabled=False,
                 )
             )
@@ -991,19 +996,19 @@ class DiffPresenter:
         self._view.set_restore_all_button_visible(False)
         self._view.set_restore_all_button_enabled(False)
 
-    def _show_summary(self, diff_results: list[DiffResult]) -> None:
-        """Show the summary of changed documents."""
-        changed_docs = sum(
-            1
-            for diff_result in diff_results
-            if (diff_result.added_count + diff_result.deleted_count + diff_result.modified_count) > 0
-        )
-        self._view.show_summary(changed_docs=changed_docs)
+    def _show_summary(self, document_statuses: dict[str, DocumentDiffStatus]) -> None:
+        """Show per-status summary counts derived from document status."""
+        modified_docs = self._count_status(document_statuses, DocumentDiffStatus.MODIFIED)
+        deleted_docs = self._count_status(document_statuses, DocumentDiffStatus.DELETED_FILE)
+        added_docs = self._count_status(document_statuses, DocumentDiffStatus.NEW_FILE)
+        self._view.show_summary(modified_docs=modified_docs, deleted_docs=deleted_docs, added_docs=added_docs)
+
+    def _count_status(self, statuses: dict[str, DocumentDiffStatus], target: DocumentDiffStatus) -> int:
+        """Count documents matching target status."""
+        return sum(1 for status in statuses.values() if status == target)
 
     def _get_document_indicators(self, status: DocumentDiffStatus) -> list[DocumentStatusIndicator]:
         """Build UI indicators for document-level status."""
-        if status == DocumentDiffStatus.NEW_FILE:
-            return [NewFileIndicator()]
         if status == DocumentDiffStatus.OLD_SNAPSHOT_MISSING:
             return [OldSnapshotMissingIndicator()]
         if status == DocumentDiffStatus.SNAPSHOT_MISSING:
@@ -1013,6 +1018,14 @@ class DiffPresenter:
         if status == DocumentDiffStatus.DIFF_COMPUTATION_FAILED:
             return [DiffComputationFailedIndicator()]
         return []
+
+    def _get_document_state(self, status: DocumentDiffStatus) -> DiffState:
+        """Map document status to document row diff state."""
+        if status == DocumentDiffStatus.NEW_FILE:
+            return DiffState.ADDED
+        if status == DocumentDiffStatus.DELETED_FILE:
+            return DiffState.DELETED
+        return DiffState.UNCHANGED
 
     def _format_node(self, node_diff: NodeDiff) -> NodePresentation:
         """Transform domain NodeDiff to presentation model.

@@ -46,21 +46,30 @@ class CreateDocumentSnapshotForCommitAction:
             fcstd_git_path: Relative path of the FCStd file within the repository.
 
         Returns:
-            Result containing SnapshotLoadResult with status describing outcome:
-            FOUND, DOCUMENT_MISSING, SNAPSHOT_MISSING, or INVALID_SNAPSHOT.
+            Result containing SnapshotLoadResult with status describing outcome.
+
+            Status mapping:
+            - FOUND: FCStd exists and snapshot YAML is valid.
+            - DOCUMENT_MISSING: FCStd path does not exist in selected commit/index.
+              This is returned even when stale snapshot YAML still exists.
+            - SNAPSHOT_MISSING: FCStd exists, but corresponding snapshot YAML is missing.
+            - INVALID_SNAPSHOT: Snapshot YAML exists but fails deserialization.
         """
         # Compute the YAML snapshot path from the FCStd git_path
         fcstd_git_path = to_git_path(fcstd_git_path)
         yaml_git_path = to_git_path(str(get_snapshot_yaml_path_for_document(fcstd_git_path)))
 
+        document_exists = self._git_service.file_exists(repo, commit, fcstd_git_path)
+        if not document_exists:
+            Log.debug(f"Document missing for {fcstd_git_path} (status={SnapshotLoadStatus.DOCUMENT_MISSING.name})")
+            return Result.success(SnapshotLoadResult(snapshot=None, status=SnapshotLoadStatus.DOCUMENT_MISSING))
+
         # Get file contents from git
         yaml_contents = self._git_service.get_file_contents(repo, commit, yaml_git_path)
 
         if yaml_contents is None:
-            document_exists = self._git_service.file_exists(repo, commit, fcstd_git_path)
-            status = SnapshotLoadStatus.DOCUMENT_MISSING if not document_exists else SnapshotLoadStatus.SNAPSHOT_MISSING
-            Log.debug(f"No snapshot found for {yaml_git_path} (status={status.name})")
-            return Result.success(SnapshotLoadResult(snapshot=None, status=status))
+            Log.debug(f"No snapshot found for {yaml_git_path} (status={SnapshotLoadStatus.SNAPSHOT_MISSING.name})")
+            return Result.success(SnapshotLoadResult(snapshot=None, status=SnapshotLoadStatus.SNAPSHOT_MISSING))
 
         try:
             snapshot = self._snapshot_deserializer.from_yaml(yaml_contents)

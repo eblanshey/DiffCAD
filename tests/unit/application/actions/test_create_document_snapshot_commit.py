@@ -31,6 +31,7 @@ class TestCreateDocumentSnapshotForCommitAction:
         """Test: Execute with commit=None returns snapshot from index."""
         # Given a GitService that returns YAML content from index
         mock_git_service = MagicMock(spec=GitService)
+        mock_git_service.file_exists.return_value = True
         yaml_content = """v: 2
 timestamp: 2024-01-15T10:30:00+00:00
 uid: test-uuid-index
@@ -71,6 +72,7 @@ occurrences:
         """Test: Execute with commit hash returns snapshot from that commit."""
         # Given a GitService that returns YAML content from HEAD
         mock_git_service = MagicMock(spec=GitService)
+        mock_git_service.file_exists.return_value = True
         yaml_content = """v: 1
 timestamp: 2024-02-20T14:00:00+00:00
 uid: test-uuid-commit
@@ -109,6 +111,7 @@ objects:
         """Test: Nested git paths are preserved while document name uses filename."""
         # Given a GitService that returns YAML content
         mock_git_service = MagicMock(spec=GitService)
+        mock_git_service.file_exists.return_value = True
         yaml_content = """v: 1
 timestamp: 2024-02-20T14:00:00+00:00
 uid: test-uuid-nested
@@ -138,6 +141,7 @@ objects: []
     def test_execute_normalizes_windows_snapshot_path_for_git_lookup(self) -> None:
         """Test: Windows separators are normalized before git snapshot lookup."""
         mock_git_service = MagicMock(spec=GitService)
+        mock_git_service.file_exists.return_value = True
         yaml_content = """v: 1
 timestamp: 2024-02-20T14:00:00+00:00
 uid: test-uuid-windows
@@ -184,6 +188,27 @@ objects: []
         assert result.data.status == SnapshotLoadStatus.DOCUMENT_MISSING
         mock_git_service.file_exists.assert_called_once_with(repo, None, "path/to/nonexistent.FCStd")
 
+    def test_fcstd_missing_and_yaml_present_returns_document_missing_without_deserialization(self) -> None:
+        """Test: FCStd missing returns DOCUMENT_MISSING even if YAML exists."""
+        mock_git_service = MagicMock(spec=GitService)
+        mock_git_service.file_exists.return_value = False
+        mock_git_service.get_file_contents.return_value = "v: 2\nobjects: []\n"
+        mock_deserializer = MagicMock()
+
+        action = CreateDocumentSnapshotForCommitAction(
+            git_service=mock_git_service,
+            snapshot_deserializer=mock_deserializer,
+        )
+        repo = GitRepository(name="test-repo", absolute_path="/path/to/repo")
+
+        result = action.execute(repo, "HEAD", "path/to/deleted.FCStd")
+
+        assert result.is_success is True
+        assert result.data is not None
+        assert result.data.snapshot is None
+        assert result.data.status == SnapshotLoadStatus.DOCUMENT_MISSING
+        mock_deserializer.from_yaml.assert_not_called()
+
     def test_yaml_missing_and_fcstd_exists_returns_snapshot_missing(self) -> None:
         """Test: Missing YAML + existing FCStd returns SNAPSHOT_MISSING."""
         mock_git_service = MagicMock(spec=GitService)
@@ -208,6 +233,7 @@ objects: []
         """Test: Invalid YAML returns INVALID_SNAPSHOT success result."""
         # Given a GitService that returns invalid YAML
         mock_git_service = MagicMock(spec=GitService)
+        mock_git_service.file_exists.return_value = True
         mock_git_service.get_file_contents.return_value = "invalid: yaml: content: ["
         mock_deserializer = MagicMock()
         mock_deserializer.from_yaml.side_effect = ValueError("invalid yaml")

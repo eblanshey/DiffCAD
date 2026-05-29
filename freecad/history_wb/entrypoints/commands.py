@@ -397,9 +397,7 @@ class _UpdateGitIgnoreCommand:
             'Update the ignored files list. Lines starting with a "#" are considered comments. '
             'Click <a href="%1">here</a> to learn about the full syntax.',
         )
-        help_label = QtWidgets.QLabel(
-            help_template.replace("%1", "https://www.w3schools.com/git/git_ignore.asp")
-        )
+        help_label = QtWidgets.QLabel(help_template.replace("%1", "https://www.w3schools.com/git/git_ignore.asp"))
         help_label.setOpenExternalLinks(True)
         layout.addWidget(help_label)
 

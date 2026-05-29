@@ -39,7 +39,9 @@ def test_single_restore_closes_project_docs_reopens_and_restores_active_doc() ->
     active_doc = MockDocument("/repo/a.FCStd", name="DocA")
     other_project_doc = MockDocument("/repo/b.FCStd", name="DocB")
     outside_doc = MockDocument("/outside/x.FCStd", name="Outside")
-    freecad_port = FakeFreeCadPort(active_document=active_doc, open_documents=[active_doc, other_project_doc, outside_doc])
+    freecad_port = FakeFreeCadPort(
+        active_document=active_doc, open_documents=[active_doc, other_project_doc, outside_doc]
+    )
 
     fake_git_port = FakeGitPort()
     fake_git_port.set_file_contents("abc123", "a.FCStd", "exists")

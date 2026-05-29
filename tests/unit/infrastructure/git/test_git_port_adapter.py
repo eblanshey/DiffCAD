@@ -968,6 +968,20 @@ class TestGitPortAdapterGetStagedPaths:
 
             assert result == ["path/with\nnewline.FCStd"]
 
+    def test_get_staged_paths_includes_staged_deleted_fcstd(self) -> None:
+        """Given staged delete status, deleted FCStd path is included."""
+        mock_result = subprocess.CompletedProcess(
+            args=["git", "status", "--porcelain", "-z"],
+            returncode=0,
+            stdout="D  deleted.FCStd\x00",
+            stderr="",
+        )
+
+        with patch.object(subprocess, "run", return_value=mock_result):
+            result = self.adapter.get_staged_paths("/path/to/repo")
+
+            assert result == ["deleted.FCStd"]
+
     @pytest.mark.parametrize(
         ("side_effect",),
         [

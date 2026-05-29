@@ -16,7 +16,6 @@ __all__ = [
     "PropertyPresentation",
     "SnapshotPresentation",
     "DocumentStatusIndicator",
-    "NewFileIndicator",
     "OldSnapshotMissingIndicator",
     "SnapshotMissingIndicator",
     "InvalidSnapshotIndicator",
@@ -30,17 +29,6 @@ class DocumentStatusIndicator:
 
     tooltip: str
     icon: QtGui.QIcon
-
-
-@dataclass(frozen=True)
-class NewFileIndicator(DocumentStatusIndicator):
-    """Indicator for new documents missing in old ref."""
-
-    def __init__(self) -> None:
-        super().__init__(
-            tooltip=cast(str, QtCore.QT_TRANSLATE_NOOP("History", "New document")),
-            icon=QtGui.QIcon(str(get_icon_path("DocumentStatusNewFile.svg"))),
-        )
 
 
 @dataclass(frozen=True)
@@ -163,4 +151,5 @@ class DiffTreePresentation:
     nodes: list[NodePresentation]
     git_path: str
     indicators: list[DocumentStatusIndicator]
+    document_state: DiffState = DiffState.UNCHANGED
     stage_button_enabled: bool = False

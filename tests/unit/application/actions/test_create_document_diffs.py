@@ -47,8 +47,10 @@ class _FakeDiffAction:
     def __init__(self, changed_paths: set[str], fail_paths: set[str] | None = None) -> None:
         self._changed_paths = changed_paths
         self._fail_paths = fail_paths or set()
+        self.calls: list[tuple[Snapshot | None, Snapshot]] = []
 
     def execute(self, old: Snapshot | None, new: Snapshot) -> Result:  # noqa: ARG002
+        self.calls.append((old, new))
         if new.git_path in self._fail_paths:
             return Result.failure("simulated diff failure")
         return Result.success(self._Diff(new_snapshot=new, has_changes=new.git_path in self._changed_paths))
@@ -95,10 +97,11 @@ def _build_action(
     fail_diff_paths: set[str] | None = None,
 ) -> CreateDocumentDiffsAction:
     committed_paths_action = _FakeCommittedPathsAction(committed_paths or {})
+    diff_action = _FakeDiffAction(changed_paths or set(), fail_paths=fail_diff_paths)
     return CreateDocumentDiffsAction(
         create_working_snapshot_action=_FakeWorkingSnapshotAction(working_snapshots or {}),
         create_commit_snapshot_action=_FakeCommitSnapshotAction(snapshot_mapping),
-        create_diff_action=_FakeDiffAction(changed_paths or set(), fail_paths=fail_diff_paths),
+        create_diff_action=diff_action,
         get_staged_file_paths_action=_FakeStagedPathsAction(staged_paths or []),
         get_committed_file_paths_action=committed_paths_action,
     )
@@ -135,9 +138,9 @@ def test_commit_mode_covers_new_file_old_missing_invalid_and_diff_states() -> No
     assert by_path["new.FCStd"].status == DocumentDiffStatus.NEW_FILE
     assert by_path["new.FCStd"].snapshot_diff is not None
     assert by_path["old-missing.FCStd"].status == DocumentDiffStatus.OLD_SNAPSHOT_MISSING
-    assert by_path["old-missing.FCStd"].snapshot_diff is not None
+    assert by_path["old-missing.FCStd"].snapshot_diff is None
     assert by_path["old-invalid.FCStd"].status == DocumentDiffStatus.INVALID_SNAPSHOT
-    assert by_path["old-invalid.FCStd"].snapshot_diff is not None
+    assert by_path["old-invalid.FCStd"].snapshot_diff is None
     assert by_path["modified.FCStd"].status == DocumentDiffStatus.MODIFIED
     assert by_path["modified.FCStd"].snapshot_diff is not None
     assert by_path["same.FCStd"].status == DocumentDiffStatus.UNCHANGED
@@ -192,7 +195,7 @@ def test_staging_mode_covers_index_missing_head_missing_and_head_snapshot_missin
     assert by_path["head-missing.FCStd"].status == DocumentDiffStatus.NEW_FILE
     assert by_path["head-missing.FCStd"].snapshot_diff is not None
     assert by_path["head-snapshot-missing.FCStd"].status == DocumentDiffStatus.OLD_SNAPSHOT_MISSING
-    assert by_path["head-snapshot-missing.FCStd"].snapshot_diff is not None
+    assert by_path["head-snapshot-missing.FCStd"].snapshot_diff is None
 
 
 def test_working_tree_mode_covers_new_file_and_old_snapshot_missing() -> None:
@@ -216,7 +219,57 @@ def test_working_tree_mode_covers_new_file_and_old_snapshot_missing() -> None:
     assert by_path["new.FCStd"].status == DocumentDiffStatus.NEW_FILE
     assert by_path["new.FCStd"].snapshot_diff is not None
     assert by_path["missing.FCStd"].status == DocumentDiffStatus.OLD_SNAPSHOT_MISSING
-    assert by_path["missing.FCStd"].snapshot_diff is not None
+    assert by_path["missing.FCStd"].snapshot_diff is None
+
+
+def test_commit_mode_deleted_file_returns_deleted_status_with_diff() -> None:
+    repo = GitRepository(name="r", absolute_path="/repo")
+    snapshot_mapping = {
+        ("c1", "deleted.FCStd"): SnapshotLoadResult(None, SnapshotLoadStatus.DOCUMENT_MISSING),
+        ("c1^", "deleted.FCStd"): SnapshotLoadResult(_snapshot("deleted.FCStd", "old"), SnapshotLoadStatus.FOUND),
+    }
+    action = _build_action(
+        snapshot_mapping=snapshot_mapping,
+        committed_paths={"c1": ["deleted.FCStd"]},
+        changed_paths={"deleted.FCStd"},
+    )
+
+    result = action.execute(CreateDocumentDiffsRequest(mode=DocumentDiffMode.COMMIT, repo=repo, commit_hash="c1"))
+    assert result.data is not None
+    assert result.data[0].status == DocumentDiffStatus.DELETED_FILE
+    assert result.data[0].snapshot_diff is not None
+
+
+def test_staging_mode_deleted_file_returns_deleted_status_with_diff() -> None:
+    repo = GitRepository(name="r", absolute_path="/repo")
+    snapshot_mapping = {
+        (None, "deleted.FCStd"): SnapshotLoadResult(None, SnapshotLoadStatus.DOCUMENT_MISSING),
+        ("HEAD", "deleted.FCStd"): SnapshotLoadResult(_snapshot("deleted.FCStd", "head"), SnapshotLoadStatus.FOUND),
+    }
+    action = _build_action(
+        snapshot_mapping=snapshot_mapping,
+        staged_paths=["deleted.FCStd"],
+        changed_paths={"deleted.FCStd"},
+    )
+
+    result = action.execute(CreateDocumentDiffsRequest(mode=DocumentDiffMode.STAGING, repo=repo))
+    assert result.data is not None
+    assert result.data[0].status == DocumentDiffStatus.DELETED_FILE
+    assert result.data[0].snapshot_diff is not None
+
+
+def test_deleted_file_with_old_snapshot_missing_returns_old_snapshot_missing_status_only() -> None:
+    repo = GitRepository(name="r", absolute_path="/repo")
+    snapshot_mapping = {
+        ("c1", "deleted.FCStd"): SnapshotLoadResult(None, SnapshotLoadStatus.DOCUMENT_MISSING),
+        ("c1^", "deleted.FCStd"): SnapshotLoadResult(None, SnapshotLoadStatus.SNAPSHOT_MISSING),
+    }
+    action = _build_action(snapshot_mapping=snapshot_mapping, committed_paths={"c1": ["deleted.FCStd"]})
+
+    result = action.execute(CreateDocumentDiffsRequest(mode=DocumentDiffMode.COMMIT, repo=repo, commit_hash="c1"))
+    assert result.data is not None
+    assert result.data[0].status == DocumentDiffStatus.OLD_SNAPSHOT_MISSING
+    assert result.data[0].snapshot_diff is None
 
 
 def test_staging_mode_sets_modified_and_unchanged_from_diff_result() -> None:

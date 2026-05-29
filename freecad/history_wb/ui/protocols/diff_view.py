@@ -6,12 +6,8 @@ substitution using Qt-style placeholders (%1, %2, etc.). Presenters pass
 raw data only - they never format user-facing messages.
 
 Translation Strategy for Summary:
-    The show_summary method passes changed-document count.
-    The view should translate the label and combine it with the value:
-
-        def show_summary(self, changed_docs: int) -> None:
-            changed_label = translate("History", "Changed:")
-            self._changed_label.setText(f"{changed_label} {changed_docs}")
+    The show_summary method passes per-status document counts.
+    The view should translate each label and combine with values.
 """
 
 from collections.abc import Callable
@@ -46,13 +42,13 @@ class DiffView(Protocol):
             git_path: The git path to display as top-level item (falls back to document name).
         """
 
-    def show_summary(self, changed_docs: int) -> None:
-        """Display count of documents that contain changes.
+    def show_summary(self, modified_docs: int, deleted_docs: int, added_docs: int) -> None:
+        """Display per-status document counts.
 
         Args:
-            changed_docs: Number of changed documents.
-
-        The view should use translated "Changed:" label and append the count.
+            modified_docs: Number of modified documents.
+            deleted_docs: Number of deleted documents.
+            added_docs: Number of added documents.
         """
 
     def show_property_diff(self, properties: list[PropertyPresentation]) -> None:
