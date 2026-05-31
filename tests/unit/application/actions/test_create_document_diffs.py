@@ -3,6 +3,7 @@
 
 from dataclasses import dataclass
 from datetime import datetime
+from unittest.mock import patch
 
 from freecad.history_wb.application.actions.create_document_diffs import CreateDocumentDiffsAction
 from freecad.history_wb.application.actions.result_models import (
@@ -58,8 +59,10 @@ class _FakeDiffAction:
 class _FakeWorkingSnapshotAction:
     def __init__(self, snapshots_by_doc: dict[str, Snapshot]) -> None:
         self._snapshots_by_doc = snapshots_by_doc
+        self.calls: list[str] = []
 
     def execute(self, repo: GitRepository, document: object) -> Result:  # noqa: ARG002
+        self.calls.append(document.name)
         return Result.success(self._snapshots_by_doc[document.name])
 
 
@@ -96,7 +99,7 @@ def _build_action(
     changed_paths: set[str] | None = None,
     committed_paths: dict[str, list[str]] | None = None,
     staged_paths: list[str] | None = None,
-    dirty_paths: list[str] | None = None,
+    dirty_files: list[DirtyFile] | None = None,
     working_snapshots: dict[str, Snapshot] | None = None,
     fail_diff_paths: set[str] | None = None,
 ) -> CreateDocumentDiffsAction:
@@ -107,7 +110,7 @@ def _build_action(
         git_service=_FakeGitService(
             committed_paths,
             staged_paths,
-            [DirtyFile(git_path=path, status=DirtyFileStatus.MODIFIED) for path in (dirty_paths or [])],
+            dirty_files or [],
         ),
     )
 
@@ -176,7 +179,10 @@ def test_both_snapshot_missing_surfaces_both_side_issues() -> None:
 
 def test_working_tree_dirty_not_open_returns_missing_new_snapshot_issue() -> None:
     repo = GitRepository(name="r", absolute_path="/repo")
-    action = _build_action(snapshot_mapping={}, dirty_paths=["closed.FCStd"])
+    action = _build_action(
+        snapshot_mapping={},
+        dirty_files=[DirtyFile(git_path="closed.FCStd", status=DirtyFileStatus.MODIFIED)],
+    )
 
     result = action.execute(CreateDocumentDiffsRequest(mode=DocumentDiffMode.WORKING_TREE, repo=repo, eligible_docs=[]))
 
@@ -212,7 +218,7 @@ def test_existing_git_unchanged_with_parametric_changes_returns_modified_without
     action = _build_action(
         snapshot_mapping=snapshot_mapping,
         working_snapshots={"a": _snapshot("a.FCStd", "new")},
-        dirty_paths=["a.FCStd"],
+        dirty_files=[DirtyFile(git_path="a.FCStd", status=DirtyFileStatus.MODIFIED)],
         changed_paths={"a.FCStd"},
     )
 
@@ -242,16 +248,25 @@ def test_both_documents_missing_returns_unchanged_without_snapshot_issues() -> N
     assert doc.issues.general == []
 
 
-def test_working_tree_skips_clean_and_unmodified_open_documents() -> None:
+def test_working_tree_includes_clean_open_eligible_docs() -> None:
     repo = GitRepository(name="r", absolute_path="/repo")
     docs = [_Doc(name="a", FileName="/repo/a.FCStd")]
-    action = _build_action(snapshot_mapping={}, working_snapshots={"a": _snapshot("a.FCStd", "new")})
+    snapshot_mapping = {
+        (None, "a.FCStd"): SnapshotLoadResult(_snapshot("a.FCStd", "old"), SnapshotLoadStatus.FOUND)
+    }
+    action = _build_action(
+        snapshot_mapping=snapshot_mapping,
+        working_snapshots={"a": _snapshot("a.FCStd", "new")},
+    )
 
     result = action.execute(
         CreateDocumentDiffsRequest(mode=DocumentDiffMode.WORKING_TREE, repo=repo, eligible_docs=docs)
     )
 
-    assert result.data == []
+    assert len(result.data) == 1
+    assert result.data[0].git_path == "a.FCStd"
+    assert result.data[0].document_state == DiffState.UNCHANGED
+    assert result.data[0].snapshot_diff is not None
 
 
 def test_diff_computation_failure_on_git_modified_keeps_state_and_sets_general_issue() -> None:
@@ -282,7 +297,7 @@ def test_diff_computation_failure_on_in_memory_only_keeps_modified_and_sets_gene
     action = _build_action(
         snapshot_mapping=snapshot_mapping,
         working_snapshots={"a": _snapshot("a.FCStd", "new")},
-        dirty_paths=["a.FCStd"],
+        dirty_files=[DirtyFile(git_path="a.FCStd", status=DirtyFileStatus.MODIFIED)],
         fail_diff_paths={"a.FCStd"},
     )
 
@@ -310,12 +325,6 @@ def test_old_invalid_and_new_missing_issues_both_surface() -> None:
     assert doc.issues.new_snapshot == SnapshotIssue.MISSING
 
 
-def test_diff_issues_blocker_helper() -> None:
-    issues = DiffIssues(old_snapshot=SnapshotIssue.MISSING)
-    assert issues.is_diff_blocker_for(DiffState.DELETED) is True
-    assert issues.is_diff_blocker_for(DiffState.ADDED) is False
-
-
 def test_working_tree_missing_old_snapshot_still_computes_diff() -> None:
     repo = GitRepository(name="r", absolute_path="/repo")
     docs = [_Doc(name="a", FileName="/repo/a.FCStd")]
@@ -325,7 +334,7 @@ def test_working_tree_missing_old_snapshot_still_computes_diff() -> None:
     action = _build_action(
         snapshot_mapping=snapshot_mapping,
         working_snapshots={"a": _snapshot("a.FCStd", "new")},
-        dirty_paths=["a.FCStd"],
+        dirty_files=[DirtyFile(git_path="a.FCStd", status=DirtyFileStatus.MODIFIED)],
         changed_paths={"a.FCStd"},
     )
 
@@ -336,3 +345,99 @@ def test_working_tree_missing_old_snapshot_still_computes_diff() -> None:
     assert len(result.data) == 1
     assert result.data[0].snapshot_diff is not None
     assert result.data[0].document_state == DiffState.MODIFIED
+
+
+def test_working_tree_invalid_old_snapshot_still_computes_diff() -> None:
+    repo = GitRepository(name="r", absolute_path="/repo")
+    docs = [_Doc(name="a", FileName="/repo/a.FCStd")]
+    snapshot_mapping = {
+        (None, "a.FCStd"): SnapshotLoadResult(None, SnapshotLoadStatus.INVALID_SNAPSHOT),
+    }
+    action = _build_action(
+        snapshot_mapping=snapshot_mapping,
+        working_snapshots={"a": _snapshot("a.FCStd", "new")},
+    )
+
+    result = action.execute(
+        CreateDocumentDiffsRequest(mode=DocumentDiffMode.WORKING_TREE, repo=repo, eligible_docs=docs)
+    )
+
+    assert len(result.data) == 1
+    assert result.data[0].snapshot_diff is not None
+    assert result.data[0].issues.old_snapshot == SnapshotIssue.INVALID
+
+
+def test_working_tree_dirty_closed_added_path_returns_added_with_missing_new_issue() -> None:
+    repo = GitRepository(name="r", absolute_path="/repo")
+    action = _build_action(
+        snapshot_mapping={},
+        dirty_files=[DirtyFile(git_path="new.FCStd", status=DirtyFileStatus.ADDED)],
+    )
+
+    result = action.execute(CreateDocumentDiffsRequest(mode=DocumentDiffMode.WORKING_TREE, repo=repo, eligible_docs=[]))
+
+    doc = result.data[0]
+    assert doc.git_path == "new.FCStd"
+    assert doc.document_state == DiffState.ADDED
+    assert doc.issues == DiffIssues(new_snapshot=SnapshotIssue.MISSING)
+
+
+def test_working_tree_dirty_deleted_path_returns_deleted_with_tree_diff_when_old_snapshot_exists() -> None:
+    repo = GitRepository(name="r", absolute_path="/repo")
+    snapshot_mapping = {
+        (None, "gone.FCStd"): SnapshotLoadResult(_snapshot("gone.FCStd", "old"), SnapshotLoadStatus.FOUND)
+    }
+    action = _build_action(
+        snapshot_mapping=snapshot_mapping,
+        dirty_files=[DirtyFile(git_path="gone.FCStd", status=DirtyFileStatus.DELETED)],
+    )
+
+    result = action.execute(CreateDocumentDiffsRequest(mode=DocumentDiffMode.WORKING_TREE, repo=repo, eligible_docs=[]))
+
+    doc = result.data[0]
+    assert doc.document_state == DiffState.DELETED
+    assert doc.snapshot_diff is not None
+
+
+def test_working_tree_dirty_deleted_path_with_missing_old_snapshot_returns_deleted_without_tree_diff() -> None:
+    repo = GitRepository(name="r", absolute_path="/repo")
+    snapshot_mapping = {
+        (None, "gone.FCStd"): SnapshotLoadResult(None, SnapshotLoadStatus.SNAPSHOT_MISSING)
+    }
+    action = _build_action(
+        snapshot_mapping=snapshot_mapping,
+        dirty_files=[DirtyFile(git_path="gone.FCStd", status=DirtyFileStatus.DELETED)],
+    )
+
+    result = action.execute(CreateDocumentDiffsRequest(mode=DocumentDiffMode.WORKING_TREE, repo=repo, eligible_docs=[]))
+
+    doc = result.data[0]
+    assert doc.document_state == DiffState.DELETED
+    assert doc.snapshot_diff is None
+    assert doc.issues.old_snapshot == SnapshotIssue.MISSING
+
+
+def test_working_tree_deleted_path_with_open_doc_logs_warning_and_skips_working_snapshot() -> None:
+    repo = GitRepository(name="r", absolute_path="/repo")
+    docs = [_Doc(name="a", FileName="/repo/a.FCStd")]
+    snapshot_mapping = {
+        (None, "a.FCStd"): SnapshotLoadResult(_snapshot("a.FCStd", "old"), SnapshotLoadStatus.FOUND)
+    }
+    working_action = _FakeWorkingSnapshotAction({})
+    action = CreateDocumentDiffsAction(
+        create_working_snapshot_action=working_action,
+        create_commit_snapshot_action=_FakeCommitSnapshotAction(snapshot_mapping),
+        create_diff_action=_FakeDiffAction(set()),
+        git_service=_FakeGitService(
+            dirty=[DirtyFile(git_path="a.FCStd", status=DirtyFileStatus.DELETED)]
+        ),
+    )
+
+    with patch("freecad.history_wb.application.actions.create_document_diffs.Log.warning") as warning_mock:
+        result = action.execute(
+            CreateDocumentDiffsRequest(mode=DocumentDiffMode.WORKING_TREE, repo=repo, eligible_docs=docs)
+        )
+
+    assert warning_mock.call_count == 1
+    assert working_action.calls == []
+    assert result.data[0].document_state == DiffState.DELETED

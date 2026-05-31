@@ -7,7 +7,7 @@ from datetime import datetime
 from ...domain.diff.models import DiffState
 from ...domain.freecad_ports import DocumentLike
 from ...domain.git.git_service import GitService
-from ...domain.git.models import GitRepository
+from ...domain.git.models import DirtyFile, DirtyFileStatus, GitRepository
 from ...domain.git.paths import relative_git_path
 from ...domain.snapshots.models import Snapshot
 from ...utils import Log
@@ -71,41 +71,117 @@ class CreateDocumentDiffsAction:
         return self._compute_for_paths(request.repo, staged_paths, None, "HEAD")
 
     def _compute_working_tree_diffs(self, request: CreateDocumentDiffsRequest) -> list[DocumentDiffResult]:
-        """Compute working-tree diffs for git-dirty files only."""
+        """Compute diffs for every open eligible document and every dirty git path.
+
+        Candidate set is union of dirty git paths and open eligible document paths.
+        This ensures clean-but-open documents appear for baseline comparison, and
+        dirty-but-closed documents appear with a status-only indicator.
+        """
+        dirty_files = self._git_service.get_dirty_files(request.repo)
+        dirty_by_path: dict[str, DirtyFile] = {item.git_path: item for item in dirty_files}
         eligible_docs = request.eligible_docs or []
-        dirty_paths = {dirty_file.git_path for dirty_file in self._git_service.get_dirty_files(request.repo)}
-        if not dirty_paths:
+        docs_by_path = self._documents_by_git_path(request.repo, eligible_docs)
+        # Union ensures both dirty-closed and clean-open paths are candidates.
+        candidate_paths = set(dirty_by_path) | set(docs_by_path)
+
+        # No dirty files and no open docs means nothing to display.
+        if not candidate_paths:
             return []
 
-        eligible_docs_by_path = self._documents_by_git_path(request.repo, eligible_docs)
-
         results: list[DocumentDiffResult] = []
-        for git_path in sorted(dirty_paths):
-            document = eligible_docs_by_path.get(git_path)
-            if document is None:
-                results.append(self._result_for_dirty_path_not_open(git_path, dirty_paths))
+        for git_path in sorted(candidate_paths):
+            dirty_item = dirty_by_path.get(git_path)
+            document = docs_by_path.get(git_path)
+
+            # Deleted path takes priority over open document to preserve git deletion intent.
+            if dirty_item is not None and dirty_item.status == DirtyFileStatus.DELETED:
+                results.append(self._result_for_deleted_path(request.repo, git_path, document))
                 continue
 
-            working = self._create_working_snapshot.execute(request.repo, document)
-            if not working.is_success or working.data is None:
-                Log.warning(f"Failed to create working snapshot: {working.message}")
-                continue
-
-            working_snapshot = working.data
-            old_load = self._load_snapshot(request.repo, None, working_snapshot.git_path)
-            working_load = SnapshotLoadResult(snapshot=working_snapshot, status=SnapshotLoadStatus.FOUND)
-            results.append(
-                self._build_document_diff_result(
-                    working_snapshot.git_path,
-                    new_load=working_load,
-                    old_load=old_load,
-                    git_changed_paths=dirty_paths,
-                    open_modified_paths=set(),
-                    mode="working-tree",
+            # Open document always gets working snapshot, even when git-clean.
+            if document is not None:
+                open_doc_result = self._result_for_open_document(
+                    repo=request.repo,
+                    git_path=git_path,
+                    document=document,
+                    git_changed=git_path in dirty_by_path,
                 )
-            )
+                if open_doc_result is not None:
+                    results.append(open_doc_result)
+                continue
+
+            # Dirty path not open (non-deleted) -> status-only result.
+            if dirty_item is None:
+                raise RuntimeError(f"Candidate path {git_path} has no dirty item and no document")
+            results.append(self._result_for_dirty_path_not_open(git_path, dirty_item))
 
         return results
+
+    def _result_for_deleted_path(
+        self,
+        repo: GitRepository,
+        git_path: str,
+        document: DocumentLike | None,
+    ) -> DocumentDiffResult:
+        """Build deleted-path result with optional tree diff from old snapshot."""
+        # Open doc exists for deleted path: warn and never snapshot working side.
+        if document is not None:
+            Log.warning(f"Deleted path {git_path} has an open document. Git deletion wins; skipping snapshot.")
+        # Load old snapshot from index to build deleted-vs-empty tree diff.
+        old_load = self._load_snapshot(repo, None, git_path)
+
+        # New side explicitly missing: file no longer exists.
+        new_load = SnapshotLoadResult(
+            snapshot=None,
+            status=SnapshotLoadStatus.DOCUMENT_MISSING,
+        )
+        issues = self._issues_for_loads(old_load, new_load)
+        old_snap, new_snap = self._snapshots_for_diff(DiffState.DELETED, old_load, new_load)
+
+        if old_snap is not None and new_snap is not None:
+            diff = self._create_diff.execute(old_snap, new_snap)
+            snapshot_diff = diff.data if diff.is_success and diff.data else None
+            # Diff engine succeeded but produced no payload: treat as computation failure.
+            if diff.is_success and diff.data is None:
+                issues.general.append(GeneralDiffIssue.DIFF_COMPUTATION_FAILED)
+        else:
+            # Old snapshot missing: cannot build tree diff, still return DELETED state.
+            snapshot_diff = None
+        return DocumentDiffResult(
+            git_path=git_path,
+            document_state=DiffState.DELETED,
+            issues=issues,
+            snapshot_diff=snapshot_diff,
+        )
+
+    def _result_for_open_document(
+        self,
+        repo: GitRepository,
+        git_path: str,
+        document: DocumentLike,
+        git_changed: bool,
+    ) -> DocumentDiffResult | None:
+        """Build result for open document path by creating working snapshot."""
+        working = self._create_working_snapshot.execute(repo, document)
+        # Snapshot extraction failed -- skip this document path.
+        if not working.is_success or working.data is None:
+            Log.warning(f"Failed to create working snapshot: {working.message}")
+            return None
+
+        working_snapshot = working.data
+        old_load = self._load_snapshot(repo, None, working_snapshot.git_path)
+        working_load = SnapshotLoadResult(
+            snapshot=working_snapshot,
+            status=SnapshotLoadStatus.FOUND,
+        )
+
+        return self._build_document_diff_result(
+            git_path,
+            new_load=working_load,
+            old_load=old_load,
+            git_changed=git_changed,
+            mode="working-tree",
+        )
 
     def _documents_by_git_path(self, repo: GitRepository, documents: list[DocumentLike]) -> dict[str, DocumentLike]:
         """Build map of open eligible documents keyed by git path."""
@@ -123,14 +199,17 @@ class CreateDocumentDiffsAction:
     def _result_for_dirty_path_not_open(
         self,
         git_path: str,
-        dirty_paths: set[str],
+        dirty_item: DirtyFile,
     ) -> DocumentDiffResult:
-        """Return status-only result when git dirty path has no open doc."""
-        if git_path not in dirty_paths:
-            raise RuntimeError(f"Unexpected non-dirty path without open document: {git_path}")
+        """Return status-only result when a git-dirty path has no open document."""
+        # DELETED must be handled by dedicated path that loads old snapshot.
+        if dirty_item.status == DirtyFileStatus.DELETED:
+            raise RuntimeError(f"Deleted path {git_path} should be handled by main loop, not this helper")
+        # Map git status to document state: added -> ADDED, modified -> MODIFIED.
+        state = DiffState.ADDED if dirty_item.status == DirtyFileStatus.ADDED else DiffState.MODIFIED
         return DocumentDiffResult(
             git_path=git_path,
-            document_state=DiffState.MODIFIED,
+            document_state=state,
             issues=DiffIssues(new_snapshot=SnapshotIssue.MISSING),
         )
 
@@ -141,6 +220,11 @@ class CreateDocumentDiffsAction:
         new_ref: str | None,
         old_ref: str | None,
     ) -> list[DocumentDiffResult]:
+        """Compute diffs for paths at historical refs (commit/staging modes).
+
+        Every path in set considered changed by definition -- committed files,
+        staged files, or explicitly requested historical paths.
+        """
         results: list[DocumentDiffResult] = []
         for git_path in git_paths:
             new_load = self._load_snapshot(repo, new_ref, git_path)
@@ -150,8 +234,7 @@ class CreateDocumentDiffsAction:
                     git_path,
                     new_load=new_load,
                     old_load=old_load,
-                    git_changed_paths=git_paths,
-                    open_modified_paths=set(),
+                    git_changed=True,
                     mode="historical",
                 )
             )
@@ -219,8 +302,13 @@ class CreateDocumentDiffsAction:
         document_state: DiffState,
         old_load: SnapshotLoadResult,
         new_load: SnapshotLoadResult,
-    ) -> tuple[Snapshot, Snapshot]:
+    ) -> tuple[Snapshot | None, Snapshot | None]:
         """Select snapshots for diff according to document state.
+
+        Returns (None, None) when no valid diff can be computed:
+        - ADDED with missing new snapshot
+        - DELETED with missing old snapshot
+        - MODIFIED/UNCHANGED with missing new snapshot
 
         ADDED: empty old vs real new.
         DELETED: real old vs empty new.
@@ -231,20 +319,24 @@ class CreateDocumentDiffsAction:
         """
         if document_state == DiffState.ADDED:
             new_snapshot = new_load.snapshot
+            # Cannot diff added file without new snapshot.
             if new_snapshot is None:
-                raise RuntimeError("Missing new snapshot for added file")
+                return None, None
             return self._empty_snapshot_for(new_snapshot), new_snapshot
         if document_state == DiffState.DELETED:
             old_snapshot = old_load.snapshot
+            # Cannot diff deleted file without old snapshot.
             if old_snapshot is None:
-                raise RuntimeError("Missing old snapshot for deleted file")
+                return None, None
             return old_snapshot, self._empty_snapshot_for(old_snapshot)
 
         new_snapshot = new_load.snapshot
+        # MODIFIED/UNCHANGED cannot diff without new side.
         if new_snapshot is None:
-            raise RuntimeError("Missing new snapshot for modified/unchanged file")
+            return None, None
 
         old_snapshot = old_load.snapshot
+        # Missing old baseline: synthesize empty old for full-tree added diff.
         if old_snapshot is None:
             old_snapshot = self._empty_snapshot_for(new_snapshot)
         return old_snapshot, new_snapshot
@@ -303,30 +395,32 @@ class CreateDocumentDiffsAction:
         git_path: str,
         new_load: SnapshotLoadResult,
         old_load: SnapshotLoadResult,
-        git_changed_paths: set[str],
-        open_modified_paths: set[str],
+        git_changed: bool,
         mode: str,
     ) -> DocumentDiffResult:
-        """Build one document-level result from state, issues, and optional diff."""
-        git_file_changed = git_path in git_changed_paths
-        open_modified = git_path in open_modified_paths
-        has_any_change = git_file_changed or open_modified
-        document_state = self._document_state_for_loads(old_load, new_load, has_any_change)
+        """Build one document-level result from state, issues, and optional diff.
+
+        Determines document state from snapshot load results, collects issues,
+        selects snapshots for comparison, then computes tree diff if possible.
+        """
+        document_state = self._document_state_for_loads(old_load, new_load, git_changed)
         issues = self._issues_for_loads(old_load, new_load)
 
+        # Both sides missing: document absent both refs, issues-only result.
         if not self._document_exists(old_load) and not self._document_exists(new_load):
             return DocumentDiffResult(git_path=git_path, document_state=document_state, issues=issues)
 
-        if issues.is_diff_blocker_for(document_state):
-            return DocumentDiffResult(git_path=git_path, document_state=document_state, issues=issues)
-
         old_snapshot, new_snapshot = self._snapshots_for_diff(document_state, old_load, new_load)
+
+        # Snapshot selection failed (e.g. deleted with missing old snapshot).
+        if old_snapshot is None or new_snapshot is None:
+            return DocumentDiffResult(git_path=git_path, document_state=document_state, issues=issues)
         return self._compute_diff_result(
             git_path=git_path,
             old_snapshot=old_snapshot,
             new_snapshot=new_snapshot,
             document_state=document_state,
             issues=issues,
-            git_file_changed=git_file_changed,
+            git_file_changed=git_changed,
             mode=mode,
         )

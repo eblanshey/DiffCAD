@@ -70,23 +70,6 @@ class DiffIssues:
         """Return True when any issue exists on either side or general bucket."""
         return self.old_snapshot is not None or self.new_snapshot is not None or bool(self.general)
 
-    def is_diff_blocker_for(self, document_state: DiffState) -> bool:
-        """Return True when snapshot issues prevent diff computation for state.
-
-        ADDED needs new snapshot (compare empty vs new).
-        DELETED needs old snapshot (compare old vs empty).
-        MODIFIED/UNCHANGED only block on new snapshot missing. Old snapshot missing
-        is NOT a blocker: the diff runs with an empty old snapshot, producing a
-        full-tree "added" diff. This allows first-time snapshot creation — a user
-        with no baseline snapshot can still see and stage their working tree.
-        """
-        if document_state == DiffState.ADDED:
-            return self.new_snapshot is not None
-        if document_state == DiffState.DELETED:
-            return self.old_snapshot is not None
-        return self.new_snapshot is not None
-
-
 @dataclass(frozen=True)
 class DocumentDiffResult:
     """Application-level diff result for one FCStd document."""

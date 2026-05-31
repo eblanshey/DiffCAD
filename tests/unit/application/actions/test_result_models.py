@@ -53,13 +53,6 @@ def test_default_diff_issues_have_no_values() -> None:
     assert issues.general == []
 
 
-def test_diff_issues_is_blocker_for_states() -> None:
-    assert DiffIssues(new_snapshot=SnapshotIssue.MISSING).is_diff_blocker_for(DiffState.ADDED) is True
-    assert DiffIssues(old_snapshot=SnapshotIssue.MISSING).is_diff_blocker_for(DiffState.ADDED) is False
-    assert DiffIssues(old_snapshot=SnapshotIssue.MISSING).is_diff_blocker_for(DiffState.DELETED) is True
-    assert DiffIssues(new_snapshot=SnapshotIssue.MISSING).is_diff_blocker_for(DiffState.DELETED) is False
-    assert DiffIssues(old_snapshot=SnapshotIssue.INVALID).is_diff_blocker_for(DiffState.DELETED) is True
-    assert DiffIssues(new_snapshot=SnapshotIssue.INVALID).is_diff_blocker_for(DiffState.MODIFIED) is True
-    assert DiffIssues(old_snapshot=SnapshotIssue.INVALID).is_diff_blocker_for(DiffState.UNCHANGED) is False
-    assert DiffIssues(old_snapshot=SnapshotIssue.MISSING).is_diff_blocker_for(DiffState.MODIFIED) is False
-    assert DiffIssues().is_diff_blocker_for(DiffState.UNCHANGED) is False
+def test_diff_issues_has_any_detects_presence_of_issue() -> None:
+    assert DiffIssues().has_any() is False
+    assert DiffIssues(old_snapshot=SnapshotIssue.MISSING).has_any() is True
