@@ -9,7 +9,7 @@
 
 from ...utils import Log
 from ..freecad_ports import DocumentLike
-from .models import GitCommit, GitIdentity, GitRepository
+from .models import DirtyFile, GitCommit, GitIdentity, GitRepository
 from .paths import git_path_name, relative_git_path
 from .ports import GitPort
 
@@ -98,7 +98,7 @@ class GitService:
             List of git paths (relative from repo root) that are dirty.
         """
         try:
-            dirty_paths = self._git_port.get_dirty_paths(repo.absolute_path)
+            dirty_paths = {dirty_file.git_path for dirty_file in self._git_port.get_dirty_files(repo.absolute_path)}
 
             # Filter to only documents we care about
             dirty_doc_paths = []
@@ -146,16 +146,16 @@ class GitService:
         """
         return self._git_port.get_staged_paths(repo.absolute_path)
 
-    def get_dirty_files(self, repo: GitRepository) -> list[str]:
-        """Get list of dirty FCStd file paths.
+    def get_dirty_files(self, repo: GitRepository) -> list[DirtyFile]:
+        """Get list of dirty FCStd files with working-tree status.
 
         Args:
             repo: GitRepository to check.
 
         Returns:
-            List of relative paths (from git root) of dirty FCStd files.
+            List of DirtyFile records for dirty FCStd files.
         """
-        return self._git_port.get_dirty_paths(repo.absolute_path)
+        return self._git_port.get_dirty_files(repo.absolute_path)
 
     def get_file_contents(self, repo: GitRepository, commit: str | None, git_path: str) -> str | None:
         """Get file contents from git at a specific commit or index.

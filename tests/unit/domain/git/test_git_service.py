@@ -4,7 +4,7 @@
 
 import pytest
 
-from freecad.history_wb.domain.git import GitRepository, GitService
+from freecad.history_wb.domain.git import DirtyFile, DirtyFileStatus, GitRepository, GitService
 from tests.fakes import FakeGitPort, MockDocument
 
 
@@ -247,28 +247,38 @@ class TestGetStagedFiles:
 
 
 class _FakeDirtyPort(FakeGitPort):
-    def __init__(self, dirty_paths: list[str]) -> None:
+    def __init__(self, dirty_files: list[DirtyFile]) -> None:
         super().__init__()
-        self._dirty_paths = dirty_paths
+        self._dirty_files = dirty_files
 
-    def get_dirty_paths(self, git_root: str) -> list[str]:
+    def get_dirty_files(self, git_root: str) -> list[DirtyFile]:
         if git_root != "/repo":
             return []
-        return self._dirty_paths
+        return self._dirty_files
 
 
 class TestGetDirtyFiles:
     """Tests for GitService.get_dirty_files() delegation."""
 
-    def test_returns_dirty_paths_from_port(self) -> None:
-        service = GitService(git_port=_FakeDirtyPort(["a.FCStd", "nested/b.FCStd"]))
+    def test_returns_dirty_files_from_port(self) -> None:
+        service = GitService(
+            git_port=_FakeDirtyPort(
+                [
+                    DirtyFile(git_path="a.FCStd", status=DirtyFileStatus.MODIFIED),
+                    DirtyFile(git_path="nested/b.FCStd", status=DirtyFileStatus.ADDED),
+                ]
+            )
+        )
         repo = GitRepository(name="repo", absolute_path="/repo")
 
         result = service.get_dirty_files(repo=repo)
 
-        assert result == ["a.FCStd", "nested/b.FCStd"]
+        assert result == [
+            DirtyFile(git_path="a.FCStd", status=DirtyFileStatus.MODIFIED),
+            DirtyFile(git_path="nested/b.FCStd", status=DirtyFileStatus.ADDED),
+        ]
 
-    def test_returns_empty_when_port_reports_no_dirty_paths(self) -> None:
+    def test_returns_empty_when_port_reports_no_dirty_files(self) -> None:
         service = GitService(git_port=_FakeDirtyPort([]))
         repo = GitRepository(name="repo", absolute_path="/repo")
 

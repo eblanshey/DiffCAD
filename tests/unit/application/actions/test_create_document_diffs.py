@@ -16,7 +16,7 @@ from freecad.history_wb.application.actions.result_models import (
     SnapshotLoadStatus,
 )
 from freecad.history_wb.domain.diff.models import DiffState
-from freecad.history_wb.domain.git.models import GitRepository
+from freecad.history_wb.domain.git.models import DirtyFile, DirtyFileStatus, GitRepository
 from freecad.history_wb.domain.snapshots.models import Snapshot
 
 
@@ -68,7 +68,7 @@ class _FakeGitService:
         self,
         committed: dict[str, list[str]] | None = None,
         staged: list[str] | None = None,
-        dirty: list[str] | None = None,
+        dirty: list[DirtyFile] | None = None,
     ) -> None:
         self._committed = committed or {}
         self._staged = staged or []
@@ -80,7 +80,7 @@ class _FakeGitService:
     def get_staged_files(self, repo: GitRepository) -> list[str]:  # noqa: ARG002
         return self._staged
 
-    def get_dirty_files(self, repo: GitRepository) -> list[str]:  # noqa: ARG002
+    def get_dirty_files(self, repo: GitRepository) -> list[DirtyFile]:  # noqa: ARG002
         return self._dirty
 
 
@@ -113,7 +113,11 @@ def _build_action(
         create_working_snapshot_action=_FakeWorkingSnapshotAction(working_snapshots or {}),
         create_commit_snapshot_action=_FakeCommitSnapshotAction(snapshot_mapping),
         create_diff_action=_FakeDiffAction(changed_paths or set(), fail_paths=fail_diff_paths),
-        git_service=_FakeGitService(committed_paths, staged_paths, dirty_paths),
+        git_service=_FakeGitService(
+            committed_paths,
+            staged_paths,
+            [DirtyFile(git_path=path, status=DirtyFileStatus.MODIFIED) for path in (dirty_paths or [])],
+        ),
         freecad_port=_FakeFreeCadPort(modified_doc_names),
     )
 

@@ -8,7 +8,7 @@ import os
 from datetime import datetime
 from pathlib import Path
 
-from freecad.history_wb.domain.git.models import GitCommit, GitIdentity
+from freecad.history_wb.domain.git.models import DirtyFile, GitCommit, GitIdentity
 
 
 class FakeGitPort:
@@ -53,6 +53,7 @@ class FakeGitPort:
         self._fail_unstage = fail_unstage
         # Staged paths for get_staged_paths
         self._staged_paths: list[str] = []
+        self._dirty_files: list[DirtyFile] = []
         # File contents mapping: (commit, git_path) -> content
         self._file_contents: dict[tuple[str | None, str], str] = {}
         self._file_bytes: dict[tuple[str | None, str], bytes] = {}
@@ -241,8 +242,8 @@ class FakeGitPort:
         self._last_stage_files_call = (git_root, paths)
         return not self._fail_stage
 
-    def get_dirty_paths(self, git_root: str) -> list[str]:
-        """Fake implementation of get_dirty_paths for testing.
+    def get_dirty_files(self, git_root: str) -> list[DirtyFile]:
+        """Fake implementation of get_dirty_files for testing.
 
         This fake implementation returns an empty list by default. Tests can
         override this behavior by subclassing or using a different fake.
@@ -251,9 +252,13 @@ class FakeGitPort:
             git_root: Absolute path to git repository root.
 
         Returns:
-            Empty list (simulating a clean repository).
+            Configured dirty files, or empty list (simulating a clean repository).
         """
-        return []
+        return self._dirty_files
+
+    def set_dirty_files(self, files: list[DirtyFile]) -> None:
+        """Set dirty files returned by get_dirty_files."""
+        self._dirty_files = files
 
     def unstage_files(self, git_root: str, paths: list[str]) -> bool:
         """Fake implementation of unstage_files for testing."""

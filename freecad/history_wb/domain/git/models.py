@@ -6,6 +6,7 @@
 
 from dataclasses import dataclass
 from datetime import datetime
+from enum import Enum, auto
 
 
 @dataclass(frozen=True)
@@ -81,3 +82,24 @@ class GitRepositoryInitCandidate:
     path: str
     is_available: bool
     existing_repository_path: str | None = None
+
+
+class DirtyFileStatus(Enum):
+    """Git working-tree change status for a dirty file."""
+
+    MODIFIED = auto()
+    ADDED = auto()
+    DELETED = auto()
+
+
+@dataclass(frozen=True)
+class DirtyFile:
+    """A dirty file with its git working-tree status.
+
+    Attributes:
+        git_path: Relative path from repository root.
+        status: Working-tree change status.
+    """
+
+    git_path: str
+    status: DirtyFileStatus

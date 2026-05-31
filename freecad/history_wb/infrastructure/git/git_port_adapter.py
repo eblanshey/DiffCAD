@@ -13,7 +13,7 @@ from datetime import datetime
 from pathlib import PurePosixPath
 from typing import Any
 
-from freecad.history_wb.domain.git.models import GitCommit, GitIdentity
+from freecad.history_wb.domain.git.models import DirtyFile, DirtyFileStatus, GitCommit, GitIdentity
 from freecad.history_wb.domain.git.paths import is_fcstd_path
 from freecad.history_wb.domain.git.ports import GitPort
 from freecad.history_wb.utils import Log
@@ -325,27 +325,21 @@ class GitPortAdapter(GitPort):
             # Different drives on Windows cannot share common path.
             return False
 
-    def get_dirty_paths(self, git_root: str) -> list[str]:
-        """Get dirty paths using git status --porcelain -z.
-
-        Filters for modified (M) and untracked (??) files only, as these are
-        the only ones that can be staged via `git add`.
-
-        Args:
-            git_root: Absolute path to git repository root.
-
-        Returns:
-            List of relative .FCStd paths (from git root) that are modified
-            or untracked. Empty list if repo is clean or not a git repo.
-        """
+    def get_dirty_files(self, git_root: str) -> list[DirtyFile]:
+        """Get dirty FCStd files with working-tree status."""
         try:
             status_entries = self._get_status_entries(git_root)
-            return [
-                str(entry["rel_path"])
-                for entry in status_entries
-                if self._is_dirty_status(str(entry["wt_status"]), str(entry["rel_path"]))
-                and str(entry["rel_path"]).endswith(".FCStd")
-            ]
+            result: list[DirtyFile] = []
+            for entry in status_entries:
+                wt_status = str(entry["wt_status"])
+                rel_path = str(entry["rel_path"])
+                if not is_fcstd_path(rel_path):
+                    continue
+                dirty_status = self._classify_dirty_status(wt_status)
+                if dirty_status is None:
+                    continue
+                result.append(DirtyFile(git_path=rel_path, status=dirty_status))
+            return result
         except subprocess.TimeoutExpired:
             Log.warning("Git status command timed out")
             return []
@@ -458,27 +452,19 @@ class GitPortAdapter(GitPort):
 
         return normalized
 
-    def _is_dirty_status(self, status: str, rel_path: str) -> bool:
-        """Check if a git status code represents a dirty (staggable) file.
+    def _classify_dirty_status(self, wt_status: str) -> DirtyFileStatus | None:
+        """Map working-tree porcelain status to DirtyFileStatus.
 
-        A file is considered dirty if it has changes in the working tree that
-        can be staged via `git add`. This includes:
-        - Modified files (M): Changes not yet staged
-        - Untracked files (?): New files not in git
-
-        Files that are already staged (A without M), deleted (D), or have other
-        statuses are NOT considered dirty.
-
-        Args:
-            status: The git status character (working tree position).
-            rel_path: The relative file path (used to ensure non-empty).
-
-        Returns:
-            True if the file is dirty and can be staged, False otherwise.
+        Only M (modified), ? (untracked/new), and D (deleted) are dirty.
+        Staged-only (space in wt position) and others are not dirty.
         """
-        # Only M (modified) and ? (untracked) are dirty
-        # Staged-only (A), deleted (D), and others are NOT dirty
-        return (status == "M" or status == "?") and bool(rel_path)
+        if wt_status == "M":
+            return DirtyFileStatus.MODIFIED
+        if wt_status == "?":
+            return DirtyFileStatus.ADDED
+        if wt_status == "D":
+            return DirtyFileStatus.DELETED
+        return None
 
     def stage_files(self, git_root: str, paths: list[str]) -> bool:
         """Stage files using git add.

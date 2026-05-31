@@ -149,7 +149,7 @@ class CreateDocumentDiffsAction:
         eligible_docs: list[DocumentLike],
     ) -> tuple[set[str], set[str]]:
         """Return working tree dirty paths and open modified paths."""
-        dirty_paths = set(self._git_service.get_dirty_files(repo))
+        dirty_paths = {dirty_file.git_path for dirty_file in self._git_service.get_dirty_files(repo)}
         open_modified_paths: set[str] = set()
         for doc in eligible_docs:
             doc_path = getattr(doc, "FileName", "")

@@ -9,7 +9,7 @@
 
 from typing import Protocol
 
-from freecad.history_wb.domain.git.models import GitCommit, GitIdentity
+from freecad.history_wb.domain.git.models import DirtyFile, GitCommit, GitIdentity
 
 
 __all__ = ["GitPort"]
@@ -107,8 +107,8 @@ class GitPort(Protocol):
         """
         ...
 
-    def get_dirty_paths(self, git_root: str) -> list[str]:
-        """Get list of dirty FCStd file paths (modified or untracked).
+    def get_dirty_files(self, git_root: str) -> list[DirtyFile]:
+        """Get list of dirty FCStd files with their working-tree status.
 
         This method runs `git status --porcelain` and filters for files that are
         modified in the working tree or untracked. These are the only files that
@@ -118,8 +118,8 @@ class GitPort(Protocol):
             git_root: Absolute path to git repository root.
 
         Returns:
-            List of relative .FCStd paths (from git root) that are modified
-            or untracked. Empty list if no dirty FCStd files or not a git repo.
+            List of DirtyFile records for dirty .FCStd files in worktree.
+            Empty list if no dirty FCStd files or not a git repo.
         """
         ...
 
