@@ -88,6 +88,13 @@ class DiffView(Protocol):
                 "Reviewed" rows before commit rows.
         """
 
+    def set_force_diff_callback(self, callback: Callable[[], None]) -> None:
+        """Set the callback to invoke when force diff button is clicked.
+
+        Args:
+            callback: A no-argument callable to invoke on force diff.
+        """
+
     def set_refresh_callback(self, callback: Callable[[], None]) -> None:
         """Set the callback to invoke when refresh button is clicked.
 

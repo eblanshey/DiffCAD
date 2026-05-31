@@ -10,6 +10,7 @@ import shutil
 import subprocess
 from codecs import decode as codecs_decode
 from datetime import datetime
+from pathlib import PurePosixPath
 from typing import Any
 
 from freecad.history_wb.domain.git.models import GitCommit, GitIdentity
@@ -652,11 +653,18 @@ class GitPortAdapter(GitPort):
         """
         try:
             status_entries = self._get_status_entries(git_root)
-            return [
-                str(entry["rel_path"])
-                for entry in status_entries
-                if str(entry["index_status"]) not in (" ", "?") and is_fcstd_path(str(entry["rel_path"]))
-            ]
+            staged_document_paths: list[str] = []
+            seen_paths: set[str] = set()
+            for entry in status_entries:
+                if str(entry["index_status"]) in (" ", "?"):
+                    continue
+                rel_path = str(entry["rel_path"])
+                fcstd_path = self._document_path_for_staged_entry(rel_path)
+                if fcstd_path is None or fcstd_path in seen_paths:
+                    continue
+                seen_paths.add(fcstd_path)
+                staged_document_paths.append(fcstd_path)
+            return staged_document_paths
         except subprocess.TimeoutExpired:
             Log.warning("Git status command timed out")
             return []
@@ -666,6 +674,22 @@ class GitPortAdapter(GitPort):
         except (NotADirectoryError, OSError) as e:
             Log.warning(f"Git status failed: {e}")
             return []
+
+    def _document_path_for_staged_entry(self, rel_path: str) -> str | None:
+        """Map staged path to its reviewed FCStd document path when applicable."""
+        if is_fcstd_path(rel_path):
+            return rel_path
+
+        normalized_path = rel_path.replace("\\", "/")
+        yaml_path = PurePosixPath(normalized_path)
+        if yaml_path.suffix != ".yaml":
+            return None
+        if yaml_path.parent.name != ".snapshots":
+            return None
+
+        document_name = f"{yaml_path.stem}.FCStd"
+        mapped = yaml_path.parent.parent / document_name
+        return str(mapped)
 
     def get_file_contents(self, git_root: str, commit: str | None, git_path: str) -> str | None:
         """Get file contents using git show.

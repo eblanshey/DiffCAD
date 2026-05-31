@@ -449,6 +449,7 @@ class DiffPresenter:
         self._view.set_restore_all_button_callback(self.on_restore_all_clicked)
         self._view.set_restore_all_from_history_context_callback(self.on_restore_all_from_history_context)
         self._view.set_open_document_for_comparison_callback(self.on_open_document_for_comparison_clicked)
+        self._view.set_force_diff_callback(self.force_working_tree_diffs)
 
     def on_open_document_for_comparison_clicked(self, git_path: str) -> None:
         """Open missing working-tree document in FreeCAD, then recompute Current Files diff."""
@@ -547,15 +548,40 @@ class DiffPresenter:
         return docs_result.data
 
     def _compute_working_tree_diffs(
-        self, repo: GitRepository, eligible_docs: list[DocumentLike]
+        self, repo: GitRepository, eligible_docs: list[DocumentLike], force_all: bool = False
     ) -> list[DocumentDiffResult]:
         """Compute diffs for working tree mode."""
         doc_diff_results_result = self._create_document_diffs.execute(
-            CreateDocumentDiffsRequest(mode=DocumentDiffMode.WORKING_TREE, repo=repo, eligible_docs=eligible_docs)
+            CreateDocumentDiffsRequest(
+                mode=DocumentDiffMode.WORKING_TREE, repo=repo, eligible_docs=eligible_docs, force_all=force_all
+            )
         )
         if doc_diff_results_result.is_success and doc_diff_results_result.data:
             return doc_diff_results_result.data
         return []
+
+    def force_working_tree_diffs(self) -> None:
+        """Force diff computation for all eligible documents, including unchanged ones."""
+        repo = self._ui_state.git_repository
+        if repo is None:
+            return
+
+        eligible_docs = self._get_eligible_documents(repo)
+        if not eligible_docs:
+            return
+
+        document_results = self._compute_working_tree_diffs(repo, eligible_docs, force_all=True)
+        self._store_results(document_results)
+
+        if document_results:
+            self.present_diffs(document_results)
+        else:
+            self.clear_doc_diff()
+
+        self._view.show_info_message(
+            translate("History", "Force Refresh"),
+            translate("History", "Force refreshed comparisons for all open files."),
+        )
 
     def _store_results(self, document_results: list[DocumentDiffResult]) -> None:
         """Store action results and diff payloads for later use."""
@@ -673,9 +699,8 @@ class DiffPresenter:
         # Clear stale property view tied to prior node selection
         self.clear_property_diff()
 
-        # Collapse the root tree item and disable the stage button
-        self._view.collapse_tree_item(git_path)
-        self._view.set_stage_button_enabled(git_path, enabled=False)
+        # Remove staged path from cached Current Files results and re-present remainder.
+        self._remove_path_from_cached_working_tree_results(git_path)
 
     def on_stage_all_clicked(self) -> None:
         """Handle 'Stage All' button click.
@@ -714,6 +739,18 @@ class DiffPresenter:
 
         # Refresh the working tree view to reflect staged state
         self._on_working_tree_selected()
+
+    def _remove_path_from_cached_working_tree_results(self, git_path: str) -> None:
+        """Remove one path from cached working-tree results and refresh view from cache."""
+        self._diff_results_by_path.pop(git_path, None)
+        self._document_results_by_path.pop(git_path, None)
+
+        if not self._document_results_by_path:
+            self.clear_doc_diff()
+            return
+
+        remaining_results = sorted(self._document_results_by_path.values(), key=lambda result: result.git_path)
+        self.present_diffs(remaining_results)
 
     def on_remove_from_reviewed_button_clicked(self, git_path: str) -> None:
         """Unstage one reviewed document unit (FCStd + snapshot yaml)."""
@@ -899,11 +936,17 @@ class DiffPresenter:
         document_result: DocumentDiffResult | None,
         is_working_tree: bool,
     ) -> bool:
-        """Compute whether stage button should be enabled."""
+        """Compute whether stage button should be enabled.
+
+        Stage writes new-side snapshot. Enabled when:
+        - document has changes (not UNCHANGED), OR old snapshot is missing (first snapshot needed)
+        - new-side snapshot has no issue (dirty-not-open files block staging)
+        """
         if not is_working_tree or document_result is None:
             return False
-        # Stage writes new-side snapshot. New-side issue blocks stage regardless of state.
-        return document_result.document_state != DiffState.UNCHANGED and document_result.issues.new_snapshot is None
+        has_changes = document_result.document_state != DiffState.UNCHANGED
+        needs_snapshot = document_result.issues.old_snapshot is not None
+        return (has_changes or needs_snapshot) and document_result.issues.new_snapshot is None
 
     def _configure_summary_buttons(self, presentations: list[DiffTreePresentation]) -> None:
         """Configure summary-bar bulk action buttons by current history selection."""

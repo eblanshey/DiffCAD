@@ -33,6 +33,7 @@ class FakeDiffView:
         self._remove_all_button_callback: Callable[[], None] | None = None
         self._visual_diff_callback: Callable[[str, str], None] | None = None
         self._open_document_for_comparison_callback: Callable[[str], None] | None = None
+        self._force_diff_callback: Callable[[], None] | None = None
         self._restore_button_callback: Callable[[str], None] | None = None
         self._restore_all_button_callback: Callable[[], None] | None = None
         self._restore_all_from_history_context_callback: Callable[[HistorySelection], None] | None = None
@@ -134,6 +135,20 @@ class FakeDiffView:
         """Capture open-document callback registration."""
         self._record_call("set_open_document_for_comparison_callback", callback=callback)
         self._open_document_for_comparison_callback = callback
+
+    def set_force_diff_callback(self, callback: Callable[[], None]) -> None:
+        """Capture force diff callback registration."""
+        self._record_call("set_force_diff_callback", callback=callback)
+        self._force_diff_callback = callback
+
+    def set_force_diff_button_visible(self, visible: bool) -> None:
+        """Capture force diff button visibility call."""
+        self._record_call("set_force_diff_button_visible", visible=visible)
+
+    def trigger_force_diff_callback(self) -> None:
+        """Trigger registered force diff callback for tests."""
+        if self._force_diff_callback is not None:
+            self._force_diff_callback()
 
     def trigger_visual_diff_callback(self, git_path: str, node_path: str) -> None:
         """Trigger visual diff callback for tests."""

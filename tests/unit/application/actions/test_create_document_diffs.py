@@ -389,10 +389,23 @@ def test_diff_issues_blocker_helper() -> None:
     assert issues.is_diff_blocker_for(DiffState.ADDED) is False
 
 
-def test_diff_issues_blocker_all_state_combinations() -> None:
-    assert DiffIssues(new_snapshot=SnapshotIssue.MISSING).is_diff_blocker_for(DiffState.ADDED) is True
-    assert DiffIssues(old_snapshot=SnapshotIssue.MISSING).is_diff_blocker_for(DiffState.ADDED) is False
-    assert DiffIssues(old_snapshot=SnapshotIssue.MISSING).is_diff_blocker_for(DiffState.DELETED) is True
-    assert DiffIssues(new_snapshot=SnapshotIssue.MISSING).is_diff_blocker_for(DiffState.DELETED) is False
-    assert DiffIssues(old_snapshot=SnapshotIssue.MISSING).is_diff_blocker_for(DiffState.MODIFIED) is True
-    assert DiffIssues(new_snapshot=SnapshotIssue.MISSING).is_diff_blocker_for(DiffState.UNCHANGED) is True
+def test_working_tree_missing_old_snapshot_still_computes_diff() -> None:
+    repo = GitRepository(name="r", absolute_path="/repo")
+    docs = [_Doc(name="a", FileName="/repo/a.FCStd")]
+    snapshot_mapping = {
+        (None, "a.FCStd"): SnapshotLoadResult(None, SnapshotLoadStatus.SNAPSHOT_MISSING),
+    }
+    action = _build_action(
+        snapshot_mapping=snapshot_mapping,
+        working_snapshots={"a": _snapshot("a.FCStd", "new")},
+        changed_paths={"a.FCStd"},
+        modified_doc_names={"a"},
+    )
+
+    result = action.execute(
+        CreateDocumentDiffsRequest(mode=DocumentDiffMode.WORKING_TREE, repo=repo, eligible_docs=docs)
+    )
+
+    assert len(result.data) == 1
+    assert result.data[0].snapshot_diff is not None
+    assert result.data[0].document_state == DiffState.MODIFIED

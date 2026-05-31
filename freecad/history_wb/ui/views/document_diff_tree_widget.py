@@ -50,6 +50,7 @@ class DocumentDiffTreeWidget(QtWidgets.QWidget):
         self._current_selection: HistorySelection | None = None
         self._on_visual_diff_callback: Callable[[str, str], None] | None = None
         self._on_open_document_for_comparison_callback: Callable[[str], None] | None = None
+        self._on_force_diff_callback: Callable[[], None] | None = None
         self._stage_buttons: dict[str, QtWidgets.QToolButton] = {}
         self._remove_from_reviewed_buttons: dict[str, QtWidgets.QToolButton] = {}
         self._diff_item_delegate: DiffItemDelegate | None = None
@@ -105,8 +106,32 @@ class DocumentDiffTreeWidget(QtWidgets.QWidget):
         self._remove_all_button.clicked.connect(self._on_remove_all_clicked)
         summary_layout.addWidget(self._remove_all_button)
 
+        # Custom header bar: "Tree" label on left, Force button on right
+        tree_header = QtWidgets.QWidget()
+        tree_header_layout = QtWidgets.QHBoxLayout(tree_header)
+        tree_header_layout.setContentsMargins(4, 2, 4, 2)
+        tree_header_layout.setSpacing(4)
+        tree_header_label = QtWidgets.QLabel(translate("History", "Tree"))
+        tree_header_layout.addWidget(tree_header_label)
+        tree_header_layout.addStretch()
+
+        self._force_diff_button = QtWidgets.QToolButton()
+        self._force_diff_button.setIcon(QtGui.QIcon(str(get_icon_path("RefreshRepositoryForce.svg"))))
+        self._force_diff_button.setIconSize(QtCore.QSize(16, 16))
+        self._force_diff_button.setToolTip(
+            translate(
+                "History",
+                "Force generating a comparison for all open files, including unchanged.\n\n"
+                "Mainly useful for new projects without snapshots.",
+            )
+        )
+        self._force_diff_button.setFixedSize(22, 22)
+        self._force_diff_button.hide()
+        self._force_diff_button.clicked.connect(self._on_force_diff_clicked)
+        tree_header_layout.addWidget(self._force_diff_button)
+
         self._tree_widget = QtWidgets.QTreeWidget()
-        self._tree_widget.setHeaderLabels([translate("History", "Tree")])
+        self._tree_widget.header().hide()
         self._tree_widget.setColumnCount(1)
         self._tree_widget.header().setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.Stretch)
         self._diff_item_delegate = DiffItemDelegate(self._tree_widget)
@@ -116,11 +141,27 @@ class DocumentDiffTreeWidget(QtWidgets.QWidget):
         layout = QtWidgets.QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(summary_container)
+        layout.addWidget(tree_header)
         layout.addWidget(self._tree_widget)
 
     def set_current_history_selection(self, selection: HistorySelection | None) -> None:
         """Set current history selection for conditional Current Files controls."""
         self._current_selection = selection
+        is_working_tree = selection is not None and selection.item_kind == "WORKING_TREE"
+        self._force_diff_button.setVisible(is_working_tree)
+
+    def set_force_diff_callback(self, callback: Callable[[], None]) -> None:
+        """Set callback for force diff button click."""
+        self._on_force_diff_callback = callback
+
+    def set_force_diff_button_visible(self, visible: bool) -> None:
+        """Show or hide the force diff button."""
+        self._force_diff_button.setVisible(visible)
+
+    def _on_force_diff_clicked(self) -> None:
+        """Handle force diff button click."""
+        if self._on_force_diff_callback:
+            self._on_force_diff_callback()
 
     def set_node_selection_callback(self, callback: Callable[[str, str], None]) -> None:
         """Set callback for node selection with (git_path, node_path).

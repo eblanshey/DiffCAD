@@ -843,14 +843,14 @@ class TestGitPortAdapterGetStagedPaths:
         mock_result = subprocess.CompletedProcess(
             args=["git", "status", "--porcelain"],
             returncode=0,
-            stdout="A  readme.txt\nA  document.FCStd\nM  notes.md\nA  another.FCStd\n",
+            stdout=("A  readme.txt\nA  document.FCStd\nM  notes.md\nA  another.FCStd\nA  sub/.snapshots/subdoc.yaml\n"),
             stderr="",
         )
 
         with patch.object(subprocess, "run", return_value=mock_result):
             result = self.adapter.get_staged_paths("/path/to/repo")
 
-            assert result == ["document.FCStd", "another.FCStd"]
+            assert result == ["document.FCStd", "another.FCStd", "sub/subdoc.FCStd"]
 
     def test_get_staged_paths_returns_empty_when_nothing_staged(self) -> None:
         """Test that empty list is returned when nothing is staged.
@@ -939,6 +939,34 @@ class TestGitPortAdapterGetStagedPaths:
             result = self.adapter.get_staged_paths("/path/to/repo")
 
             assert result == ["new/path/document.FCStd"]
+
+    def test_get_staged_paths_maps_snapshot_yaml_to_document_path(self) -> None:
+        """Given staged snapshot yaml path, returns corresponding FCStd path."""
+        mock_result = subprocess.CompletedProcess(
+            args=["git", "status", "--porcelain", "-z"],
+            returncode=0,
+            stdout="A  doc/.snapshots/doc.yaml\x00",
+            stderr="",
+        )
+
+        with patch.object(subprocess, "run", return_value=mock_result):
+            result = self.adapter.get_staged_paths("/path/to/repo")
+
+            assert result == ["doc/doc.FCStd"]
+
+    def test_get_staged_paths_deduplicates_fcstd_and_snapshot_yaml_entries(self) -> None:
+        """Given both staged FCStd and snapshot yaml, returns one reviewed path."""
+        mock_result = subprocess.CompletedProcess(
+            args=["git", "status", "--porcelain", "-z"],
+            returncode=0,
+            stdout="A  doc.FCStd\x00A  .snapshots/doc.yaml\x00",
+            stderr="",
+        )
+
+        with patch.object(subprocess, "run", return_value=mock_result):
+            result = self.adapter.get_staged_paths("/path/to/repo")
+
+            assert result == ["doc.FCStd"]
 
     def test_get_staged_paths_preserves_z_leading_path_space(self) -> None:
         """Given status -z raw paths, leading spaces are preserved."""

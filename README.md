@@ -78,7 +78,7 @@ History Workbench works with a Project: a folder on your computer that contains 
 3. **Initialize the Project:** Click <img src="freecad/history_wb/resources/icons/CreateGitRepository.svg" width="16" alt="" /> **Initialize Project** in the History Workbench, select the folder that contains your project files, and click "Initialize".
 4. **Open project documents:** Click <img src="freecad/history_wb/resources/icons/RefreshRepository.svg" width="16" alt="" /> **Refresh Project**, then click <img src="freecad/history_wb/resources/icons/OpenAllDocuments.svg" width="16" alt="" /> **Open All Documents** to open all FreeCAD documents in the project folder.
 5. **Recompute documents:** Click <img src="freecad/history_wb/resources/icons/RecomputeAll.svg" width="16" alt="" /> **Recompute All** to make sure document state is current. Ensure there aren't recomputation errors.
-6. **Review current file state:** Select **Current Files** in the history list. Large projects may take some time while comparison data is generated.
+6. **Force refresh current files:** Select **Current Files** in the history list, followed by the <img src="freecad/history_wb/resources/icons/RefreshRepositoryForce.svg" width="16" alt="" /> Force Refresh button. This internally generates a snapshot of the document trees. Large projects may take some time while comparison data is generated.
 7. **Mark everything reviewed:** Click **Mark All Reviewed**. The workbench saves documents and records the tree structure data needed for future comparisons.
 8. **Save the baseline iteration:** Use <img src="freecad/history_wb/resources/icons/Commit.svg" width="16" alt="" /> **Save Iteration** or your regular version-control client.
 

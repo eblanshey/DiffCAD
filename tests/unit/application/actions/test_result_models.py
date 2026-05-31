@@ -4,7 +4,6 @@
 from freecad.history_wb.application.actions.result_models import (
     DiffIssues,
     DocumentDiffResult,
-    GeneralDiffIssue,
     Result,
     SnapshotIssue,
 )
@@ -61,5 +60,6 @@ def test_diff_issues_is_blocker_for_states() -> None:
     assert DiffIssues(new_snapshot=SnapshotIssue.MISSING).is_diff_blocker_for(DiffState.DELETED) is False
     assert DiffIssues(old_snapshot=SnapshotIssue.INVALID).is_diff_blocker_for(DiffState.DELETED) is True
     assert DiffIssues(new_snapshot=SnapshotIssue.INVALID).is_diff_blocker_for(DiffState.MODIFIED) is True
-    assert DiffIssues(old_snapshot=SnapshotIssue.INVALID).is_diff_blocker_for(DiffState.UNCHANGED) is True
+    assert DiffIssues(old_snapshot=SnapshotIssue.INVALID).is_diff_blocker_for(DiffState.UNCHANGED) is False
+    assert DiffIssues(old_snapshot=SnapshotIssue.MISSING).is_diff_blocker_for(DiffState.MODIFIED) is False
     assert DiffIssues().is_diff_blocker_for(DiffState.UNCHANGED) is False

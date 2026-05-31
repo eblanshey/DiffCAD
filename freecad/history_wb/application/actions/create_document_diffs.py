@@ -80,7 +80,13 @@ class CreateDocumentDiffsAction:
         """
         eligible_docs = request.eligible_docs or []
         dirty_paths, open_modified_paths = self._working_tree_candidate_paths(request.repo, eligible_docs)
-        diff_candidate_paths = dirty_paths | open_modified_paths
+
+        if request.force_all:
+            eligible_paths = set(self._documents_by_git_path(request.repo, eligible_docs).keys())
+            diff_candidate_paths = dirty_paths | open_modified_paths | eligible_paths
+        else:
+            diff_candidate_paths = dirty_paths | open_modified_paths
+
         if not diff_candidate_paths:
             return []
 
@@ -247,7 +253,15 @@ class CreateDocumentDiffsAction:
         old_load: SnapshotLoadResult,
         new_load: SnapshotLoadResult,
     ) -> tuple[Snapshot, Snapshot]:
-        """Select snapshots for diff according to document state."""
+        """Select snapshots for diff according to document state.
+
+        ADDED: empty old vs real new.
+        DELETED: real old vs empty new.
+        MODIFIED/UNCHANGED: real old vs real new. But if the old snapshot is
+        missing (first-time snapshot, no baseline), synthesize an empty old
+        snapshot so the diff can run. The result is a full-tree "added" diff,
+        which is correct for a document with no prior snapshot history.
+        """
         if document_state == DiffState.ADDED:
             new_snapshot = new_load.snapshot
             if new_snapshot is None:
@@ -259,10 +273,13 @@ class CreateDocumentDiffsAction:
                 raise RuntimeError("Missing old snapshot for deleted file")
             return old_snapshot, self._empty_snapshot_for(old_snapshot)
 
-        old_snapshot = old_load.snapshot
         new_snapshot = new_load.snapshot
-        if old_snapshot is None or new_snapshot is None:
-            raise RuntimeError("Missing snapshots for modified/unchanged file")
+        if new_snapshot is None:
+            raise RuntimeError("Missing new snapshot for modified/unchanged file")
+
+        old_snapshot = old_load.snapshot
+        if old_snapshot is None:
+            old_snapshot = self._empty_snapshot_for(new_snapshot)
         return old_snapshot, new_snapshot
 
     def _compute_diff_result(

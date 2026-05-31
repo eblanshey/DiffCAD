@@ -8,7 +8,7 @@ from ...domain.diff import DiffResult
 from ...domain.diff.models import DiffState
 from ...domain.freecad_ports import DocumentLike
 from ...domain.git.models import GitRepository
-from ...domain.snapshots import Snapshot
+from ...domain.snapshots.models import Snapshot
 
 
 __all__ = [
@@ -71,12 +71,20 @@ class DiffIssues:
         return self.old_snapshot is not None or self.new_snapshot is not None or bool(self.general)
 
     def is_diff_blocker_for(self, document_state: DiffState) -> bool:
-        """Return True when snapshot issues prevent diff computation for state."""
+        """Return True when snapshot issues prevent diff computation for state.
+
+        ADDED needs new snapshot (compare empty vs new).
+        DELETED needs old snapshot (compare old vs empty).
+        MODIFIED/UNCHANGED only block on new snapshot missing. Old snapshot missing
+        is NOT a blocker: the diff runs with an empty old snapshot, producing a
+        full-tree "added" diff. This allows first-time snapshot creation — a user
+        with no baseline snapshot can still see and stage their working tree.
+        """
         if document_state == DiffState.ADDED:
             return self.new_snapshot is not None
         if document_state == DiffState.DELETED:
             return self.old_snapshot is not None
-        return self.old_snapshot is not None or self.new_snapshot is not None
+        return self.new_snapshot is not None
 
 
 @dataclass(frozen=True)
@@ -108,12 +116,16 @@ class CreateDocumentDiffsRequest:
     - eligible_docs: Required only for WORKING_TREE mode.
       - None/[] means no open eligible documents.
       - COMMIT/STAGING ignore this field.
+    - force_all: When True in WORKING_TREE mode, include all eligible docs as
+      diff candidates regardless of git change status. Used for explicit force
+      refresh to discover documents missing baseline snapshots.
     """
 
     mode: DocumentDiffMode
     repo: GitRepository
     commit_hash: str | None = None
     eligible_docs: list[DocumentLike] | None = None
+    force_all: bool = False
 
 
 @dataclass

@@ -188,6 +188,32 @@ class TestDiffPresenterDocumentResults:
 
         assert focused == [True]
 
+    def test_add_button_click_removes_staged_row_from_cached_current_files(self) -> None:
+        view, presenter, _ = _make_presenter()
+        repo = GitRepository(name="repo", absolute_path="/home/user/dir/repo")
+        presenter._ui_state.git_repository = repo
+        presenter._current_history_selection = HistorySelection(item_kind="WORKING_TREE", commit_hash=None)
+
+        snapshot_a = Snapshot(snapshot_id="a", document_name="a.FCStd", timestamp=datetime.now(), git_path="a.FCStd")
+        snapshot_b = Snapshot(snapshot_id="b", document_name="b.FCStd", timestamp=datetime.now(), git_path="b.FCStd")
+        presenter._diff_results_by_path = {
+            "a.FCStd": DiffResult(old_snapshot=snapshot_a, new_snapshot=snapshot_a),
+            "b.FCStd": DiffResult(old_snapshot=snapshot_b, new_snapshot=snapshot_b),
+        }
+        presenter._document_results_by_path = {
+            "a.FCStd": DocumentDiffResult(git_path="a.FCStd", document_state=DiffState.MODIFIED, issues=DiffIssues()),
+            "b.FCStd": DocumentDiffResult(git_path="b.FCStd", document_state=DiffState.MODIFIED, issues=DiffIssues()),
+        }
+        presenter._stage_documents.execute.return_value = Result.success(True)
+
+        presenter.on_add_button_clicked("a.FCStd")
+
+        assert "a.FCStd" not in presenter._diff_results_by_path
+        assert "a.FCStd" not in presenter._document_results_by_path
+        show_trees_call = next((c for c in view.get_calls() if c["method"] == "show_doc_diffs"), None)
+        assert show_trees_call is not None
+        assert [tree.git_path for tree in show_trees_call["diff_trees"]] == ["b.FCStd"]
+
 
 class TestVisualDiffClickHandling:
     def test_visual_diff_click_builds_working_tree_request(self) -> None:

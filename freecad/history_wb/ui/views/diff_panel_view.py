@@ -109,6 +109,26 @@ class DiffPanelView(QtWidgets.QWidget):
         """
         self._history_panel.append_commits(commits)
 
+    def set_force_diff_callback(self, callback: Callable[[], None]) -> None:
+        """Set the callback to invoke when force diff button is clicked.
+
+        Delegates to DocumentDiffTreeWidget.
+
+        Args:
+            callback: A no-argument callable to invoke on force diff.
+        """
+        self._document_diff_tree.set_force_diff_callback(callback)
+
+    def set_force_diff_button_visible(self, visible: bool) -> None:
+        """Show or hide the force diff button.
+
+        Delegates to DocumentDiffTreeWidget.
+
+        Args:
+            visible: Whether the force diff button should be visible.
+        """
+        self._document_diff_tree.set_force_diff_button_visible(visible)
+
     def set_refresh_callback(self, callback: Callable[[], None]) -> None:
         """Set the callback to invoke when refresh button is clicked.
 
