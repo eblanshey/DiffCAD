@@ -547,8 +547,8 @@ Saved history is not affected.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/presenters/diff_presenter.py" line="831"/>
-        <location filename="../../ui/presenters/diff_presenter.py" line="833"/>
+        <location filename="../../ui/presenters/diff_presenter.py" line="863"/>
+        <location filename="../../ui/presenters/diff_presenter.py" line="865"/>
         <location filename="../../ui/views/diff_panel_view.py" line="474"/>
         <location filename="../../ui/views/diff_panel_view.py" line="481"/>
         <location filename="../../ui/views/diff_panel_view.py" line="548"/>
@@ -557,7 +557,7 @@ Saved history is not affected.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/presenters/diff_presenter.py" line="833"/>
+        <location filename="../../ui/presenters/diff_presenter.py" line="865"/>
         <source>Restoration complete.</source>
         <translation type="unfinished"></translation>
     </message>

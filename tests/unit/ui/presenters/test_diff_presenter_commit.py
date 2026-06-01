@@ -124,6 +124,17 @@ class TestDiffPresenterDocumentResults:
 
         assert enabled is True
 
+    def test_stage_button_enabled_for_deleted_document(self) -> None:
+        _, presenter, _ = _make_presenter()
+        presenter._current_history_selection = HistorySelection(item_kind="WORKING_TREE", commit_hash=None)
+
+        enabled = presenter._compute_stage_button_state(
+            DocumentDiffResult(git_path="gone.FCStd", document_state=DiffState.DELETED, issues=DiffIssues()),
+            True,
+        )
+
+        assert enabled is True
+
     def test_working_tree_uses_open_document_indicator_for_missing_new_snapshot(self) -> None:
         view, presenter, _ = _make_presenter()
         presenter._current_history_selection = HistorySelection(item_kind="WORKING_TREE", commit_hash=None)
@@ -142,6 +153,25 @@ class TestDiffPresenterDocumentResults:
         assert show_trees_call is not None
         indicator = show_trees_call["diff_trees"][0].indicators[0]
         assert indicator.__class__.__name__ == "WorkingTreeDocumentClosedIndicator"
+
+    def test_working_tree_deleted_does_not_use_open_document_indicator(self) -> None:
+        view, presenter, _ = _make_presenter()
+        presenter._current_history_selection = HistorySelection(item_kind="WORKING_TREE", commit_hash=None)
+
+        presenter.present_diffs(
+            [
+                DocumentDiffResult(
+                    git_path="gone.FCStd",
+                    document_state=DiffState.DELETED,
+                    issues=DiffIssues(old_snapshot=SnapshotIssue.MISSING),
+                )
+            ]
+        )
+
+        show_trees_call = next((c for c in view.get_calls() if c["method"] == "show_doc_diffs"), None)
+        assert show_trees_call is not None
+        indicators = show_trees_call["diff_trees"][0].indicators
+        assert all(ind.__class__.__name__ != "WorkingTreeDocumentClosedIndicator" for ind in indicators)
 
     def test_commit_selection_does_not_query_changed_path_actions(self) -> None:
         _, presenter, create_document_diffs_action = _make_presenter()
@@ -171,6 +201,25 @@ class TestDiffPresenterDocumentResults:
         show_trees_call = next((c for c in view.get_calls() if c["method"] == "show_doc_diffs"), None)
         assert show_trees_call is not None
         assert show_trees_call["diff_trees"] == []
+
+    def test_present_diffs_shows_deleted_without_snapshot_diff(self) -> None:
+        view, presenter, _ = _make_presenter()
+        presenter._current_history_selection = HistorySelection(item_kind="WORKING_TREE", commit_hash=None)
+
+        presenter.present_diffs(
+            [
+                DocumentDiffResult(
+                    git_path="gone.FCStd",
+                    document_state=DiffState.DELETED,
+                    snapshot_diff=None,
+                    issues=DiffIssues(),
+                )
+            ]
+        )
+
+        show_trees_call = next((c for c in view.get_calls() if c["method"] == "show_doc_diffs"), None)
+        assert show_trees_call is not None
+        assert [tree.git_path for tree in show_trees_call["diff_trees"]] == ["gone.FCStd"]
 
     def test_open_document_click_focuses_history_window_after_refresh(self) -> None:
         _, presenter, _ = _make_presenter()
@@ -205,11 +254,64 @@ class TestDiffPresenterDocumentResults:
 
         presenter.on_add_button_clicked("a.FCStd")
 
+        presenter._stage_documents.execute.assert_called_once_with(repo, [snapshot_a], deleted_paths=[])
+
         assert "a.FCStd" not in presenter._diff_results_by_path
         assert "a.FCStd" not in presenter._document_results_by_path
         show_trees_call = next((c for c in view.get_calls() if c["method"] == "show_doc_diffs"), None)
         assert show_trees_call is not None
         assert [tree.git_path for tree in show_trees_call["diff_trees"]] == ["b.FCStd"]
+
+    def test_deleted_single_mark_reviewed_stages_deleted_path_only(self) -> None:
+        _, presenter, _ = _make_presenter()
+        repo = GitRepository(name="repo", absolute_path="/home/user/dir/repo")
+        presenter._ui_state.git_repository = repo
+        presenter._current_history_selection = HistorySelection(item_kind="WORKING_TREE", commit_hash=None)
+        presenter._document_results_by_path = {
+            "gone.FCStd": DocumentDiffResult(git_path="gone.FCStd", document_state=DiffState.DELETED, issues=DiffIssues())
+        }
+        presenter._stage_documents.execute.return_value = Result.success(True)
+
+        presenter.on_add_button_clicked("gone.FCStd")
+
+        presenter._stage_documents.execute.assert_called_once_with(repo, [], deleted_paths=["gone.FCStd"])
+
+    def test_stage_all_sends_snapshots_and_deleted_paths(self) -> None:
+        _, presenter, _ = _make_presenter()
+        repo = GitRepository(name="repo", absolute_path="/home/user/dir/repo")
+        presenter._ui_state.git_repository = repo
+        presenter._current_history_selection = HistorySelection(item_kind="WORKING_TREE", commit_hash=None)
+
+        snapshot_a = Snapshot(snapshot_id="a", document_name="a.FCStd", timestamp=datetime.now(), git_path="a.FCStd")
+        presenter._diff_results_by_path = {
+            "a.FCStd": DiffResult(old_snapshot=snapshot_a, new_snapshot=snapshot_a),
+        }
+        presenter._document_results_by_path = {
+            "a.FCStd": DocumentDiffResult(git_path="a.FCStd", document_state=DiffState.MODIFIED, issues=DiffIssues()),
+            "gone.FCStd": DocumentDiffResult(git_path="gone.FCStd", document_state=DiffState.DELETED, issues=DiffIssues()),
+        }
+        presenter._stage_documents.execute.return_value = Result.success(True)
+
+        presenter.on_stage_all_clicked()
+
+        presenter._stage_documents.execute.assert_called_once_with(
+            repo,
+            [snapshot_a],
+            deleted_paths=["gone.FCStd"],
+        )
+
+    def test_working_tree_selected_with_no_eligible_docs_still_computes_diffs(self) -> None:
+        _, presenter, create_document_diffs_action = _make_presenter()
+        repo = GitRepository(name="repo", absolute_path="/home/user/dir/repo")
+        presenter._ui_state.git_repository = repo
+        presenter._get_eligible_docs.execute.return_value = Result.success([])
+        create_document_diffs_action.execute.return_value = Result.success([])
+
+        presenter._on_working_tree_selected()
+
+        create_document_diffs_action.execute.assert_called_once_with(
+            CreateDocumentDiffsRequest(mode=DocumentDiffMode.WORKING_TREE, repo=repo, eligible_docs=[])
+        )
 
 
 class TestVisualDiffClickHandling:

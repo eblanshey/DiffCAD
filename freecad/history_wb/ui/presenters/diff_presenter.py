@@ -45,6 +45,7 @@ from ...domain.diff.models import DiffState, NodeDiff, PropertyDiff, PropertyPat
 from ...domain.freecad_ports import DocumentLike
 from ...domain.git.models import GitRepository
 from ...domain.settings import SettingsRepository
+from ...domain.snapshots.models import Snapshot
 from ...domain.tree import Property
 from ...domain.tree.data_path import PropertyPathType
 from ...utils import Log, format_float, translate
@@ -508,11 +509,10 @@ class DiffPresenter:
     def _on_working_tree_selected(self) -> None:
         """Handle Working Tree item selection.
 
-        For each eligible document:
-        1. Create working tree snapshot
-        2. Create diff against None (old snapshot)
-        3. Get dirty documents (ONE call for all eligible docs)
-        4. Collect results, logging failures
+        For each candidate path:
+        1. Include every eligible open document
+        2. Include every dirty FCStd path from git, including deleted files
+        3. Display status-only rows when no snapshot diff can be computed
         """
         repo = self._ui_state.git_repository
         if repo is None:
@@ -521,7 +521,9 @@ class DiffPresenter:
             return
 
         eligible_docs = self._get_eligible_documents(repo)
-        if not eligible_docs:
+
+        # Explicitly check None, because empty list is valid
+        if eligible_docs is None:
             self.clear_doc_diff()
             return
 
@@ -535,11 +537,13 @@ class DiffPresenter:
             self.clear_doc_diff()
 
     def _get_eligible_documents(self, repo: GitRepository) -> list[DocumentLike] | None:
-        """Get eligible documents for the repository."""
+        """Get eligible open documents for repository."""
         docs_result = self._get_eligible_docs.execute(repo)
-        if not docs_result.is_success or not docs_result.data:
-            Log.warning(f"No eligible documents: {docs_result.message}")
+
+        if not docs_result.is_success:
+            Log.warning(f"Failed to get eligible documents: {docs_result.message}")
             return None
+
         return docs_result.data
 
     def _compute_working_tree_diffs(
@@ -640,17 +644,35 @@ class DiffPresenter:
     def on_add_button_clicked(self, git_path: str) -> None:
         """Handle '+ Stage' button click for staging.
 
-        Args:
-            git_path: The git_path of the document to stage.
+        For deleted documents, stages the deletion with no snapshots.
+        For other documents, stages the new snapshot from the diff result.
         """
         repo = self._ui_state.git_repository
         if repo is None:
             Log.warning("No git repository detected")
             return
 
-        # Look up the DiffResult for this git_path
+        # Use document result to determine staging strategy.
+        document_result = self._document_results_by_path.get(git_path)
+        if document_result is None:
+            Log.warning(f"No document result found for {git_path}")
+            return
+
+        # Deleted document -- stage deletion, no snapshot to persist.
+        if document_result.document_state == DiffState.DELETED:
+            result = self._stage_documents.execute(repo, [], deleted_paths=[git_path])
+            if not result.is_success:
+                Log.warning(f"Failed to stage deleted document: {result.message}")
+                return
+
+            Log.info(f"Successfully staged deletion of {git_path}")
+            self.clear_property_diff()
+            self._remove_path_from_cached_working_tree_results(git_path)
+            return
+
+        # Normal document -- require a snapshot diff to stage.
         diff_result = self._diff_results_by_path.get(git_path)
-        if not diff_result:
+        if diff_result is None:
             Log.warning(f"No diff result found for {git_path}")
             return
 
@@ -659,7 +681,7 @@ class DiffPresenter:
         working_snapshot = diff_result.new_snapshot
 
         # Stage the document
-        result = self._stage_documents.execute(repo, [working_snapshot])
+        result = self._stage_documents.execute(repo, [working_snapshot], deleted_paths=[])
         if not result.is_success:
             Log.warning(f"Failed to stage document: {result.message}")
             return
@@ -675,34 +697,44 @@ class DiffPresenter:
     def on_stage_all_clicked(self) -> None:
         """Handle 'Stage All' button click.
 
-        Collects all working tree snapshots from _diff_results_by_path that have
-        changes (matching the staggability criteria for individual + Stage buttons),
-        stages them via StageDocumentsAction, then refreshes the view.
+        Collects snapshots for non-deleted stage-able documents and deleted paths
+        for stage-able deleted documents, then stages everything in one call.
         """
         repo = self._ui_state.git_repository
         if repo is None:
             Log.warning("No git repository detected")
             return
 
-        # Collect snapshots that keep working-tree stage button enabled.
-        snapshots = [
-            result.new_snapshot
-            for result in self._diff_results_by_path.values()
-            if result.new_snapshot is not None
-            and self._compute_stage_button_state(self._document_results_by_path.get(result.new_snapshot.git_path), True)
-        ]
+        snapshots: list[Snapshot] = []
+        deleted_paths: list[str] = []
 
-        if not snapshots:
+        for document_result in self._document_results_by_path.values():
+            if not self._compute_stage_button_state(document_result, True):
+                # Not stage-able -- skip.
+                continue
+
+            if document_result.document_state == DiffState.DELETED:
+                # Deleted documents are staged by path, not snapshot.
+                deleted_paths.append(document_result.git_path)
+                continue
+
+            # Non-deleted documents need a snapshot diff to stage.
+            diff_result = self._diff_results_by_path.get(document_result.git_path)
+            if diff_result is not None and diff_result.new_snapshot is not None:
+                snapshots.append(diff_result.new_snapshot)
+
+        # Nothing to stage.
+        if not snapshots and not deleted_paths:
             # Normal no-op case (for example, Current Files context action with nothing to stage).
             return
 
         # Stage all documents
-        result = self._stage_documents.execute(repo, snapshots)
+        result = self._stage_documents.execute(repo, snapshots, deleted_paths=deleted_paths)
         if not result.is_success:
             Log.warning(f"Failed to stage documents: {result.message}")
             return
 
-        Log.info(f"Successfully staged {len(snapshots)} documents")
+        Log.info(f"Successfully staged {len(snapshots) + len(deleted_paths)} documents")
 
         # Clear current doc/property selection before reloading trees
         self.clear_doc_diff()
@@ -909,13 +941,21 @@ class DiffPresenter:
         """Compute whether stage button should be enabled.
 
         Stage writes new-side snapshot. Enabled when:
-        - document has changes (not UNCHANGED), OR old snapshot is missing (first snapshot needed)
-        - new-side snapshot has no issue (dirty-not-open files block staging)
+        - Document is DELETED (staging the deletion is always allowed)
+        - Document has changes or old snapshot issue, with a valid new snapshot
+        - Closed modified/added docs with missing new snapshot are blocked
         """
         if not is_working_tree or document_result is None:
             return False
+
+        # Deleted documents can always be staged (deletion is safe).
+        if document_result.document_state == DiffState.DELETED:
+            return True
+
         has_changes = document_result.document_state != DiffState.UNCHANGED
         needs_snapshot = document_result.issues.old_snapshot is not None
+
+        # Block staging when new snapshot is missing (closed dirty file).
         return (has_changes or needs_snapshot) and document_result.issues.new_snapshot is None
 
     def _configure_summary_buttons(self, presentations: list[DiffTreePresentation]) -> None:
@@ -926,9 +966,9 @@ class DiffPresenter:
         is_commit = current is not None and current.item_kind == "COMMIT"
 
         if is_working_tree:
-            any_staggable = any(p.stage_button_enabled for p in presentations)
+            any_stagable = any(p.stage_button_enabled for p in presentations)
             self._view.set_stage_all_button_visible(True)
-            self._view.set_stage_all_button_enabled(any_staggable)
+            self._view.set_stage_all_button_enabled(any_stagable)
             self._view.set_remove_all_button_visible(False)
             self._view.set_remove_all_button_enabled(False)
             self._view.set_restore_all_button_visible(False)

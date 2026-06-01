@@ -25,6 +25,7 @@
 - Do not remove useful line comments when refactoring
 - DO add comments for all public functions/methods, and private/internal methods when their name doesn't describe their logic well enough
 - Add comments on if-statements and other code-path decisions, when semantics are not immediately clear
+- Separate code comments and previous code with an empty line, so that code comment has a line space before it
 - Keep cyclomatic complexity at B (5-10) or better in the src dir: `uv run radon cc --min C freecad/history_wb --no-assert -s`
 
 Terse like caveman. Technical substance exact. Only fluff die.

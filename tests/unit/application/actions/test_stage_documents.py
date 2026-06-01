@@ -1,7 +1,5 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
-# File responsibility: Unit tests for StageDocumentsAction using mock dependencies.
-# Tests cover empty list handling, snapshot YAML creation, staging both FCStd and YAML files,
-# success returns, and failure handling on YAML serialization errors.
+# File responsibility: Unit tests for StageDocumentsAction staging snapshots and deleted documents.
 """Unit tests for StageDocumentsAction."""
 
 from pathlib import Path
@@ -14,375 +12,278 @@ from freecad.history_wb.domain.git.models import GitRepository
 from freecad.history_wb.domain.snapshots.models import Snapshot
 
 
-class TestStageDocumentsActionEmptyList:
-    """Tests for empty list handling."""
+def _snapshot(git_path: str) -> Snapshot:
+    return Snapshot(
+        snapshot_id="test-uuid",
+        document_name=Path(git_path).name,
+        timestamp=None,  # type: ignore[arg-type]
+        objects=[],
+        occurrences=[],
+        git_path=git_path,
+    )
 
-    def test_stage_documents_empty_list_returns_success(self) -> None:
-        """Test that execute returns Result.success(True) immediately for empty list (no-op)."""
-        # Given an empty list of snapshots
-        git_service = MagicMock(spec=GitService)
-        freecad_port = MagicMock(spec=FreeCadPort)
-        action = StageDocumentsAction(git_service=git_service, freecad_port=freecad_port)
-        repo = GitRepository(name="test_repo", absolute_path="/home/user/dir/test_repo")
 
-        # When execute is called with empty snapshots
-        result = action.execute(repo, [])
+def _build_action() -> tuple[StageDocumentsAction, MagicMock, MagicMock, GitRepository]:
+    git_service = MagicMock(spec=GitService)
+    freecad_port = MagicMock(spec=FreeCadPort)
+    freecad_port.get_all_open_documents.return_value = []
+    git_service.get_eligible_docs.return_value = []
+    action = StageDocumentsAction(git_service=git_service, freecad_port=freecad_port)
+    repo = GitRepository(name="test_repo", absolute_path="/home/user/dir/test_repo")
+    return action, git_service, freecad_port, repo
 
-        # Then Result.success(True) is returned immediately
+
+class TestStageDocumentsAction:
+    def test_empty_snapshots_and_deleted_paths_returns_success(self) -> None:
+        action, git_service, _, repo = _build_action()
+
+        result = action.execute(repo, [], deleted_paths=[])
+
         assert result.is_success is True
         assert result.data is True
-        assert result.message is None
-        # And git_service.stage_files was never called
         git_service.stage_files.assert_not_called()
 
-
-class TestStageDocumentsActionSnapshotYaml:
-    """Tests for snapshot YAML creation."""
-
-    def test_stage_documents_creates_snapshot_yaml(self) -> None:
-        """Test that SnapshotYamlSerializer.to_yaml is called with correct path."""
-        # Given a mock GitService that returns correct snapshot directory
-        git_service = MagicMock(spec=GitService)
-        freecad_port = MagicMock(spec=FreeCadPort)
-        freecad_port.get_all_open_documents.return_value = []
-        git_service.get_eligible_docs.return_value = []
-        action = StageDocumentsAction(git_service=git_service, freecad_port=freecad_port)
-        repo = GitRepository(name="test_repo", absolute_path="/home/user/dir/test_repo")
-
-        # Create a test snapshot
-        snapshot = Snapshot(
-            snapshot_id="test-uuid-123",
-            document_name="MyDocument",
-            timestamp=None,  # type: ignore
-            objects=[],
-            occurrences=[],
-            git_path="path/to/mydoc.FCStd",
-        )
-
-        # Mock the SnapshotYamlSerializer
-        with (
-            patch("freecad.history_wb.application.actions.stage_documents.SnapshotYamlSerializer") as mock_serializer,
-            patch("pathlib.Path.mkdir"),
-        ):
-            # When execute is called with repo and list of snapshots
-            result = action.execute(repo, [snapshot])
-
-            # Then SnapshotYamlSerializer.to_yaml is called with correct path
-            expected_yaml_path = Path("/home/user/dir/test_repo/path/to/.snapshots/mydoc.yaml")
-            mock_serializer.to_yaml.assert_called_once_with(snapshot, expected_yaml_path)
-            assert result.is_success is True
-
-
-class TestStageDocumentsActionStaging:
-    """Tests for staging both FCStd and YAML files."""
-
-    def test_stage_documents_stages_both_fcstd_and_yaml(self) -> None:
-        """Test that git_service.stage_files is called with both FCStd and YAML paths."""
-        # Given snapshots with git_path "path/to/mydoc.FCStd"
-        git_service = MagicMock(spec=GitService)
+    def test_matching_open_doc_always_calls_save_document(self) -> None:
+        action, git_service, freecad_port, repo = _build_action()
         git_service.stage_files.return_value = True
-        freecad_port = MagicMock(spec=FreeCadPort)
-        freecad_port.get_all_open_documents.return_value = []
-        git_service.get_eligible_docs.return_value = []
-        action = StageDocumentsAction(git_service=git_service, freecad_port=freecad_port)
-        repo = GitRepository(name="test_repo", absolute_path="/home/user/dir/test_repo")
-
-        snapshot = Snapshot(
-            snapshot_id="test-uuid-123",
-            document_name="MyDocument",
-            timestamp=None,  # type: ignore
-            objects=[],
-            occurrences=[],
-            git_path="path/to/mydoc.FCStd",
-        )
-
-        # Mock directory creation and YAML serialization
-        with (
-            patch("freecad.history_wb.application.actions.stage_documents.SnapshotYamlSerializer"),
-            patch("pathlib.Path.mkdir"),
-        ):
-            # When execute is called
-            result = action.execute(repo, [snapshot])
-
-            # Then git_service.stage_files is called with ["path/to/mydoc.FCStd", "path/to/.snapshots/mydoc.yaml"]
-            expected_paths = ["path/to/mydoc.FCStd", "path/to/.snapshots/mydoc.yaml"]
-            git_service.stage_files.assert_called_once_with(repo, expected_paths)
-            assert result.is_success is True
-
-    def test_stage_documents_multiple_snapshots_stages_all(self) -> None:
-        """Test that multiple snapshots stage all their files correctly."""
-        # Given two snapshots
-        git_service = MagicMock(spec=GitService)
-        git_service.stage_files.return_value = True
-        freecad_port = MagicMock(spec=FreeCadPort)
-        freecad_port.get_all_open_documents.return_value = []
-        git_service.get_eligible_docs.return_value = []
-        action = StageDocumentsAction(git_service=git_service, freecad_port=freecad_port)
-        repo = GitRepository(name="test_repo", absolute_path="/home/user/dir/test_repo")
-
-        snapshot1 = Snapshot(
-            snapshot_id="uuid-1",
-            document_name="Doc1",
-            timestamp=None,  # type: ignore
-            objects=[],
-            occurrences=[],
-            git_path="doc1.FCStd",
-        )
-        snapshot2 = Snapshot(
-            snapshot_id="uuid-2",
-            document_name="Doc2",
-            timestamp=None,  # type: ignore
-            objects=[],
-            occurrences=[],
-            git_path="subdir/doc2.FCStd",
-        )
-
-        # Mock directory creation and YAML serialization
-        with (
-            patch("freecad.history_wb.application.actions.stage_documents.SnapshotYamlSerializer"),
-            patch("pathlib.Path.mkdir"),
-        ):
-            # When execute is called
-            result = action.execute(repo, [snapshot1, snapshot2])
-
-            # Then git_service.stage_files is called with all paths
-            expected_paths = [
-                "doc1.FCStd",
-                ".snapshots/doc1.yaml",
-                "subdir/doc2.FCStd",
-                "subdir/.snapshots/doc2.yaml",
-            ]
-            git_service.stage_files.assert_called_once_with(repo, expected_paths)
-            assert result.is_success is True
-
-    def test_stage_documents_saves_matching_open_document_before_staging(self) -> None:
-        """Test that open document is saved before snapshot YAML and git add."""
-        git_service = MagicMock(spec=GitService)
-        git_service.stage_files.return_value = True
-        freecad_port = MagicMock(spec=FreeCadPort)
 
         mock_doc = MagicMock()
         mock_doc.FileName = "/home/user/dir/test_repo/path/to/mydoc.FCStd"
         freecad_port.get_all_open_documents.return_value = [mock_doc]
         git_service.get_eligible_docs.return_value = [mock_doc]
 
-        action = StageDocumentsAction(git_service=git_service, freecad_port=freecad_port)
-        repo = GitRepository(name="test_repo", absolute_path="/home/user/dir/test_repo")
-        snapshot = Snapshot(
-            snapshot_id="test-uuid-123",
-            document_name="MyDocument",
-            timestamp=None,  # type: ignore
-            objects=[],
-            occurrences=[],
-            git_path="path/to/mydoc.FCStd",
-        )
-
         with (
             patch("freecad.history_wb.application.actions.stage_documents.SnapshotYamlSerializer"),
             patch("pathlib.Path.mkdir"),
         ):
-            result = action.execute(repo, [snapshot])
+            result = action.execute(repo, [_snapshot("path/to/mydoc.FCStd")], deleted_paths=[])
 
         assert result.is_success is True
-        freecad_port.save_document_if_modified.assert_called_once_with(mock_doc)
+        freecad_port.save_document.assert_called_once_with(mock_doc)
+        freecad_port.save_document_if_modified.assert_not_called()
 
-
-class TestStageDocumentsActionSuccess:
-    """Tests for success scenarios."""
-
-    def test_stage_documents_returns_success_on_success(self) -> None:
-        """Test that Result.success is returned when all operations succeed."""
-        # Given all operations succeed
-        git_service = MagicMock(spec=GitService)
-        git_service.stage_files.return_value = True
-        freecad_port = MagicMock(spec=FreeCadPort)
-        freecad_port.get_all_open_documents.return_value = []
-        git_service.get_eligible_docs.return_value = []
-        action = StageDocumentsAction(git_service=git_service, freecad_port=freecad_port)
-        repo = GitRepository(name="test_repo", absolute_path="/home/user/dir/test_repo")
-
-        snapshot = Snapshot(
-            snapshot_id="test-uuid",
-            document_name="MyDocument",
-            timestamp=None,  # type: ignore
-            objects=[],
-            occurrences=[],
-            git_path="mydoc.FCStd",
-        )
-
-        # Mock directory creation and YAML serialization
-        with (
-            patch("freecad.history_wb.application.actions.stage_documents.SnapshotYamlSerializer"),
-            patch("pathlib.Path.mkdir"),
-        ):
-            # When execute is called
-            result = action.execute(repo, [snapshot])
-
-            # Then Result.success is returned
-            assert result.is_success is True
-            assert result.data is True
-            assert result.message is None
-
-
-class TestStageDocumentsActionFailure:
-    """Tests for failure scenarios."""
-
-    def test_stage_documents_returns_failure_on_yaml_error(self) -> None:
-        """Test that Result.failure is returned when SnapshotYamlSerializer.to_yaml raises."""
-        # Given SnapshotYamlSerializer.to_yaml raises
-        git_service = MagicMock(spec=GitService)
-        freecad_port = MagicMock(spec=FreeCadPort)
-        freecad_port.get_all_open_documents.return_value = []
-        git_service.get_eligible_docs.return_value = []
-        action = StageDocumentsAction(git_service=git_service, freecad_port=freecad_port)
-        repo = GitRepository(name="test_repo", absolute_path="/home/user/dir/test_repo")
-
-        snapshot = Snapshot(
-            snapshot_id="test-uuid",
-            document_name="MyDocument",
-            timestamp=None,  # type: ignore
-            objects=[],
-            occurrences=[],
-            git_path="mydoc.FCStd",
-        )
-
-        # Mock YAML serialization to raise an exception
-        with (
-            patch("freecad.history_wb.application.actions.stage_documents.SnapshotYamlSerializer") as mock_serializer,
-            patch("pathlib.Path.mkdir"),
-        ):
-            mock_serializer.to_yaml.side_effect = Exception("Serialization failed")
-            # When execute is called
-            result = action.execute(repo, [snapshot])
-
-            # Then Result.failure is returned
-            assert result.is_success is False
-            assert result.message is not None
-            assert "Failed to persist snapshot" in result.message
-            # And git_service.stage_files was never called
-            git_service.stage_files.assert_not_called()
-
-    def test_stage_documents_returns_failure_on_save_error(self) -> None:
-        """Test that Result.failure is returned when conditional save raises."""
-        git_service = MagicMock(spec=GitService)
-        freecad_port = MagicMock(spec=FreeCadPort)
+    def test_save_failure_returns_failure_result(self) -> None:
+        action, git_service, freecad_port, repo = _build_action()
 
         mock_doc = MagicMock()
         mock_doc.FileName = "/home/user/dir/test_repo/mydoc.FCStd"
         freecad_port.get_all_open_documents.return_value = [mock_doc]
         git_service.get_eligible_docs.return_value = [mock_doc]
-        freecad_port.save_document_if_modified.side_effect = Exception("save failed")
+        freecad_port.save_document.side_effect = Exception("save failed")
 
-        action = StageDocumentsAction(git_service=git_service, freecad_port=freecad_port)
-        repo = GitRepository(name="test_repo", absolute_path="/home/user/dir/test_repo")
-        snapshot = Snapshot(
-            snapshot_id="test-uuid",
-            document_name="MyDocument",
-            timestamp=None,  # type: ignore
-            objects=[],
-            occurrences=[],
-            git_path="mydoc.FCStd",
-        )
-
-        result = action.execute(repo, [snapshot])
+        result = action.execute(repo, [_snapshot("mydoc.FCStd")], deleted_paths=[])
 
         assert result.is_success is False
-        assert result.message is not None
-        assert "Failed to save document before staging" in result.message
+        assert "Failed to save document before staging" in (result.message or "")
         git_service.stage_files.assert_not_called()
 
-    def test_stage_documents_returns_failure_on_directory_creation_error(self) -> None:
-        """Test that Result.failure is returned when snapshot directory creation fails."""
-        # Given snapshot directory creation fails
-        git_service = MagicMock(spec=GitService)
-        freecad_port = MagicMock(spec=FreeCadPort)
-        freecad_port.get_all_open_documents.return_value = []
-        git_service.get_eligible_docs.return_value = []
-        action = StageDocumentsAction(git_service=git_service, freecad_port=freecad_port)
-        repo = GitRepository(name="test_repo", absolute_path="/home/user/dir/test_repo")
-
-        snapshot = Snapshot(
-            snapshot_id="test-uuid",
-            document_name="MyDocument",
-            timestamp=None,  # type: ignore
-            objects=[],
-            occurrences=[],
-            git_path="mydoc.FCStd",
-        )
-
-        # Mock directory creation to raise an OSError
-        with patch("pathlib.Path.mkdir", side_effect=OSError("Permission denied")):
-            # When execute is called
-            result = action.execute(repo, [snapshot])
-
-            # Then Result.failure is returned
-            assert result.is_success is False
-            assert result.message is not None
-            assert "Failed to create snapshot directory" in result.message
-            # And YAML serialization and git stage were never called
-            git_service.stage_files.assert_not_called()
-
-    def test_stage_documents_returns_failure_on_git_stage_error(self) -> None:
-        """Test that Result.failure is returned when git staging fails."""
-        # Given git staging fails
-        git_service = MagicMock(spec=GitService)
-        git_service.stage_files.return_value = False
-        freecad_port = MagicMock(spec=FreeCadPort)
-        freecad_port.get_all_open_documents.return_value = []
-        git_service.get_eligible_docs.return_value = []
-        action = StageDocumentsAction(git_service=git_service, freecad_port=freecad_port)
-        repo = GitRepository(name="test_repo", absolute_path="/home/user/dir/test_repo")
-
-        snapshot = Snapshot(
-            snapshot_id="test-uuid",
-            document_name="MyDocument",
-            timestamp=None,  # type: ignore
-            objects=[],
-            occurrences=[],
-            git_path="mydoc.FCStd",
-        )
-
-        # Mock directory creation and YAML serialization
-        with (
-            patch("freecad.history_wb.application.actions.stage_documents.SnapshotYamlSerializer"),
-            patch("pathlib.Path.mkdir"),
-        ):
-            # When execute is called
-            result = action.execute(repo, [snapshot])
-
-            # Then Result.failure is returned
-            assert result.is_success is False
-            assert result.message == "Failed to stage one or more files"
-
-    def test_stage_documents_skips_snapshot_without_git_path(self) -> None:
-        """Test that snapshots without git_path are skipped with a warning."""
-        # Given a snapshot with no git_path
-        git_service = MagicMock(spec=GitService)
+    def test_deleted_path_stages_fcstd_and_tracked_yaml(self) -> None:
+        action, git_service, _, repo = _build_action()
+        git_service.file_exists.return_value = True
         git_service.stage_files.return_value = True
-        freecad_port = MagicMock(spec=FreeCadPort)
-        freecad_port.get_all_open_documents.return_value = []
-        git_service.get_eligible_docs.return_value = []
-        action = StageDocumentsAction(git_service=git_service, freecad_port=freecad_port)
-        repo = GitRepository(name="test_repo", absolute_path="/home/user/dir/test_repo")
 
-        snapshot = Snapshot(
-            snapshot_id="test-uuid",
-            document_name="MyDocument",
-            timestamp=None,  # type: ignore
-            objects=[],
-            occurrences=[],
-            git_path="",  # Empty git_path
+        with patch("pathlib.Path.unlink") as unlink_mock:
+            result = action.execute(repo, [], deleted_paths=["parts/deleted.FCStd"])
+
+        assert result.is_success is True
+        git_service.stage_files.assert_called_once_with(
+            repo,
+            ["parts/deleted.FCStd", "parts/.snapshots/deleted.yaml"],
+        )
+        unlink_mock.assert_called_once()
+
+    def test_deleted_path_deletes_yaml_from_disk(self) -> None:
+        action, git_service, _, repo = _build_action()
+        git_service.file_exists.return_value = False
+        git_service.stage_files.return_value = True
+
+        with patch("pathlib.Path.unlink") as unlink_mock:
+            result = action.execute(repo, [], deleted_paths=["deleted.FCStd"])
+
+        assert result.is_success is True
+        unlink_mock.assert_called_once_with(missing_ok=True)
+
+    def test_deleted_yaml_unlink_failure_returns_failure_and_skips_git_stage(self) -> None:
+        action, git_service, _, repo = _build_action()
+        with patch("pathlib.Path.unlink", side_effect=OSError("permission denied")):
+            result = action.execute(repo, [], deleted_paths=["deleted.FCStd"])
+
+        assert result.is_success is False
+        assert "Failed to delete snapshot YAML" in (result.message or "")
+        git_service.stage_files.assert_not_called()
+
+    def test_deleted_path_skips_untracked_yaml_staging(self) -> None:
+        action, git_service, _, repo = _build_action()
+        git_service.file_exists.return_value = False
+        git_service.stage_files.return_value = True
+
+        with patch("pathlib.Path.unlink"):
+            result = action.execute(repo, [], deleted_paths=["parts/deleted.FCStd"])
+
+        assert result.is_success is True
+        git_service.stage_files.assert_called_once_with(repo, ["parts/deleted.FCStd"])
+
+    def test_deleted_path_with_open_doc_logs_warning_and_does_not_save(self) -> None:
+        action, git_service, freecad_port, repo = _build_action()
+        git_service.file_exists.return_value = False
+        git_service.stage_files.return_value = True
+
+        mock_doc = MagicMock()
+        mock_doc.FileName = "/home/user/dir/test_repo/deleted.FCStd"
+        freecad_port.get_all_open_documents.return_value = [mock_doc]
+        git_service.get_eligible_docs.return_value = [mock_doc]
+
+        with (
+            patch("pathlib.Path.unlink"),
+            patch("freecad.history_wb.application.actions.stage_documents.Log.warning") as warning_mock,
+        ):
+            result = action.execute(repo, [], deleted_paths=["deleted.FCStd"])
+
+        assert result.is_success is True
+        warning_mock.assert_called_once()
+        freecad_port.save_document.assert_not_called()
+
+    def test_snapshots_and_deleted_paths_stage_in_one_call(self) -> None:
+        action, git_service, _, repo = _build_action()
+        git_service.file_exists.return_value = True
+        git_service.stage_files.return_value = True
+
+        with (
+            patch("freecad.history_wb.application.actions.stage_documents.SnapshotYamlSerializer"),
+            patch("pathlib.Path.mkdir"),
+            patch("pathlib.Path.unlink"),
+        ):
+            result = action.execute(repo, [_snapshot("a.FCStd")], deleted_paths=["b.FCStd"])
+
+        assert result.is_success is True
+        git_service.stage_files.assert_called_once_with(
+            repo,
+            ["a.FCStd", ".snapshots/a.yaml", "b.FCStd", ".snapshots/b.yaml"],
         )
 
-        # Mock directory creation and YAML serialization
+    def test_snapshot_and_deleted_overlap_returns_failure_before_side_effects(self) -> None:
+        action, git_service, freecad_port, repo = _build_action()
+
+        with (
+            patch("freecad.history_wb.application.actions.stage_documents.SnapshotYamlSerializer") as serializer_mock,
+            patch("pathlib.Path.unlink") as unlink_mock,
+        ):
+            result = action.execute(repo, [_snapshot("same.FCStd")], deleted_paths=["same.FCStd"])
+
+        assert result.is_success is False
+        assert "both present and deleted" in (result.message or "")
+        freecad_port.save_document.assert_not_called()
+        serializer_mock.to_yaml.assert_not_called()
+        unlink_mock.assert_not_called()
+        git_service.stage_files.assert_not_called()
+
+    def test_duplicate_paths_deduped_preserving_order(self) -> None:
+        action, git_service, _, repo = _build_action()
+        git_service.file_exists.return_value = False
+        git_service.stage_files.return_value = True
+
+        with (
+            patch("freecad.history_wb.application.actions.stage_documents.SnapshotYamlSerializer"),
+            patch("pathlib.Path.mkdir"),
+            patch("pathlib.Path.unlink"),
+        ):
+            result = action.execute(
+                repo,
+                [_snapshot("same.FCStd"), _snapshot("same.FCStd")],
+                deleted_paths=[],
+            )
+
+        assert result.is_success is True
+        git_service.stage_files.assert_called_once_with(repo, ["same.FCStd", ".snapshots/same.yaml"])
+
+    def test_creates_snapshot_yaml_with_expected_path(self) -> None:
+        action, _, _, repo = _build_action()
+        snapshot = _snapshot("path/to/mydoc.FCStd")
+
+        with (
+            patch("freecad.history_wb.application.actions.stage_documents.SnapshotYamlSerializer") as serializer_mock,
+            patch("pathlib.Path.mkdir"),
+        ):
+            result = action.execute(repo, [snapshot], deleted_paths=[])
+
+        assert result.is_success is True
+        serializer_mock.to_yaml.assert_called_once_with(snapshot, Path("/home/user/dir/test_repo/path/to/.snapshots/mydoc.yaml"))
+
+    def test_stages_both_fcstd_and_yaml_for_snapshot(self) -> None:
+        action, git_service, _, repo = _build_action()
+        git_service.stage_files.return_value = True
+
         with (
             patch("freecad.history_wb.application.actions.stage_documents.SnapshotYamlSerializer"),
             patch("pathlib.Path.mkdir"),
         ):
-            # When execute is called
-            result = action.execute(repo, [snapshot])
+            result = action.execute(repo, [_snapshot("path/to/mydoc.FCStd")], deleted_paths=[])
 
-            # Then Result.success is returned (skipped gracefully)
-            assert result.is_success is True
-            # And git_service.stage_files was never called since we had nothing to stage
-            git_service.stage_files.assert_not_called()
+        assert result.is_success is True
+        git_service.stage_files.assert_called_once_with(repo, ["path/to/mydoc.FCStd", "path/to/.snapshots/mydoc.yaml"])
+
+    def test_multiple_snapshots_stage_all_paths(self) -> None:
+        action, git_service, _, repo = _build_action()
+        git_service.stage_files.return_value = True
+
+        with (
+            patch("freecad.history_wb.application.actions.stage_documents.SnapshotYamlSerializer"),
+            patch("pathlib.Path.mkdir"),
+        ):
+            result = action.execute(repo, [_snapshot("doc1.FCStd"), _snapshot("subdir/doc2.FCStd")], deleted_paths=[])
+
+        assert result.is_success is True
+        git_service.stage_files.assert_called_once_with(
+            repo,
+            ["doc1.FCStd", ".snapshots/doc1.yaml", "subdir/doc2.FCStd", "subdir/.snapshots/doc2.yaml"],
+        )
+
+    def test_yaml_serialize_failure_returns_failure_and_skips_stage(self) -> None:
+        action, git_service, _, repo = _build_action()
+
+        with (
+            patch("freecad.history_wb.application.actions.stage_documents.SnapshotYamlSerializer") as serializer_mock,
+            patch("pathlib.Path.mkdir"),
+        ):
+            serializer_mock.to_yaml.side_effect = Exception("Serialization failed")
+            result = action.execute(repo, [_snapshot("mydoc.FCStd")], deleted_paths=[])
+
+        assert result.is_success is False
+        assert "Failed to persist snapshot" in (result.message or "")
+        git_service.stage_files.assert_not_called()
+
+    def test_directory_creation_failure_returns_failure_and_skips_stage(self) -> None:
+        action, git_service, _, repo = _build_action()
+
+        with patch("pathlib.Path.mkdir", side_effect=OSError("Permission denied")):
+            result = action.execute(repo, [_snapshot("mydoc.FCStd")], deleted_paths=[])
+
+        assert result.is_success is False
+        assert "Failed to create snapshot directory" in (result.message or "")
+        git_service.stage_files.assert_not_called()
+
+    def test_git_stage_failure_returns_failure(self) -> None:
+        action, git_service, _, repo = _build_action()
+        git_service.stage_files.return_value = False
+
+        with (
+            patch("freecad.history_wb.application.actions.stage_documents.SnapshotYamlSerializer"),
+            patch("pathlib.Path.mkdir"),
+        ):
+            result = action.execute(repo, [_snapshot("mydoc.FCStd")], deleted_paths=[])
+
+        assert result.is_success is False
+        assert result.message == "Failed to stage one or more files"
+
+    def test_snapshot_without_git_path_is_skipped(self) -> None:
+        action, git_service, _, repo = _build_action()
+        git_service.stage_files.return_value = True
+
+        with (
+            patch("freecad.history_wb.application.actions.stage_documents.SnapshotYamlSerializer"),
+            patch("pathlib.Path.mkdir"),
+        ):
+            result = action.execute(repo, [_snapshot("")], deleted_paths=[])
+
+        assert result.is_success is True
+        git_service.stage_files.assert_not_called()
