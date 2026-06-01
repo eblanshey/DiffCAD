@@ -29,9 +29,7 @@ REMOVE_BUTTON_WIDTH = 90
 RESTORE_BUTTON_WIDTH = 90
 DIFF_ROW_CONTAINER_OBJECT_NAME = "diffRowContainer"
 DIFF_ROW_LABEL_OBJECT_NAME = "diffRowLabel"
-ROW_ACTION_BUTTON_STYLE = (
-    "QToolButton { padding: 0px 4px; margin: 0px; border-radius: 2px; }"
-)
+ROW_ACTION_BUTTON_STYLE = "QToolButton { padding: 0px 4px; margin: 0px; border-radius: 2px; }"
 REMOVE_REVIEWED_TOOLTIP = translate(
     "History",
     "Remove document(s) from Reviewed.\n"
@@ -101,7 +99,7 @@ class DocumentDiffTreeWidget(QtWidgets.QWidget):
         summary_layout.addWidget(self._restore_all_button)
 
         self._remove_all_button = QtWidgets.QToolButton()
-        self._remove_all_button.setText(translate("History", "- Remove All"))
+        self._remove_all_button.setText(translate("History", "Remove All"))
         self._remove_all_button.setToolButtonStyle(QtCore.Qt.ToolButtonStyle.ToolButtonTextOnly)
         self._remove_all_button.setSizePolicy(QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.Fixed)
         self._remove_all_button.setFixedHeight(TREE_ITEM_HEIGHT)
@@ -311,7 +309,7 @@ class DocumentDiffTreeWidget(QtWidgets.QWidget):
     def _add_remove_from_reviewed_button(self, layout: QtWidgets.QHBoxLayout, diff: DiffTreePresentation) -> None:
         """Add Remove button for one reviewed document row."""
         remove_button = QtWidgets.QToolButton()
-        remove_button.setText(translate("History", "- Remove"))
+        remove_button.setText(translate("History", "Remove"))
         remove_button.setToolButtonStyle(QtCore.Qt.ToolButtonStyle.ToolButtonTextOnly)
         remove_button.setStyleSheet(ROW_ACTION_BUTTON_STYLE)
         remove_button.setFixedSize(REMOVE_BUTTON_WIDTH, TREE_ITEM_HEIGHT)

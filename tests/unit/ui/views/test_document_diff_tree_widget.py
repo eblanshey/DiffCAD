@@ -471,7 +471,7 @@ class TestCallbackWiring:
         )
 
         button = widget._remove_from_reviewed_buttons["parts/A.FCStd"]
-        assert button.text() == "- Remove"
+        assert button.text() == "Remove"
         assert "will not be saved in the next iteration" in button.toolTip()
         button.click()
         assert captured == ["parts/A.FCStd"]
@@ -714,7 +714,7 @@ class TestSetStageAllButtonVisibilityAndEnabled:
 
     def test_remove_all_button_has_requested_text_and_tooltip(self, widget) -> None:  # type: ignore[no-untyped-def]
         """Remove All summary button has requested text and tooltip."""
-        assert widget._remove_all_button.text() == "- Remove All"
+        assert widget._remove_all_button.text() == "Remove All"
         assert "will not be saved in the next iteration" in widget._remove_all_button.toolTip()
 
     def test_set_remove_all_button_callback_invokes_callback(self, widget) -> None:  # type: ignore[no-untyped-def]

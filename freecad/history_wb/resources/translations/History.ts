@@ -71,7 +71,7 @@
     </message>
     <message>
         <location filename="../../ui/views/diff_panel_view.py" line="496"/>
-        <location filename="../../ui/views/document_diff_tree_widget.py" line="87"/>
+        <location filename="../../ui/views/document_diff_tree_widget.py" line="85"/>
         <source>Restore All</source>
         <translation type="unfinished"></translation>
     </message>
@@ -323,47 +323,47 @@ Saved history is not affected.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/views/document_diff_tree_widget.py" line="79"/>
+        <location filename="../../ui/views/document_diff_tree_widget.py" line="77"/>
         <source>+ Mark All Reviewed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/views/document_diff_tree_widget.py" line="104"/>
-        <source>- Remove All</source>
+        <location filename="../../ui/views/document_diff_tree_widget.py" line="102"/>
+        <source>Remove All</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/views/document_diff_tree_widget.py" line="35"/>
+        <location filename="../../ui/views/document_diff_tree_widget.py" line="33"/>
         <source>Remove document(s) from Reviewed.
 The current file(s) stay unchanged.
 They will not be saved in the next iteration until reviewed again.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/views/document_diff_tree_widget.py" line="92"/>
+        <location filename="../../ui/views/document_diff_tree_widget.py" line="90"/>
         <source>Choose which files to restore from the selected iteration.
 Current files on disk can be overwritten or removed.
 Saved history is not affected.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/views/document_diff_tree_widget.py" line="223"/>
-        <location filename="../../ui/views/document_diff_tree_widget.py" line="250"/>
+        <location filename="../../ui/views/document_diff_tree_widget.py" line="221"/>
+        <location filename="../../ui/views/document_diff_tree_widget.py" line="248"/>
         <source>Unnamed Document</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/views/document_diff_tree_widget.py" line="301"/>
+        <location filename="../../ui/views/document_diff_tree_widget.py" line="299"/>
         <source>+ Reviewed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/views/document_diff_tree_widget.py" line="314"/>
-        <source>- Remove</source>
+        <location filename="../../ui/views/document_diff_tree_widget.py" line="312"/>
+        <source>Remove</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/views/document_diff_tree_widget.py" line="335"/>
+        <location filename="../../ui/views/document_diff_tree_widget.py" line="333"/>
         <source>Restore the selected file.
 This overwrites %1 on disk with a copy of the file as it was saved in the selected iteration.
 THE CURRENT FILE WILL BE OVERWRITTEN BY THIS OPERATION.
@@ -371,33 +371,33 @@ Saved history is not affected.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/views/document_diff_tree_widget.py" line="349"/>
-        <location filename="../../ui/views/document_diff_tree_widget.py" line="556"/>
+        <location filename="../../ui/views/document_diff_tree_widget.py" line="347"/>
+        <location filename="../../ui/views/document_diff_tree_widget.py" line="554"/>
         <source>No changes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/views/document_diff_tree_widget.py" line="392"/>
+        <location filename="../../ui/views/document_diff_tree_widget.py" line="390"/>
         <source>Open</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/views/document_diff_tree_widget.py" line="498"/>
+        <location filename="../../ui/views/document_diff_tree_widget.py" line="496"/>
         <source>Open 3D comparison</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/views/document_diff_tree_widget.py" line="559"/>
+        <location filename="../../ui/views/document_diff_tree_widget.py" line="557"/>
         <source>Modified:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/views/document_diff_tree_widget.py" line="560"/>
+        <location filename="../../ui/views/document_diff_tree_widget.py" line="558"/>
         <source>Deleted:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/views/document_diff_tree_widget.py" line="561"/>
+        <location filename="../../ui/views/document_diff_tree_widget.py" line="559"/>
         <source>Added:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -552,7 +552,7 @@ Saved history is not affected.</source>
         <location filename="../../ui/views/diff_panel_view.py" line="474"/>
         <location filename="../../ui/views/diff_panel_view.py" line="481"/>
         <location filename="../../ui/views/diff_panel_view.py" line="548"/>
-        <location filename="../../ui/views/document_diff_tree_widget.py" line="331"/>
+        <location filename="../../ui/views/document_diff_tree_widget.py" line="329"/>
         <source>Restore</source>
         <translation type="unfinished"></translation>
     </message>
